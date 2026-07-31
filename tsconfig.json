@@ -8,6 +8,7 @@
     { "path": "./packages/ui" },
     { "path": "./packages/contracts" },
     { "path": "./packages/env" },
+    { "path": "./packages/database" },
     { "path": "./tools/workspace-plugin" }
   ]
 }

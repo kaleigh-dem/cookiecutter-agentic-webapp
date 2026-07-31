@@ -37,22 +37,24 @@ Exit criteria: a clean checkout passes `pnpm check`, and GitHub Actions verifies
 - [x] **P3-04** Add a worker job generator with queue metadata, correlation handling, tests, and barrel updates.
 - [x] **P3-05** Add a contract generator with a Zod runtime schema, inferred type, tests, and barrel updates.
 - [x] **P3-06** Verify generator unit tests, package resolution, formatting, typechecking, and build in CI.
-- [ ] **P3-07** Add a generated-output smoke test that runs all four generators in a temporary workspace and validates the resulting project graph.
+- [x] **P3-07** Add a generated-output smoke test that runs all four generators in a temporary workspace and validates the resulting project graph.
 - [x] **P3-08** Document extension guidance for adding a fifth generator without weakening boundaries.
 
 Exit criteria: all four generators run by package name, generator unit tests pass, generated projects receive correct tags, and CI validates the plugin as a normal Nx project.
 
 ## Phase 4 — Data foundation
 
-- [ ] **P4-01** Record the ORM/query-layer decision in an ADR, including migration and testing tradeoffs.
-- [ ] **P4-02** Add the database project with Node-only and data-access tags.
-- [ ] **P4-03** Define schema naming, timestamps, identifiers, soft-delete policy, and transaction conventions.
-- [ ] **P4-04** Add migration create/apply/rollback/status commands.
-- [ ] **P4-05** Add deterministic development seed data and a reset command.
+- [x] **P4-01** Record the ORM/query-layer decision in an ADR, including migration and testing tradeoffs.
+- [x] **P4-02** Add the database project with Node-only and data-access tags.
+- [x] **P4-03** Define schema naming, timestamps, identifiers, soft-delete policy, and transaction conventions.
+- [x] **P4-04** Add migration create/apply/rollback/status commands.
+- [x] **P4-05** Add deterministic development seed data and a reset command.
 - [ ] **P4-06** Add repository adapters for the reference domain without leaking database types into domain projects.
-- [ ] **P4-07** Add isolated PostgreSQL integration tests with automatic setup and teardown.
-- [ ] **P4-08** Add CI migration validation against an empty database and an upgrade-from-previous-schema fixture.
-- [ ] **P4-09** Document backup, restore, and destructive migration review requirements.
+- [x] **P4-07** Add isolated PostgreSQL integration tests with automatic setup and teardown.
+- [x] **P4-08** Add CI migration validation against an empty database and an upgrade-from-previous-schema fixture.
+- [x] **P4-09** Document backup, restore, and destructive migration review requirements.
+
+PR #4 completes the shared database platform. P4-06 remains sequenced after the reference domain is selected so adapters implement a real domain port rather than a placeholder abstraction.
 
 Exit criteria: migrations are reproducible, repository integration tests run in CI, and domain projects remain database-framework-free.
 

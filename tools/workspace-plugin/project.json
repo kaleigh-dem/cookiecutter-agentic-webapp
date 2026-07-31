@@ -30,6 +30,13 @@
       "options": {
         "command": "vitest run tools/workspace-plugin/src"
       }
+    },
+    "generated-output-smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "tsx tools/workspace-plugin/src/generators/generated-output.integration.ts"
+      }
     }
   }
 }

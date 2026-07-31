@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "outDir": "../../dist/packages/database",
+    "rootDir": ".",
+    "tsBuildInfoFile": "../../dist/packages/database/tsconfig.tsbuildinfo",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/**/*.ts", "migrations/**/*.ts"]
+}

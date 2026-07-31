@@ -24,6 +24,12 @@
     "generate:feature": "nx g @agentic-webapp/workspace-plugin:feature",
     "generate:job": "nx g @agentic-webapp/workspace-plugin:job",
     "generate:contract": "nx g @agentic-webapp/workspace-plugin:contract",
+    "db:migration:create": "nx run database:migration-create",
+    "db:migrate": "nx run database:migrate",
+    "db:rollback": "nx run database:rollback",
+    "db:status": "nx run database:status",
+    "db:seed": "nx run database:seed",
+    "db:reset": "nx run database:reset",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },
