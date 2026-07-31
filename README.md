@@ -19,17 +19,16 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - Nx project graph, caching, affected commands, and generators
 - Nx MCP configuration and agent instructions
 - PostgreSQL and Redis development services
-- GitHub Actions using `nx affected`
+- GitHub Actions using standalone and affected Nx validation
 
 ## Create a workspace
 
 ```bash
 npx create-nx-workspace@23.1.0 my-workspace \
-  --template kaleigh-dem/cookiecutter-agentic-webapp \
-  --trustThirdPartyPreset
+  --template kaleigh-dem/cookiecutter-agentic-webapp
 ```
 
-During creation, use `--aiAgents` to configure one or more supported assistants, or run the agent setup command after installation.
+Or clone this repository directly while the template migration is under review.
 
 ## Local development
 
@@ -37,16 +36,14 @@ During creation, use `--aiAgents` to configure one or more supported assistants,
 corepack enable
 pnpm install
 cp .env.example .env
-pnpm nx configure-ai-agents
 pnpm infra:up
 pnpm dev
 ```
 
-`configure-ai-agents` installs or updates Nx agent skills, workspace guidance, and MCP integration for the assistants you select.
-
 ## Validation
 
 ```bash
+pnpm nx sync:check
 pnpm format:check
 pnpm lint
 pnpm typecheck
@@ -54,6 +51,8 @@ pnpm test
 pnpm build
 pnpm affected
 ```
+
+A production build must leave the Git working tree clean.
 
 ## Explore and generate
 
