@@ -31,4 +31,8 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
-      - run: pnpm nx affected -t lint typecheck test build
+      - run: pnpm nx sync:check
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm nx affected -t lint test
