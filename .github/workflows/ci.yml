@@ -28,6 +28,12 @@ jobs:
 
       - run: pnpm install --no-frozen-lockfile
 
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pnpm-lockfile
+          path: pnpm-lock.yaml
+          retention-days: 1
+
       - uses: nrwl/nx-set-shas@v5
 
       - run: pnpm nx affected -t lint typecheck test build
