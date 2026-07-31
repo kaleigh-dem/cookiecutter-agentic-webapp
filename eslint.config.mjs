@@ -36,8 +36,36 @@ export default [
             {
               sourceTag: 'type:app',
               onlyDependOnLibsWithTags: [
+                'type:domain',
                 'type:feature',
+                'type:job',
                 'type:ui',
+                'type:contract',
+                'type:config',
+                'type:data-access',
+                'type:util',
+              ],
+            },
+            {
+              sourceTag: 'type:domain',
+              onlyDependOnLibsWithTags: [
+                'type:domain',
+                'type:contract',
+                'type:util',
+              ],
+            },
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: [
+                'type:ui',
+                'type:contract',
+                'type:util',
+              ],
+            },
+            {
+              sourceTag: 'type:job',
+              onlyDependOnLibsWithTags: [
+                'type:domain',
                 'type:contract',
                 'type:config',
                 'type:data-access',

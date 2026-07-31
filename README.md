@@ -16,7 +16,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - shared UI, contracts, and server environment packages
 - pnpm workspaces
 - enforced scope, runtime, and project-type boundaries
-- Nx project graph, caching, affected commands, and generators
+- Nx project graph, caching, affected commands, and local generators
 - Nx MCP configuration and agent instructions
 - PostgreSQL and Redis development services
 - GitHub Actions using standalone and affected Nx validation
@@ -43,25 +43,41 @@ pnpm dev
 ## Validation
 
 ```bash
-pnpm nx sync:check
+pnpm check
+```
+
+The expanded validation contract is:
+
+```bash
+pnpm sync:check
 pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm affected
 ```
 
 A production build must leave the Git working tree clean.
 
-## Explore and generate
+## Generate approved structure
+
+Use the local plugin instead of creating repeated structures manually:
+
+```bash
+pnpm generate:domain billing
+pnpm generate:feature account-settings
+pnpm generate:job refresh-search-index --queue=search
+pnpm generate:contract project-created
+```
+
+Generator details and output contracts are documented in `tools/workspace-plugin/README.md`.
+
+## Explore the workspace
 
 ```bash
 pnpm graph
 pnpm nx show projects
 pnpm nx show project web
-pnpm nx g @nx/next:app apps/admin
-pnpm nx g @nx/nest:lib packages/backend/example
 ```
 
-Read `AGENTS.md` and the closest nested `AGENTS.md` before changing a subsystem.
+Read `AGENTS.md`, the closest nested `AGENTS.md`, and `docs/TODO.md` before changing a subsystem. Update the TODO ledger whenever a PR changes roadmap status or scope.

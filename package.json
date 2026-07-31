@@ -14,11 +14,16 @@
     "lint": "nx run-many -t lint",
     "typecheck": "nx run-many -t typecheck",
     "test": "nx run-many -t test",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "sync:check": "nx sync:check",
+    "check": "pnpm sync:check && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "affected": "nx affected -t lint typecheck test build",
     "graph": "nx graph",
     "format": "nx format:write",
     "format:check": "nx format:check",
+    "generate:domain": "nx g @agentic-webapp/workspace-plugin:domain",
+    "generate:feature": "nx g @agentic-webapp/workspace-plugin:feature",
+    "generate:job": "nx g @agentic-webapp/workspace-plugin:job",
+    "generate:contract": "nx g @agentic-webapp/workspace-plugin:contract",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },
@@ -35,6 +40,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@agentic-webapp/workspace-plugin": "workspace:*",
     "@eslint/js": "^9.8.0",
     "@next/eslint-plugin-next": "^16.1.6",
     "@nx/devkit": "23.1.0",
