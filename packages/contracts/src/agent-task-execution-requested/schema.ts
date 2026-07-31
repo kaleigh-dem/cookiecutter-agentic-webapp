@@ -30,11 +30,11 @@ export type AgentTaskExecutionRequestedV2 = z.infer<
   typeof agentTaskExecutionRequestedV2Schema
 >;
 
-export const agentTaskExecutionRequestedSchema =
-  z.discriminatedUnion('version', [
-    agentTaskExecutionRequestedV1Schema,
-    agentTaskExecutionRequestedV2Schema,
-  ]);
+const v1Schema = agentTaskExecutionRequestedV1Schema;
+const v2Schema = agentTaskExecutionRequestedV2Schema;
+const versionedSchema = z.discriminatedUnion('version', [v1Schema, v2Schema]);
+
+export const agentTaskExecutionRequestedSchema = versionedSchema;
 
 export type AgentTaskExecutionRequested = z.infer<
   typeof agentTaskExecutionRequestedSchema
