@@ -1,11 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import { runner } from 'node-pg-migrate';
 
-export const migrationsDirectory = fileURLToPath(
-  new URL('../migrations', import.meta.url),
+export const migrationsDirectory = path.resolve(
+  process.cwd(),
+  'packages/database/migrations',
 );
 
 export interface MigrationRunOptions {
