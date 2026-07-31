@@ -23,6 +23,15 @@ jobs:
           ref: agent/add-agent-task-reference-feature
           fetch-depth: 0
 
+      - name: Publish bootstrap marker
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf 'Phase 6 bootstrap validation is running.\n' > .phase6-bootstrap-running
+          git add .phase6-bootstrap-running
+          git commit -m "Mark Phase 6 bootstrap running"
+          git push origin HEAD:agent/add-agent-task-reference-feature
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
@@ -82,8 +91,7 @@ jobs:
 
       - name: Create local Phase 6 commit
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .phase6-bootstrap-running
           git add -A
           git commit -m "Add Agent Tasks reference feature"
 
