@@ -89,6 +89,7 @@ export function createStructuredLogger(
     attributes?: Record<string, unknown>,
     error?: unknown,
   ) => {
+    const context = getCorrelationContext();
     const normalizedError =
       error instanceof Error
         ? { name: error.name, message: error.message }
@@ -101,10 +102,10 @@ export function createStructuredLogger(
       level,
       service,
       timestamp: new Date().toISOString(),
-      ...(getCorrelationContext()
-        ? { context: getCorrelationContext() }
+      ...(context ? { context } : {}),
+      ...(attributes
+        ? { attributes: redact(attributes) as Record<string, unknown> }
         : {}),
-      ...(attributes ? { attributes: redact(attributes) as Record<string, unknown> } : {}),
       ...(normalizedError ? { error: normalizedError } : {}),
     });
   };
@@ -113,7 +114,8 @@ export function createStructuredLogger(
     debug: (event, attributes) => emit('debug', event, attributes),
     info: (event, attributes) => emit('info', event, attributes),
     warn: (event, attributes) => emit('warn', event, attributes),
-    error: (event, error, attributes) => emit('error', event, attributes, error),
+    error: (event, error, attributes) =>
+      emit('error', event, attributes, error),
   };
 }
 
@@ -135,13 +137,16 @@ export class MetricsRegistry {
     return {
       counters: Object.fromEntries(this.counters),
       durations: Object.fromEntries(
-        [...this.durations].map(([name, values]) => [name, {
-          count: values.length,
-          maxMs: values.length ? Math.max(...values) : 0,
-          averageMs: values.length
-            ? values.reduce((sum, value) => sum + value, 0) / values.length
-            : 0,
-        }]),
+        [...this.durations].map(([name, values]) => [
+          name,
+          {
+            count: values.length,
+            maxMs: values.length ? Math.max(...values) : 0,
+            averageMs: values.length
+              ? values.reduce((sum, value) => sum + value, 0) / values.length
+              : 0,
+          },
+        ]),
       ),
     };
   }
@@ -160,7 +165,7 @@ export interface HealthReport {
 export async function checkDependencies(
   probes: readonly DependencyProbe[],
 ): Promise<HealthReport> {
-  const checks = Object.fromEntries(
+  const checks: HealthReport['checks'] = Object.fromEntries(
     await Promise.all(
       probes.map(async (probe) => {
         try {
