@@ -1,3 +1,8 @@
+import { execFile } from 'node:child_process';
+import { readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { promisify } from 'node:util';
+
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -8,7 +13,36 @@ import { seedManifest } from './schema';
 import { seedDevelopmentData } from './seed';
 import { getMigrationStatus } from './status';
 
+const execFileAsync = promisify(execFile);
 const POSTGRES_IMAGE = 'postgres:17-alpine';
+
+async function withTemporaryEnvironmentFile(
+  content: string,
+  callback: () => Promise<void>,
+): Promise<void> {
+  const environmentPath = path.resolve(process.cwd(), '.env');
+  let previousContent: string | undefined;
+
+  try {
+    previousContent = await readFile(environmentPath, 'utf-8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  await writeFile(environmentPath, content, 'utf-8');
+
+  try {
+    await callback();
+  } finally {
+    if (previousContent === undefined) {
+      await rm(environmentPath, { force: true });
+    } else {
+      await writeFile(environmentPath, previousContent, 'utf-8');
+    }
+  }
+}
 
 describe('database foundation', () => {
   let connectionString = '';
@@ -36,6 +70,28 @@ describe('database foundation', () => {
     let status = await getMigrationStatus(connectionString);
     expect(status.applied).toHaveLength(2);
     expect(status.pending).toEqual([]);
+
+    await withTemporaryEnvironmentFile(
+      `DATABASE_URL=${connectionString}\nNODE_ENV=test\n`,
+      async () => {
+        const environment = { ...process.env };
+        delete environment.DATABASE_URL;
+        delete environment.NODE_ENV;
+
+        const { stdout } = await execFileAsync(
+          process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
+          ['db:status'],
+          {
+            cwd: process.cwd(),
+            env: environment,
+            maxBuffer: 10 * 1024 * 1024,
+          },
+        );
+
+        expect(stdout).toContain('20260731140100000_add_seed_manifest');
+        expect(stdout).toContain('"pending": []');
+      },
+    );
 
     await seedDevelopmentData(connectionString);
     const connection = createDatabase({ connectionString, maxConnections: 1 });
