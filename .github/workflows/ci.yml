@@ -7,43 +7,10 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
 
 jobs:
-  normalize-phase-7:
-    if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.13.1
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 25
-          cache: pnpm
-
-      - run: pnpm install --no-frozen-lockfile
-      - run: pnpm nx sync
-      - run: pnpm format
-      - name: Commit normalized workspace
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "chore: normalize Phase 7 workspace"
-          git push
-
   affected:
-    if: github.event_name == 'push' || github.actor == 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
