@@ -13,15 +13,20 @@ export interface CreateAgentTaskCommand {
   readonly title: string;
   readonly prompt: string;
   readonly correlationId?: string;
+  readonly requestId?: string;
+  readonly traceId?: string;
+  readonly userId?: string;
 }
 
 export interface AgentTaskDependencies {
   readonly createId: () => string;
+  readonly createJobId?: () => string;
   readonly now: () => Date;
 }
 
 const defaultDependencies: AgentTaskDependencies = {
   createId: randomUUID,
+  createJobId: randomUUID,
   now: () => new Date(),
 };
 
@@ -46,7 +51,11 @@ export class CreateAgentTask {
         version: 1,
         taskId: task.id,
         actorId: task.ownerId,
+        userId: command.userId ?? task.ownerId,
         prompt: task.prompt,
+        requestId: command.requestId ?? randomUUID(),
+        traceId: command.traceId ?? randomUUID().replaceAll('-', ''),
+        jobId: this.dependencies.createJobId?.() ?? randomUUID(),
         correlationId: task.correlationId,
         occurredAt: task.createdAt.toISOString(),
       });
