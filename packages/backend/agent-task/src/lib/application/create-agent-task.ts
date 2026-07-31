@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
 import {
-  agentTaskExecutionRequestedSchema,
-  type AgentTaskExecutionRequested,
+  agentTaskExecutionRequestedV2Schema,
+  type AgentTaskExecutionRequestedV2,
 } from '@agentic-webapp/contracts';
 
 import { createAgentTask, type AgentTask } from '../domain/agent-task';
@@ -46,9 +46,9 @@ export class CreateAgentTask {
       correlationId: command.correlationId ?? this.dependencies.createId(),
       createdAt,
     });
-    const executionRequested: AgentTaskExecutionRequested =
-      agentTaskExecutionRequestedSchema.parse({
-        version: 1,
+    const executionRequested: AgentTaskExecutionRequestedV2 =
+      agentTaskExecutionRequestedV2Schema.parse({
+        version: 2,
         taskId: task.id,
         actorId: task.ownerId,
         userId: command.userId ?? task.ownerId,
