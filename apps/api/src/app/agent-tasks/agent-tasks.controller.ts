@@ -62,11 +62,14 @@ export class AgentTasksController {
     @Headers('x-correlation-id') correlationId?: string,
   ): Promise<CreateAgentTaskSuccessResponse> {
     try {
+      const normalizedCorrelationId = correlationId?.trim();
       const task = await this.createAgentTask.execute({
         actorId: requireActor(actorHeader),
         title: body.title,
         prompt: body.prompt,
-        correlationId: correlationId?.trim() || undefined,
+        ...(normalizedCorrelationId
+          ? { correlationId: normalizedCorrelationId }
+          : {}),
       });
       return toResponse(task);
     } catch (error) {
