@@ -48,9 +48,7 @@ describe('database foundation', () => {
     await runMigrations({ connectionString, direction: 'down', count: 1 });
     status = await getMigrationStatus(connectionString);
     expect(status.applied).toHaveLength(1);
-    expect(status.pending).toEqual([
-      '20260731140100000_add_seed_manifest',
-    ]);
+    expect(status.pending).toEqual(['20260731140100000_add_seed_manifest']);
 
     await runMigrations({ connectionString });
     status = await getMigrationStatus(connectionString);
