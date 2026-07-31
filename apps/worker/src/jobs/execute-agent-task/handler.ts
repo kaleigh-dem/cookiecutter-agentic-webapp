@@ -9,8 +9,19 @@ import {
   type ExecuteAgentTaskJobResult,
 } from './contract';
 
+type ExecuteAgentTask = (
+  payload: ExecuteAgentTaskJobPayload,
+) => Promise<ExecuteAgentTaskJobResult>;
+
+const completeAgentTask: ExecuteAgentTask = async (payload) => ({
+  taskId: payload.taskId,
+  correlationId: payload.correlationId,
+  completedAt: new Date().toISOString(),
+});
+
 export async function handleExecuteAgentTaskJob(
   payload: ExecuteAgentTaskJobPayload,
+  execute: ExecuteAgentTask = completeAgentTask,
 ): Promise<ExecuteAgentTaskJobResult> {
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
   const context = createCorrelationContext({
@@ -21,9 +32,5 @@ export async function handleExecuteAgentTaskJob(
     correlationId: validated.correlationId,
   });
 
-  return runWithCorrelationContext(context, async () => ({
-    taskId: validated.taskId,
-    correlationId: validated.correlationId,
-    completedAt: new Date().toISOString(),
-  }));
+  return runWithCorrelationContext(context, () => execute(validated));
 }
