@@ -5,8 +5,8 @@
     "emitDeclarationOnly": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "outDir": "../../dist/apps/api",
     "rootDir": "src",
     "types": ["node"]
