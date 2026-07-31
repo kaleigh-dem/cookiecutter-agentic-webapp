@@ -20,7 +20,11 @@ if "{{ cookiecutter.include_redis }}" != "yes":
     text = compose.read_text()
     start = text.find("  redis:\n")
     if start != -1:
-        text = text[:start].rstrip() + "\n"
+        end = text.find("\nvolumes:\n", start)
+        if end == -1:
+            text = text[:start].rstrip() + "\n"
+        else:
+            text = text[:start].rstrip() + "\n\n" + text[end + 1 :]
         compose.write_text(text)
 
 license_name = "{{ cookiecutter.license }}"
