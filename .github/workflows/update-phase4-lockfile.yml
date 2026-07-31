@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 24
 
-      - run: pnpm install --lockfile-only --no-frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm nx sync
       - run: pnpm format
 
