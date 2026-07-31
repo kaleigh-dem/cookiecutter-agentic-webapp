@@ -55,43 +55,104 @@ function objectAt(
   return value;
 }
 
+function resolveJsonPointer(document: JsonValue, pointer: string): JsonValue {
+  if (!pointer) {
+    return document;
+  }
+  if (!pointer.startsWith('/')) {
+    throw new Error(`Unsupported JSON pointer: #${pointer}`);
+  }
+
+  return pointer
+    .slice(1)
+    .split('/')
+    .map((segment) => segment.replaceAll('~1', '/').replaceAll('~0', '~'))
+    .reduce<JsonValue>((current, segment) => {
+      if (Array.isArray(current)) {
+        const value = current[Number(segment)];
+        if (value === undefined) {
+          throw new Error(`JSON pointer segment does not exist: ${segment}`);
+        }
+        return value;
+      }
+      if (!isObject(current) || !(segment in current)) {
+        throw new Error(`JSON pointer segment does not exist: ${segment}`);
+      }
+      return current[segment] as JsonValue;
+    }, document);
+}
+
+function resolveLocalReference(
+  document: JsonObject,
+  value: JsonValue,
+  label: string,
+  stack: string[] = [],
+): JsonObject {
+  if (!isObject(value)) {
+    throw new Error(`${label} must be an object.`);
+  }
+
+  const reference = value.$ref;
+  if (typeof reference !== 'string') {
+    return value;
+  }
+  if (!reference.startsWith('#')) {
+    throw new Error(`Unresolved external reference in ${label}: ${reference}`);
+  }
+  if (stack.includes(reference)) {
+    throw new Error(`Circular local reference in ${label}: ${reference}`);
+  }
+
+  const target = resolveLocalReference(
+    document,
+    resolveJsonPointer(document, reference.slice(1)),
+    label,
+    [...stack, reference],
+  );
+  const siblings = Object.fromEntries(
+    Object.entries(value).filter(([key]) => key !== '$ref'),
+  ) as JsonObject;
+  return { ...target, ...siblings };
+}
+
+function parameterKey(parameter: JsonObject): string {
+  const name = parameter.name;
+  const location = parameter.in;
+  if (typeof name !== 'string' || typeof location !== 'string') {
+    throw new Error('OpenAPI parameters require string name and in fields.');
+  }
+  return `${location}:${name}`;
+}
+
+function collectEffectiveParameters(
+  document: JsonObject,
+  pathItem: JsonObject,
+  operation: JsonObject,
+  operationLabel: string,
+): Map<string, JsonObject> {
+  const parametersByKey = new Map<string, JsonObject>();
+  for (const parameterSource of [pathItem.parameters, operation.parameters]) {
+    if (!Array.isArray(parameterSource)) {
+      continue;
+    }
+    for (const parameterValue of parameterSource) {
+      const parameter = resolveLocalReference(
+        document,
+        parameterValue,
+        `${operationLabel} parameter`,
+      );
+      parametersByKey.set(parameterKey(parameter), parameter);
+    }
+  }
+  return parametersByKey;
+}
+
 function compareParameters(
-  baselineOperation: JsonObject,
-  currentOperation: JsonObject,
+  baselineByKey: Map<string, JsonObject>,
+  currentByKey: Map<string, JsonObject>,
   operationLabel: string,
   issues: string[],
 ): void {
-  const baselineParameters = Array.isArray(baselineOperation.parameters)
-    ? baselineOperation.parameters
-    : [];
-  const currentParameters = Array.isArray(currentOperation.parameters)
-    ? currentOperation.parameters
-    : [];
-
-  const parameterKey = (parameter: JsonValue): string | undefined => {
-    if (!isObject(parameter)) {
-      return undefined;
-    }
-    const name = parameter.name;
-    const location = parameter.in;
-    return typeof name === 'string' && typeof location === 'string'
-      ? `${location}:${name}`
-      : undefined;
-  };
-
-  const parametersByKey = (parameters: JsonValue[]) =>
-    new Map(
-      parameters
-        .map((parameter) => [parameterKey(parameter), parameter] as const)
-        .filter(
-          (entry): entry is readonly [string, JsonValue] =>
-            entry[0] !== undefined,
-        ),
-    );
-
-  const baselineByKey = parametersByKey(baselineParameters);
-  const currentByKey = parametersByKey(currentParameters);
-
   for (const [key] of baselineByKey) {
     if (!currentByKey.has(key)) {
       issues.push(`${operationLabel} removed parameter ${key}.`);
@@ -99,20 +160,35 @@ function compareParameters(
   }
 
   for (const [key, currentParameter] of currentByKey) {
-    if (!isObject(currentParameter) || currentParameter.required !== true) {
+    if (currentParameter.required !== true) {
       continue;
     }
 
     const baselineParameter = baselineByKey.get(key);
     if (baselineParameter === undefined) {
       issues.push(`${operationLabel} added required parameter ${key}.`);
-    } else if (
-      !isObject(baselineParameter) ||
-      baselineParameter.required !== true
-    ) {
+    } else if (baselineParameter.required !== true) {
       issues.push(`${operationLabel} made parameter ${key} required.`);
     }
   }
+}
+
+function requestBodyIsRequired(
+  document: JsonObject,
+  operation: JsonObject,
+  operationLabel: string,
+): boolean {
+  const requestBody = operation.requestBody;
+  if (requestBody === undefined) {
+    return false;
+  }
+  return (
+    resolveLocalReference(
+      document,
+      requestBody,
+      `${operationLabel} request body`,
+    ).required === true
+  );
 }
 
 function compareSchemas(
@@ -212,62 +288,81 @@ async function main(): Promise<void> {
       issues.push(`Removed path ${routePath}.`);
       continue;
     }
-    if (!isObject(baselinePathItemValue) || !isObject(currentPathItemValue)) {
-      continue;
-    }
+
+    const baselinePathItem = resolveLocalReference(
+      baseline,
+      baselinePathItemValue,
+      `Baseline path item ${routePath}`,
+    );
+    const currentPathItem = resolveLocalReference(
+      current,
+      currentPathItemValue,
+      `Current path item ${routePath}`,
+    );
 
     for (const method of HTTP_METHODS) {
-      const baselineOperationValue = baselinePathItemValue[method];
+      const baselineOperationValue = baselinePathItem[method];
       if (baselineOperationValue === undefined) {
         continue;
       }
       const operationLabel = `${method.toUpperCase()} ${routePath}`;
-      const currentOperationValue = currentPathItemValue[method];
+      const currentOperationValue = currentPathItem[method];
       if (currentOperationValue === undefined) {
         issues.push(`Removed operation ${operationLabel}.`);
         continue;
       }
-      if (
-        !isObject(baselineOperationValue) ||
-        !isObject(currentOperationValue)
-      ) {
-        continue;
-      }
+
+      const baselineOperation = resolveLocalReference(
+        baseline,
+        baselineOperationValue,
+        `Baseline operation ${operationLabel}`,
+      );
+      const currentOperation = resolveLocalReference(
+        current,
+        currentOperationValue,
+        `Current operation ${operationLabel}`,
+      );
 
       if (
-        typeof baselineOperationValue.operationId === 'string' &&
-        currentOperationValue.operationId !== baselineOperationValue.operationId
+        typeof baselineOperation.operationId === 'string' &&
+        currentOperation.operationId !== baselineOperation.operationId
       ) {
         issues.push(
-          `${operationLabel} changed operationId from ${baselineOperationValue.operationId}.`,
+          `${operationLabel} changed operationId from ${baselineOperation.operationId}.`,
         );
       }
 
       compareParameters(
-        baselineOperationValue,
-        currentOperationValue,
+        collectEffectiveParameters(
+          baseline,
+          baselinePathItem,
+          baselineOperation,
+          operationLabel,
+        ),
+        collectEffectiveParameters(
+          current,
+          currentPathItem,
+          currentOperation,
+          operationLabel,
+        ),
         operationLabel,
         issues,
       );
 
-      const baselineRequestBody = baselineOperationValue.requestBody;
-      const currentRequestBody = currentOperationValue.requestBody;
       if (
-        (!isObject(baselineRequestBody) ||
-          baselineRequestBody.required !== true) &&
-        isObject(currentRequestBody) &&
-        currentRequestBody.required === true
+        !requestBodyIsRequired(baseline, baselineOperation, operationLabel) &&
+        requestBodyIsRequired(current, currentOperation, operationLabel)
       ) {
         issues.push(`${operationLabel} made the request body required.`);
       }
 
       const baselineResponses = objectAt(
-        baselineOperationValue.responses,
+        baselineOperation.responses,
         `${operationLabel} baseline responses`,
         issues,
       );
       const currentResponses = objectAt(
-        currentOperationValue.responses,
+        currentOperation.responses,
         `${operationLabel} current responses`,
         issues,
       );
