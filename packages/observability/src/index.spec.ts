@@ -12,8 +12,13 @@ import {
 describe('observability primitives', () => {
   it('redacts sensitive values and attaches correlation context', () => {
     const records: unknown[] = [];
-    const logger = createStructuredLogger('test', (record) => records.push(record));
-    const context = createCorrelationContext({ requestId: 'request-1', traceId: 'trace-1' });
+    const logger = createStructuredLogger('test', (record) =>
+      records.push(record),
+    );
+    const context = createCorrelationContext({
+      requestId: 'request-1',
+      traceId: 'trace-1',
+    });
 
     runWithCorrelationContext(context, () => {
       expect(getCorrelationContext()).toEqual(context);
