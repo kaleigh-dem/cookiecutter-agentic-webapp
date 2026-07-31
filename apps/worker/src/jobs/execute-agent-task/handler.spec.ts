@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { handleExecuteAgentTaskJob } from './handler';
 
 describe('handleExecuteAgentTaskJob', () => {
-  it('restores API and outbox correlation context around execution', async () => {
+  it('restores exact v2 API and outbox correlation context', async () => {
     const payload = {
-      version: 1 as const,
+      version: 2 as const,
       taskId: '11111111-1111-4111-8111-111111111111',
       actorId: 'actor-1',
       userId: 'actor-1',
@@ -42,5 +42,38 @@ describe('handleExecuteAgentTaskJob', () => {
       correlationId: 'correlation-1',
       completedAt: '2026-07-31T17:01:00.000Z',
     });
+  });
+
+  it('keeps legacy v1 events processable during rollout', async () => {
+    const payload = {
+      version: 1 as const,
+      taskId: '11111111-1111-4111-8111-111111111111',
+      actorId: 'actor-1',
+      prompt: 'Prompt',
+      correlationId: 'correlation-1',
+      occurredAt: '2026-07-31T17:00:00.000Z',
+    };
+
+    await handleExecuteAgentTaskJob(
+      payload,
+      async (validated) => {
+        expect(validated).toEqual(payload);
+        expect(getCorrelationContext()).toEqual(
+          expect.objectContaining({
+            userId: 'actor-1',
+            jobId: '33333333-3333-4333-8333-333333333333',
+            correlationId: 'correlation-1',
+            requestId: expect.any(String),
+            traceId: expect.any(String),
+          }),
+        );
+        return {
+          taskId: validated.taskId,
+          correlationId: validated.correlationId,
+          completedAt: '2026-07-31T17:01:00.000Z',
+        };
+      },
+      { jobId: '33333333-3333-4333-8333-333333333333' },
+    );
   });
 });
