@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import type {
   AgentTask,
   AgentTaskRepository,
@@ -33,7 +31,7 @@ export class DrizzleAgentTaskRepository implements AgentTaskRepository {
         createdAt: task.createdAt,
       });
       await transaction.insert(jobOutbox).values({
-        id: randomUUID(),
+        id: payload.jobId,
         kind: 'agent-task.execute.v1',
         payload,
         correlationId: payload.correlationId,
