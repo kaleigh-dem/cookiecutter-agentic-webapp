@@ -15,10 +15,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "service",
-          "status"
-        ],
+        "required": ["service", "status"],
         "type": "object"
       }
     }
@@ -48,9 +45,7 @@
           }
         },
         "summary": "Read API health",
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     }
   },

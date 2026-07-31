@@ -22,10 +22,7 @@ const HTTP_METHODS = [
 ] as const;
 
 const packageRoot = path.resolve(process.cwd(), 'packages/contracts');
-const baselinePath = path.join(
-  packageRoot,
-  'openapi/baseline/openapi.json',
-);
+const baselinePath = path.join(packageRoot, 'openapi/baseline/openapi.json');
 const currentPath = path.join(packageRoot, 'openapi/generated/openapi.json');
 
 function isObject(value: JsonValue | undefined): value is JsonObject {
@@ -173,11 +170,7 @@ async function main(): Promise<void> {
   const current = await readJson(currentPath);
   const issues: string[] = [];
 
-  const baselinePaths = objectAt(
-    baseline.paths,
-    'Baseline paths',
-    issues,
-  );
+  const baselinePaths = objectAt(baseline.paths, 'Baseline paths', issues);
   const currentPaths = objectAt(current.paths, 'Current paths', issues);
 
   for (const [routePath, baselinePathItemValue] of Object.entries(
@@ -203,7 +196,10 @@ async function main(): Promise<void> {
         issues.push(`Removed operation ${operationLabel}.`);
         continue;
       }
-      if (!isObject(baselineOperationValue) || !isObject(currentOperationValue)) {
+      if (
+        !isObject(baselineOperationValue) ||
+        !isObject(currentOperationValue)
+      ) {
         continue;
       }
 
@@ -263,11 +259,7 @@ async function main(): Promise<void> {
     issues,
   );
   compareSchemas(
-    objectAt(
-      baselineComponents.schemas,
-      'Baseline component schemas',
-      issues,
-    ),
+    objectAt(baselineComponents.schemas, 'Baseline component schemas', issues),
     objectAt(currentComponents.schemas, 'Current component schemas', issues),
     issues,
   );
