@@ -38,6 +38,17 @@ When absent, the API creates a request identifier and trace identifier and retur
 
 Worker jobs should create a context from the event's job, correlation, actor, and trace identifiers before executing application logic.
 
+### Agent Task event rollout
+
+Agent Task execution events use immutable versioned contracts and matching outbox kinds:
+
+- `agent-task.execute.v1` contains the original task, actor, prompt, correlation, and occurrence fields.
+- `agent-task.execute.v2` additionally requires user, request, trace, and job identifiers.
+
+New producers write only v2 events. Workers accept both versions during the rollout window so existing v1 outbox rows and in-flight messages remain processable. For v1 events, the worker preserves the actor as the user identifier and the original correlation identifier, accepts the outbox job identifier from envelope metadata, and generates request and trace identifiers because those values did not exist in the v1 payload.
+
+Do not remove v1 worker support until all environments have drained or migrated their v1 outbox rows and the oldest possible in-flight v1 message has expired. Removing a version requires an explicit deployment note and a test proving no persisted payload still depends on it.
+
 ## Health endpoints
 
 - `GET /api/health/live` proves the process can serve requests. It must not call dependencies.
