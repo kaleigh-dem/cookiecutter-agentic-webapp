@@ -15,22 +15,53 @@ type ParameterGroup<T, Key extends PropertyKey> =
     : never;
 
 type RequestBody<T> = T extends { requestBody?: infer Body }
-  ? Body extends { content: { 'application/json': infer JsonBody } }
-    ? JsonBody
-    : never
+  ? [NonNullable<Body>] extends [never]
+    ? never
+    : NonNullable<Body> extends {
+          content: { 'application/json': infer JsonBody };
+        }
+      ? JsonBody
+      : never
   : never;
 
-type OptionalField<Key extends string, Value> = [Value] extends [never]
-  ? { [Property in Key]?: never }
-  : { [Property in Key]?: Value };
+type RequiredKeys<T> = T extends object
+  ? {
+      [Key in keyof T]-?: {} extends Pick<T, Key> ? never : Key;
+    }[keyof T]
+  : never;
 
-export type OperationRequest<T> = OptionalField<
-  'path',
-  ParameterGroup<T, 'path'>
-> &
-  OptionalField<'query', ParameterGroup<T, 'query'>> &
-  OptionalField<'headers', ParameterGroup<T, 'header'>> &
-  OptionalField<'body', RequestBody<T>> & {
+type Field<Key extends string, Value, IsRequired extends boolean> = [
+  Value,
+] extends [never]
+  ? { [Property in Key]?: never }
+  : IsRequired extends true
+    ? { [Property in Key]: Value }
+    : { [Property in Key]?: Value };
+
+type ParameterField<
+  T,
+  GroupKey extends PropertyKey,
+  RequestKey extends string,
+> = Field<
+  RequestKey,
+  ParameterGroup<T, GroupKey>,
+  GroupKey extends RequiredKeys<ParametersOf<T>>
+    ? true
+    : [RequiredKeys<ParameterGroup<T, GroupKey>>] extends [never]
+      ? false
+      : true
+>;
+
+type BodyField<T> = Field<
+  'body',
+  RequestBody<T>,
+  'requestBody' extends RequiredKeys<T> ? true : false
+>;
+
+export type OperationRequest<T> = ParameterField<T, 'path', 'path'> &
+  ParameterField<T, 'query', 'query'> &
+  ParameterField<T, 'header', 'headers'> &
+  BodyField<T> & {
     readonly additionalHeaders?: HeadersInit;
     readonly signal?: AbortSignal;
   };
