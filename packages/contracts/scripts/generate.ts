@@ -401,7 +401,7 @@ function generateClient(operations: OpenApiOperation[]): string {
     '',
     'type RequiredKeys<T> = T extends object',
     '  ? {',
-    '      [Key in keyof T]-?: {} extends Pick<T, Key> ? never : Key;',
+    '      [Key in keyof T]-?: Record<never, never> extends Pick<T, Key> ? never : Key;',
     '    }[keyof T]',
     '  : never;',
     '',
