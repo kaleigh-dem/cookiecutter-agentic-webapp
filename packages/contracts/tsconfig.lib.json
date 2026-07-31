@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "outDir": "../../dist/packages/contracts",
+    "rootDir": "src",
+    "tsBuildInfoFile": "../../dist/packages/contracts/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

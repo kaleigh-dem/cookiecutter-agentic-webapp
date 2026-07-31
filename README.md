@@ -1,38 +1,67 @@
-# cookiecutter-agentic-webapp
+# Agentic Webapp Nx Template
 
-A production-minded Cookiecutter template for scalable, agent-friendly TypeScript web applications.
+A production-minded Nx monorepo template for a large TypeScript web application operated by humans and coding agents.
 
-## Phase 1 scope
+> The repository name is retained from the original Cookiecutter prototype. The template itself now uses Nx directly.
 
-This initial scaffold generates:
+## Why Nx
 
-- a pnpm and Turborepo monorepo
-- a Next.js web application
-- a NestJS API
-- an optional TypeScript worker
-- shared contracts, database, and validated environment packages
-- layered `AGENTS.md` instructions for coding agents
-- architecture decisions and module-boundary documentation
-- generated-project GitHub Actions validation and CODEOWNERS
-- PostgreSQL and optional Redis development services
+Nx supplies the project graph, generators, architectural boundary enforcement, computation caching, affected-only CI, and coding-agent integration that a large monorepo needs. This repository adds opinionated web/backend boundaries, layered `AGENTS.md` guidance, and the application-specific platform pieces that Nx does not prescribe.
 
-Planned follow-up work includes executable dependency-boundary enforcement, database migrations and integration tooling, OpenAPI generation, observability, shared UI and test packages, authentication, and a complete vertical example feature.
+## Included now
 
-## Use
+- Next.js App Router web application
+- NestJS API
+- Node.js worker
+- shared UI, contracts, and server environment packages
+- pnpm workspaces
+- enforced scope, runtime, and project-type boundaries
+- Nx project graph, caching, affected commands, and generators
+- Nx MCP configuration and agent instructions
+- PostgreSQL and Redis development services
+- GitHub Actions using standalone and affected Nx validation
 
-```bash
-pipx run cookiecutter gh:kaleigh-dem/cookiecutter-agentic-webapp
-```
-
-Or from a local checkout:
+## Create a workspace
 
 ```bash
-cookiecutter .
+npx create-nx-workspace@23.1.0 my-workspace \
+  --template kaleigh-dem/cookiecutter-agentic-webapp
 ```
 
-## Template development
+Or clone this repository directly while the template migration is under review.
+
+## Local development
 
 ```bash
-python -m pip install -e '.[test]'
-python -m pytest -v
+corepack enable
+pnpm install
+cp .env.example .env
+pnpm infra:up
+pnpm dev
 ```
+
+## Validation
+
+```bash
+pnpm nx sync:check
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm affected
+```
+
+A production build must leave the Git working tree clean.
+
+## Explore and generate
+
+```bash
+pnpm graph
+pnpm nx show projects
+pnpm nx show project web
+pnpm nx g @nx/next:app apps/admin
+pnpm nx g @nx/nest:lib packages/backend/example
+```
+
+Read `AGENTS.md` and the closest nested `AGENTS.md` before changing a subsystem.

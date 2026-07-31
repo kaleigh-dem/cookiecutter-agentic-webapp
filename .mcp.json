@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "nx-mcp": {
+      "type": "stdio",
+      "command": "pnpm",
+      "args": ["nx", "mcp"]
+    }
+  }
+}

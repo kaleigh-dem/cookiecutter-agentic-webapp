@@ -1,7 +1,0 @@
-* @{{ cookiecutter.github_owner }}
-
-/apps/api/src/modules/identity/ @{{ cookiecutter.github_owner }}
-/packages/database/ @{{ cookiecutter.github_owner }}
-/packages/contracts/ @{{ cookiecutter.github_owner }}
-/.github/ @{{ cookiecutter.github_owner }}
-/AGENTS.md @{{ cookiecutter.github_owner }}

@@ -1,0 +1,8 @@
+{
+  "name": "@agentic-webapp/worker",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@agentic-webapp/contracts": "workspace:*"
+  }
+}
