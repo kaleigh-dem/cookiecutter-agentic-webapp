@@ -25,10 +25,11 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 
 ```bash
 npx create-nx-workspace@23.1.0 my-workspace \
-  --template kaleigh-dem/cookiecutter-agentic-webapp
+  --template kaleigh-dem/cookiecutter-agentic-webapp \
+  --trustThirdPartyPreset
 ```
 
-Or clone this repository directly while the template migration is under review.
+During creation, use `--aiAgents` to configure one or more supported assistants, or run the agent setup command after installation.
 
 ## Local development
 
@@ -36,9 +37,12 @@ Or clone this repository directly while the template migration is under review.
 corepack enable
 pnpm install
 cp .env.example .env
+pnpm nx configure-ai-agents
 pnpm infra:up
 pnpm dev
 ```
+
+`configure-ai-agents` installs or updates Nx agent skills, workspace guidance, and MCP integration for the assistants you select.
 
 ## Validation
 
