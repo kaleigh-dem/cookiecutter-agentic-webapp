@@ -40,7 +40,29 @@ describe('observability primitives', () => {
     ]);
   });
 
-  it('records baseline counters and durations', () => {
+  it('redacts sensitive values embedded in error messages', () => {
+    const records: unknown[] = [];
+    const logger = createStructuredLogger('test', (record) =>
+      records.push(record),
+    );
+
+    logger.error(
+      'agent_task.failed',
+      new Error('request failed token=super-secret cookie=session-value'),
+    );
+
+    expect(records).toEqual([
+      expect.objectContaining({
+        error: {
+          name: 'Error',
+          message:
+            'request failed token=[REDACTED] cookie=[REDACTED]',
+        },
+      }),
+    ]);
+  });
+
+  it('records bounded aggregate counters and durations', () => {
     const metrics = new MetricsRegistry();
     metrics.increment('http_requests_total');
     metrics.observe('http_request_duration_ms', 10);
@@ -49,7 +71,32 @@ describe('observability primitives', () => {
     expect(metrics.snapshot()).toEqual({
       counters: { http_requests_total: 1 },
       durations: {
-        http_request_duration_ms: { count: 2, maxMs: 30, averageMs: 20 },
+        http_request_duration_ms: {
+          count: 2,
+          sumMs: 40,
+          maxMs: 30,
+          averageMs: 20,
+        },
+      },
+    });
+  });
+
+  it('keeps duration storage bounded under sustained traffic', () => {
+    const metrics = new MetricsRegistry();
+
+    for (let index = 0; index < 100_000; index += 1) {
+      metrics.observe('http_request_duration_ms', index % 100);
+    }
+
+    expect(metrics.snapshot()).toEqual({
+      counters: {},
+      durations: {
+        http_request_duration_ms: {
+          count: 100_000,
+          sumMs: 4_950_000,
+          maxMs: 99,
+          averageMs: 49.5,
+        },
       },
     });
   });
