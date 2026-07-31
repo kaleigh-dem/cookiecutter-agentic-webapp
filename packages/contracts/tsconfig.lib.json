@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": false,
+    "lib": ["es2022", "dom", "dom.iterable"],
     "outDir": "../../dist/packages/contracts",
     "rootDir": "src",
     "tsBuildInfoFile": "../../dist/packages/contracts/tsconfig.tsbuildinfo"

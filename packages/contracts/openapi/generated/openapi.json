@@ -1,0 +1,64 @@
+{
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "service": {
+            "const": "api",
+            "description": "The service reporting its health.",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "description": "The stable healthy status value.",
+            "type": "string"
+          }
+        },
+        "required": ["service", "status"],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "The canonical HTTP contract for the API application.",
+    "title": "Agentic Webapp API",
+    "version": "0.1.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "description": "Returns a stable public health response for the API process.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "The API is running."
+          }
+        },
+        "summary": "Read API health",
+        "tags": ["health"]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Local development API",
+      "url": "http://localhost:4000"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Service health and readiness signals.",
+      "name": "health"
+    }
+  ]
+}

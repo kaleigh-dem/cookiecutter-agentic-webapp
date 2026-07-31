@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["service", "status"],
+  "properties": {
+    "service": {
+      "type": "string",
+      "const": "api",
+      "description": "The service reporting its health."
+    },
+    "status": {
+      "type": "string",
+      "const": "ok",
+      "description": "The stable healthy status value."
+    }
+  }
+}

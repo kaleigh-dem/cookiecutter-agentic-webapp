@@ -24,13 +24,15 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: 25
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - uses: nrwl/nx-set-shas@v5
 
+      - run: pnpm contracts:check
+      - run: pnpm contracts:compat
       - run: pnpm nx sync:check
       - run: pnpm format:check
       - run: pnpm typecheck
