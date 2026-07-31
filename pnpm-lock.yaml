@@ -39,6 +39,9 @@ importers:
         specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
+      '@agentic-webapp/workspace-plugin':
+        specifier: workspace:*
+        version: link:tools/workspace-plugin
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.39.5
@@ -170,6 +173,8 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.2.8
+
+  tools/workspace-plugin: {}
 
 packages:
 

@@ -43,6 +43,10 @@ export default async function jobGenerator(
     `# ${name.className} job guidance\n\n- Treat payloads as versioned contracts.\n- Preserve correlation identifiers in logs and downstream calls.\n- Make retries idempotent before enabling automatic retry behavior.\n- Keep queue clients out of the handler's core logic.\n`,
   );
 
-  appendBarrelExport(tree, 'apps/worker/src/jobs/index.ts', `./${name.fileName}`);
+  appendBarrelExport(
+    tree,
+    'apps/worker/src/jobs/index.ts',
+    `./${name.fileName}`,
+  );
   await formatGeneratorFiles(tree, schema.skipFormat);
 }

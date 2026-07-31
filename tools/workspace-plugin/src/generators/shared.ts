@@ -53,13 +53,16 @@ export function appendBarrelExport(
   exportPath: string,
 ): void {
   const exportLine = `export * from '${exportPath}';`;
-  const current = tree.exists(barrelPath) ? tree.read(barrelPath, 'utf-8') ?? '' : '';
+  const current = tree.exists(barrelPath)
+    ? (tree.read(barrelPath, 'utf-8') ?? '')
+    : '';
 
   if (current.split('\n').includes(exportLine)) {
     return;
   }
 
-  const prefix = current.length === 0 || current.endsWith('\n') ? current : `${current}\n`;
+  const prefix =
+    current.length === 0 || current.endsWith('\n') ? current : `${current}\n`;
   tree.write(barrelPath, `${prefix}${exportLine}\n`);
 }
 
@@ -152,7 +155,10 @@ export function createLibraryProject(
   addRootTsconfigReference(tree, projectRoot);
 }
 
-export function addRootTsconfigReference(tree: Tree, projectRoot: string): void {
+export function addRootTsconfigReference(
+  tree: Tree,
+  projectRoot: string,
+): void {
   if (!tree.exists('tsconfig.json')) {
     return;
   }

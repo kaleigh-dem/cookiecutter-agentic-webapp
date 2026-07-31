@@ -13,9 +13,15 @@ describe('feature generator', () => {
   });
 
   it('creates a browser-only feature project', async () => {
-    await featureGenerator(tree, { name: 'account settings', skipFormat: true });
+    await featureGenerator(tree, {
+      name: 'account settings',
+      skipFormat: true,
+    });
 
-    const project = readProjectConfiguration(tree, 'web-feature-account-settings');
+    const project = readProjectConfiguration(
+      tree,
+      'web-feature-account-settings',
+    );
     expect(project.root).toBe('packages/web/features/account-settings');
     expect(project.tags).toContain('runtime:browser');
     expect(
