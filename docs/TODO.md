@@ -36,9 +36,9 @@ Exit criteria: a clean checkout passes `pnpm check`, and GitHub Actions verifies
 - [x] **P3-03** Add a browser feature generator with tags, a public API, a view model test, and guidance.
 - [x] **P3-04** Add a worker job generator with queue metadata, correlation handling, tests, and barrel updates.
 - [x] **P3-05** Add a contract generator with a Zod runtime schema, inferred type, tests, and barrel updates.
-- [-] **P3-06** Verify generator unit tests, package resolution, formatting, typechecking, and build in CI.
+- [x] **P3-06** Verify generator unit tests, package resolution, formatting, typechecking, and build in CI.
 - [ ] **P3-07** Add a generated-output smoke test that runs all four generators in a temporary workspace and validates the resulting project graph.
-- [ ] **P3-08** Document extension guidance for adding a fifth generator without weakening boundaries.
+- [x] **P3-08** Document extension guidance for adding a fifth generator without weakening boundaries.
 
 Exit criteria: all four generators run by package name, generator unit tests pass, generated projects receive correct tags, and CI validates the plugin as a normal Nx project.
 
