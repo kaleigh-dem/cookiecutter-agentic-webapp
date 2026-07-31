@@ -21,7 +21,9 @@ describe('database foundation', () => {
       .withPassword('postgres')
       .start();
     connectionString = container.getConnectionUri();
-    stopContainer = async () => container.stop();
+    stopContainer = async () => {
+      await container.stop();
+    };
   });
 
   afterAll(async () => {
