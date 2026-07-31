@@ -26,7 +26,10 @@ const HTTP_METHODS = [
   'trace',
 ] as const;
 
-const packageRoot = path.resolve(process.cwd(), 'packages/contracts');
+const packageRoot = path.resolve(
+  process.env.CONTRACTS_PACKAGE_ROOT ??
+    path.join(process.cwd(), 'packages/contracts'),
+);
 const sourcePath = path.join(packageRoot, 'openapi/source/openapi.json');
 const generatedOpenApiPath = path.join(
   packageRoot,
@@ -166,13 +169,82 @@ function asObject(value: JsonValue | undefined, label: string): JsonObject {
   return value;
 }
 
+function resolveLocalReference(
+  document: JsonObject,
+  value: JsonValue,
+  label: string,
+  stack: string[] = [],
+): JsonObject {
+  const object = asObject(value, label);
+  const reference = object.$ref;
+  if (typeof reference !== 'string') {
+    return object;
+  }
+  if (!reference.startsWith('#')) {
+    throw new Error(`Unresolved external reference in ${label}: ${reference}`);
+  }
+  if (stack.includes(reference)) {
+    throw new Error(`Circular local reference in ${label}: ${reference}`);
+  }
+
+  const target = resolveLocalReference(
+    document,
+    resolveJsonPointer(document, reference.slice(1)),
+    label,
+    [...stack, reference],
+  );
+  const siblings = Object.fromEntries(
+    Object.entries(object).filter(([key]) => key !== '$ref'),
+  ) as JsonObject;
+  return { ...target, ...siblings };
+}
+
+function parameterKey(parameter: JsonObject): string {
+  const name = parameter.name;
+  const location = parameter.in;
+  if (typeof name !== 'string' || typeof location !== 'string') {
+    throw new Error('OpenAPI parameters require string name and in fields.');
+  }
+  return `${location}:${name}`;
+}
+
+function collectEffectiveParameters(
+  document: JsonObject,
+  pathItem: JsonObject,
+  operation: JsonObject,
+  operationLabel: string,
+): JsonObject[] {
+  const parametersByKey = new Map<string, JsonObject>();
+  const parameterSources = [pathItem.parameters, operation.parameters];
+
+  for (const parameterSource of parameterSources) {
+    if (!Array.isArray(parameterSource)) {
+      continue;
+    }
+    for (const parameterValue of parameterSource) {
+      const parameter = resolveLocalReference(
+        document,
+        parameterValue,
+        `${operationLabel} parameter`,
+      );
+      parametersByKey.set(parameterKey(parameter), parameter);
+    }
+  }
+
+  return [...parametersByKey.values()];
+}
+
 function collectOperations(document: JsonObject): OpenApiOperation[] {
   const paths = asObject(document.paths, 'OpenAPI paths');
   const seenOperationIds = new Set<string>();
   const operations: OpenApiOperation[] = [];
 
   for (const [routePath, pathItemValue] of Object.entries(paths)) {
-    const pathItem = asObject(pathItemValue, `Path item ${routePath}`);
+    const pathItem = resolveLocalReference(
+      document,
+      pathItemValue,
+      `Path item ${routePath}`,
+    );
 
     for (const method of HTTP_METHODS) {
       const operationValue = pathItem[method];
@@ -180,9 +252,11 @@ function collectOperations(document: JsonObject): OpenApiOperation[] {
         continue;
       }
 
-      const operation = asObject(
+      const operationLabel = `${method.toUpperCase()} ${routePath}`;
+      const operation = resolveLocalReference(
+        document,
         operationValue,
-        `Operation ${method.toUpperCase()} ${routePath}`,
+        `Operation ${operationLabel}`,
       );
       const operationId = operation.operationId;
       if (typeof operationId !== 'string' || operationId.length === 0) {
@@ -200,18 +274,25 @@ function collectOperations(document: JsonObject): OpenApiOperation[] {
       }
       seenOperationIds.add(operationId);
 
-      const parameters = Array.isArray(operation.parameters)
-        ? operation.parameters
-        : [];
-      const hasRequiredParameter = parameters.some((parameter) => {
-        if (!isObject(parameter)) {
-          return false;
-        }
-        return parameter.required === true || parameter.in === 'path';
-      });
+      const parameters = collectEffectiveParameters(
+        document,
+        pathItem,
+        operation,
+        operationLabel,
+      );
+      const hasRequiredParameter = parameters.some(
+        (parameter) => parameter.required === true || parameter.in === 'path',
+      );
       const requestBody = operation.requestBody;
-      const hasRequiredBody =
-        isObject(requestBody) && requestBody.required === true;
+      const resolvedRequestBody =
+        requestBody === undefined
+          ? undefined
+          : resolveLocalReference(
+              document,
+              requestBody,
+              `${operationLabel} request body`,
+            );
+      const hasRequiredBody = resolvedRequestBody?.required === true;
       const hasPathTemplate = routePath.includes('{');
 
       operations.push({
