@@ -60,13 +60,15 @@ Exit criteria: migrations are reproducible, repository integration tests run in 
 
 ## Phase 5 — API contracts and generated clients
 
-- [ ] **P5-01** Define the OpenAPI source-of-truth and ownership model.
-- [ ] **P5-02** Add API document generation and deterministic bundling.
-- [ ] **P5-03** Generate server-side operation and schema types.
-- [ ] **P5-04** Generate a browser-safe typed client.
-- [ ] **P5-05** Add contract drift and backward-compatibility checks.
-- [ ] **P5-06** Add versioning and deprecation guidance for HTTP and event contracts.
+- [-] **P5-01** Define the OpenAPI source-of-truth and ownership model.
+- [-] **P5-02** Add API document generation and deterministic bundling.
+- [-] **P5-03** Generate server-side operation and schema types.
+- [-] **P5-04** Generate a browser-safe typed client.
+- [-] **P5-05** Add contract drift and backward-compatibility checks.
+- [-] **P5-06** Add versioning and deprecation guidance for HTTP and event contracts.
 - [ ] **P5-07** Prevent handwritten duplicate API types in web features.
+
+Current increment: the Phase 5 contract-foundation PR implements P5-01 through P5-06 and proves the generated client through the health operation. P5-07 remains planned for executable duplicate-type enforcement as feature contracts expand.
 
 Exit criteria: generated artifacts are reproducible, drift fails CI, and the web application consumes the generated client.
 
