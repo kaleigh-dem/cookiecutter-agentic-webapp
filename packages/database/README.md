@@ -23,4 +23,6 @@ pnpm db:seed
 pnpm db:reset
 ```
 
+The database CLI loads the repository-root `.env` file through Node.js before validating `DATABASE_URL` and `NODE_ENV`. Existing exported environment variables take precedence over values in `.env`.
+
 The package exports the database client from `@agentic-webapp/database` and schema definitions from `@agentic-webapp/database/schema`. Consumers should depend on domain-facing repository interfaces instead of importing schema objects directly, except inside persistence adapters.
