@@ -1,6 +1,8 @@
 name: Bootstrap Phase 6 reference feature
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [agent/add-agent-task-reference-feature]
 
@@ -13,7 +15,7 @@ concurrency:
 
 jobs:
   bootstrap:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && (github.event_name == 'push' || github.head_ref == 'agent/add-agent-task-reference-feature')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
