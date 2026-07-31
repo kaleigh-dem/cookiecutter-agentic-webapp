@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CreateAgentTask } from './create-agent-task';
 
 describe('CreateAgentTask', () => {
-  it('validates, persists, and schedules a correlated execution request', async () => {
+  it('validates, persists, and schedules a correlated v2 execution request', async () => {
     const create = vi.fn().mockResolvedValue(undefined);
     const useCase = new CreateAgentTask(
       { create, findById: vi.fn() },
@@ -33,7 +33,7 @@ describe('CreateAgentTask', () => {
       correlationId: '22222222-2222-4222-8222-222222222222',
     });
     expect(create).toHaveBeenCalledWith(result, {
-      version: 1,
+      version: 2,
       taskId: result.id,
       actorId: '33333333-3333-4333-8333-333333333333',
       userId: '33333333-3333-4333-8333-333333333333',
