@@ -26,5 +26,8 @@
       "import": "./src/generated/server.ts",
       "default": "./src/generated/server.ts"
     }
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0"
   }
 }
