@@ -22,6 +22,9 @@
     },
     {
       "path": "../../packages/backend/agent-task/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/observability/tsconfig.lib.json"
     }
   ]
 }
