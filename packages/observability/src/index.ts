@@ -45,6 +45,16 @@ const sensitiveKeys = new Set([
   'token',
 ]);
 
+const sensitiveMessagePattern =
+  /\b(authorization|cookie|password|prompt|secret|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|\S+)/gi;
+
+function redactText(value: string): string {
+  return value.replace(
+    sensitiveMessagePattern,
+    (_match, key: string) => `${key}=[REDACTED]`,
+  );
+}
+
 function redact(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(redact);
   if (!value || typeof value !== 'object') return value;
@@ -92,9 +102,9 @@ export function createStructuredLogger(
     const context = getCorrelationContext();
     const normalizedError =
       error instanceof Error
-        ? { name: error.name, message: error.message }
+        ? { name: error.name, message: redactText(error.message) }
         : error
-          ? { name: 'Error', message: String(error) }
+          ? { name: 'Error', message: redactText(String(error)) }
           : undefined;
 
     write({
@@ -119,32 +129,44 @@ export function createStructuredLogger(
   };
 }
 
+interface DurationAggregate {
+  count: number;
+  sumMs: number;
+  maxMs: number;
+}
+
 export class MetricsRegistry {
   private readonly counters = new Map<string, number>();
-  private readonly durations = new Map<string, number[]>();
+  private readonly durations = new Map<string, DurationAggregate>();
 
   public increment(name: string, value = 1): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + value);
   }
 
   public observe(name: string, milliseconds: number): void {
-    const values = this.durations.get(name) ?? [];
-    values.push(milliseconds);
-    this.durations.set(name, values);
+    const aggregate = this.durations.get(name) ?? {
+      count: 0,
+      sumMs: 0,
+      maxMs: 0,
+    };
+    aggregate.count += 1;
+    aggregate.sumMs += milliseconds;
+    aggregate.maxMs = Math.max(aggregate.maxMs, milliseconds);
+    this.durations.set(name, aggregate);
   }
 
   public snapshot(): Record<string, unknown> {
     return {
       counters: Object.fromEntries(this.counters),
       durations: Object.fromEntries(
-        [...this.durations].map(([name, values]) => [
+        [...this.durations].map(([name, aggregate]) => [
           name,
           {
-            count: values.length,
-            maxMs: values.length ? Math.max(...values) : 0,
-            averageMs: values.length
-              ? values.reduce((sum, value) => sum + value, 0) / values.length
-              : 0,
+            count: aggregate.count,
+            sumMs: aggregate.sumMs,
+            maxMs: aggregate.maxMs,
+            averageMs:
+              aggregate.count > 0 ? aggregate.sumMs / aggregate.count : 0,
           },
         ]),
       ),
