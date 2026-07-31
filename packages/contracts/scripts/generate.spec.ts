@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = fileURLToPath(new URL('./generate.ts', import.meta.url));
+const typeScriptPath = fileURLToPath(
+  new URL('../../../node_modules/typescript/bin/tsc', import.meta.url),
+);
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
@@ -21,7 +24,7 @@ afterEach(async () => {
 });
 
 describe('OpenAPI client generation', () => {
-  it('requires request arguments for referenced path-level parameters and request bodies', async () => {
+  it('requires referenced path, query, and body inputs at the type level', async () => {
     const directory = await mkdtemp(
       path.join(tmpdir(), 'contracts-generation-'),
     );
@@ -47,6 +50,22 @@ describe('OpenAPI client generation', () => {
                         type: 'array',
                         items: { type: 'string' },
                       },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '/items/{itemId}': {
+            parameters: [{ $ref: '#/components/parameters/RequiredItemId' }],
+            get: {
+              operationId: 'getItem',
+              responses: {
+                '200': {
+                  description: 'ok',
+                  content: {
+                    'application/json': {
+                      schema: { type: 'string' },
                     },
                   },
                 },
@@ -79,6 +98,12 @@ describe('OpenAPI client generation', () => {
               name: 'limit',
               required: true,
               schema: { type: 'integer' },
+            },
+            RequiredItemId: {
+              in: 'path',
+              name: 'itemId',
+              required: true,
+              schema: { type: 'string' },
             },
           },
           requestBodies: {
@@ -123,11 +148,53 @@ describe('OpenAPI client generation', () => {
       'listItems(request: OperationRequest<operations["listItems"]>)',
     );
     expect(client).toContain(
+      'getItem(request: OperationRequest<operations["getItem"]>)',
+    );
+    expect(client).toContain(
       'createItem(request: OperationRequest<operations["createItem"]>)',
     );
-    expect(client).not.toContain('listItems(request?:');
-    expect(client).not.toContain('createItem(request?:');
-    expect(client).not.toContain('listItems(request = {})');
-    expect(client).not.toContain('createItem(request = {})');
+
+    const typecheckPath = path.join(directory, 'typecheck.ts');
+    await writeFile(
+      typecheckPath,
+      `import type { ApiClient } from './src/generated/client';
+
+declare const client: ApiClient;
+
+// @ts-expect-error required query input must be present
+void client.listItems({});
+void client.listItems({ query: { limit: 10 } });
+
+// @ts-expect-error required path input must be present
+void client.getItem({});
+void client.getItem({ path: { itemId: 'item-1' } });
+
+// @ts-expect-error required request body must be present
+void client.createItem({});
+void client.createItem({ body: { name: 'example' } });
+`,
+      'utf-8',
+    );
+
+    const typecheck = spawnSync(
+      process.execPath,
+      [
+        typeScriptPath,
+        '--noEmit',
+        '--strict',
+        '--skipLibCheck',
+        '--target',
+        'ES2022',
+        '--module',
+        'ESNext',
+        '--moduleResolution',
+        'Bundler',
+        '--lib',
+        'ES2022,DOM',
+        typecheckPath,
+      ],
+      { encoding: 'utf-8' },
+    );
+    expect(typecheck.status, typecheck.stderr || typecheck.stdout).toBe(0);
   }, 30_000);
 });
