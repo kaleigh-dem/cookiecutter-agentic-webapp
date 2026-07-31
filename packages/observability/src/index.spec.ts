@@ -55,8 +55,7 @@ describe('observability primitives', () => {
       expect.objectContaining({
         error: {
           name: 'Error',
-          message:
-            'request failed token=[REDACTED] cookie=[REDACTED]',
+          message: 'request failed token=[REDACTED] cookie=[REDACTED]',
         },
       }),
     ]);
