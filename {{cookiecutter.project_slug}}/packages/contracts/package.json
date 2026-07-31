@@ -1,8 +1,0 @@
-{
-  "name": "{{ cookiecutter.package_scope }}/contracts",
-  "private": true,
-  "type": "module",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "build": "tsc", "lint": "eslint src", "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "devDependencies": { "typescript": "^5.8.3", "vitest": "^3.2.4" }
-}

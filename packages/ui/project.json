@@ -1,0 +1,22 @@
+{
+  "name": "ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/ui/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:ui", "runtime:browser"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/ui"],
+      "options": {
+        "command": "tsc -p packages/ui/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/ui/tsconfig.lib.json --noEmit"
+      }
+    }
+  }
+}
