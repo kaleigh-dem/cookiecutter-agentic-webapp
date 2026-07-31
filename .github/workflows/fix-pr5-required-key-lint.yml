@@ -1,0 +1,67 @@
+name: Fix PR 5 required-key lint
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-pr5-required-key-lint
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/add-openapi-contract-foundation'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/add-openapi-contract-foundation
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Use a lint-safe required-key probe
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          generator = Path('packages/contracts/scripts/generate.ts')
+          text = generator.read_text()
+          old = "    '      [Key in keyof T]-?: {} extends Pick<T, Key> ? never : Key;',"
+          new = "    '      [Key in keyof T]-?: Record<never, never> extends Pick<T, Key> ? never : Key;',"
+          if old not in text:
+              raise SystemExit('required-key probe did not match')
+          generator.write_text(text.replace(old, new, 1))
+          PY
+
+      - run: pnpm exec prettier --write packages/contracts/scripts/generate.ts
+      - run: pnpm contracts:generate
+      - run: pnpm nx test contracts
+
+      - name: Create local lint-fix commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/contracts/scripts/generate.ts packages/contracts/src/generated/client.ts
+          git commit -m "Keep generated request types lint-safe"
+
+      - run: pnpm contracts:check
+      - run: pnpm contracts:compat
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm nx run workspace-plugin:generated-output-smoke
+
+      - name: Push lint fix
+        run: git push origin HEAD:agent/add-openapi-contract-foundation
