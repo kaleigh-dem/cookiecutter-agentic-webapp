@@ -3,7 +3,7 @@
 ```text
 apps -> packages
 presentation -> application
-a pplication -> domain
+application -> domain
 infrastructure -> application + domain
 domain -> framework-free code
 ```
