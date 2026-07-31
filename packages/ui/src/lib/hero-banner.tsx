@@ -18,7 +18,9 @@ export function HeroBanner({ title, description }: HeroBannerProps) {
       <p style={{ margin: 0, fontWeight: 700, letterSpacing: '0.08em' }}>
         NX AGENTIC TEMPLATE
       </p>
-      <h1 style={{ marginBottom: '0.75rem', fontSize: 'clamp(2rem, 7vw, 4rem)' }}>
+      <h1
+        style={{ marginBottom: '0.75rem', fontSize: 'clamp(2rem, 7vw, 4rem)' }}
+      >
         {title}
       </h1>
       <p style={{ margin: 0, fontSize: '1.125rem', lineHeight: 1.6 }}>

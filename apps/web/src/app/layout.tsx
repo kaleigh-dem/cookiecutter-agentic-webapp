@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   description: 'An Nx template for large agent-operated web applications.',
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <body>{children}</body>
