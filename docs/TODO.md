@@ -87,13 +87,15 @@ Exit criteria: one workflow proves the intended architecture from UI to database
 
 ## Phase 7 — Observability and operations
 
-- [ ] **P7-01** Add structured logging with redaction and stable event names.
+- [x] **P7-01** Add structured logging with redaction and stable event names.
 - [ ] **P7-02** Add OpenTelemetry initialization for web, API, and worker runtimes.
-- [ ] **P7-03** Propagate request, trace, user, and job correlation identifiers.
-- [ ] **P7-04** Add liveness, readiness, and dependency health checks.
-- [ ] **P7-05** Add baseline metrics and service-level indicators.
+- [x] **P7-03** Propagate request, trace, user, and job correlation identifiers.
+- [x] **P7-04** Add liveness, readiness, and dependency health checks.
+- [x] **P7-05** Add baseline metrics and service-level indicators.
 - [ ] **P7-06** Add local telemetry infrastructure or an exporter-neutral development path.
-- [ ] **P7-07** Add runbooks for common failures and degraded dependencies.
+- [x] **P7-07** Add runbooks for common failures and degraded dependencies.
+
+PR #7 establishes the exporter-neutral operational contract, shared primitives, API and worker integration, health endpoints, baseline metrics, and runbooks. P7-02 and P7-06 remain the next Phase 7 increment so SDK/exporter dependencies can be reviewed separately from the stable instrumentation contract.
 
 Exit criteria: the reference feature can be followed across services without exposing sensitive data.
 

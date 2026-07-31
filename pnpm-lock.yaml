@@ -132,6 +132,9 @@ importers:
       '@agentic-webapp/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@agentic-webapp/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@nestjs/common':
         specifier: ^11.1.0
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -177,6 +180,9 @@ importers:
       '@agentic-webapp/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@agentic-webapp/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
 
   packages/backend/agent-task:
     dependencies:
@@ -220,6 +226,8 @@ importers:
       zod:
         specifier: ^4.0.0
         version: 4.4.3
+
+  packages/observability: {}
 
   packages/ui:
     dependencies:

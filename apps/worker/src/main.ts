@@ -1,15 +1,24 @@
+import {
+  createCorrelationContext,
+  createStructuredLogger,
+  runWithCorrelationContext,
+} from '@agentic-webapp/observability';
+
+const logger = createStructuredLogger('worker');
+
 function startWorker() {
+  logger.info('worker.started');
+
   const interval = setInterval(() => {
-    console.info(
-      JSON.stringify({
-        event: 'worker.heartbeat',
-        timestamp: new Date().toISOString(),
-      }),
+    runWithCorrelationContext(
+      createCorrelationContext({ correlationId: 'worker-heartbeat' }),
+      () => logger.info('worker.heartbeat'),
     );
   }, 30_000);
 
   process.once('SIGTERM', () => {
     clearInterval(interval);
+    logger.info('worker.stopped', { signal: 'SIGTERM' });
     process.exitCode = 0;
   });
 }

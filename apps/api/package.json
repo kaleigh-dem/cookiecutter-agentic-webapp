@@ -6,6 +6,7 @@
     "@agentic-webapp/backend-agent-task": "workspace:*",
     "@agentic-webapp/contracts": "workspace:*",
     "@agentic-webapp/database": "workspace:*",
+    "@agentic-webapp/observability": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",

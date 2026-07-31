@@ -13,6 +13,10 @@ import type {
   GetAgentTaskSuccessResponse,
 } from '@agentic-webapp/contracts/server';
 import {
+  createCorrelationContext,
+  getCorrelationContext,
+} from '@agentic-webapp/observability';
+import {
   BadRequestException,
   Body,
   Controller,
@@ -72,14 +76,28 @@ export class AgentTasksController {
     @Headers('x-correlation-id') correlationId?: string,
   ): Promise<CreateAgentTaskSuccessResponse> {
     try {
+      const actorId = requireActor(actorHeader);
       const normalizedCorrelationId = correlationId?.trim();
+      const context =
+        getCorrelationContext() ??
+        createCorrelationContext({
+          userId: actorId,
+          ...(normalizedCorrelationId
+            ? { correlationId: normalizedCorrelationId }
+            : {}),
+        });
       const task = await this.createAgentTask.execute({
-        actorId: requireActor(actorHeader),
+        actorId,
+        userId: context.userId ?? actorId,
+        requestId: context.requestId,
+        traceId: context.traceId,
         title: body.title,
         prompt: body.prompt,
         ...(normalizedCorrelationId
           ? { correlationId: normalizedCorrelationId }
-          : {}),
+          : context.correlationId
+            ? { correlationId: context.correlationId }
+            : {}),
       });
       return toResponse(task);
     } catch (error) {
