@@ -14,7 +14,7 @@ import { Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common';
 import { AgentTasksController } from './agent-tasks.controller';
 
 @Injectable()
-class ApiDatabaseConnection implements OnModuleDestroy {
+export class ApiDatabaseConnection implements OnModuleDestroy {
   public readonly value: DatabaseConnection = createDatabase({
     connectionString:
       process.env.DATABASE_URL ??
@@ -67,5 +67,6 @@ class GetAgentTaskProvider extends GetAgentTask {
     { provide: CreateAgentTask, useClass: CreateAgentTaskProvider },
     { provide: GetAgentTask, useClass: GetAgentTaskProvider },
   ],
+  exports: [ApiDatabaseConnection],
 })
 export class AgentTasksModule {}
