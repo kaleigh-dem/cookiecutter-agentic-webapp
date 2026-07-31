@@ -1,14 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import {
-  access,
-  cp,
-  mkdtemp,
-  readdir,
-  readFile,
-  rm,
-  symlink,
-} from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -100,56 +92,6 @@ function shouldCopy(workspaceRoot: string, source: string): boolean {
     .some((segment) => ignoredCopySegments.has(segment));
 }
 
-async function pathExists(candidate: string): Promise<boolean> {
-  try {
-    await access(candidate);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function symlinkWorkspaceNodeModules(
-  workspaceRoot: string,
-  temporaryRoot: string,
-): Promise<void> {
-  const queue = ['apps', 'packages', 'tools'].map((segment) =>
-    path.join(workspaceRoot, segment),
-  );
-
-  while (queue.length > 0) {
-    const directory = queue.pop();
-    if (!directory) {
-      continue;
-    }
-
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      if (
-        entry.isDirectory() &&
-        !ignoredCopySegments.has(entry.name)
-      ) {
-        queue.push(path.join(directory, entry.name));
-      }
-    }
-
-    const manifest = path.join(directory, 'package.json');
-    const sourceNodeModules = path.join(directory, 'node_modules');
-    if (
-      !(await pathExists(manifest)) ||
-      !(await pathExists(sourceNodeModules))
-    ) {
-      continue;
-    }
-
-    const relativeDirectory = path.relative(workspaceRoot, directory);
-    await symlink(
-      sourceNodeModules,
-      path.join(temporaryRoot, relativeDirectory, 'node_modules'),
-      process.platform === 'win32' ? 'junction' : 'dir',
-    );
-  }
-}
-
 async function readJson<T>(filePath: string): Promise<T> {
   return JSON.parse(await readFile(filePath, 'utf-8')) as T;
 }
@@ -222,12 +164,11 @@ async function main(): Promise<void> {
       filter: (source) => shouldCopy(workspaceRoot, source),
       recursive: true,
     });
-    await symlink(
-      path.join(workspaceRoot, 'node_modules'),
-      path.join(temporaryRoot, 'node_modules'),
-      process.platform === 'win32' ? 'junction' : 'dir',
+    await run(
+      'pnpm',
+      ['install', '--offline', '--frozen-lockfile', '--ignore-scripts'],
+      temporaryRoot,
     );
-    await symlinkWorkspaceNodeModules(workspaceRoot, temporaryRoot);
 
     const generator = '@agentic-webapp/workspace-plugin';
     await run(
