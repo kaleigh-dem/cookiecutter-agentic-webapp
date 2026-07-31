@@ -24,6 +24,9 @@
       "path": "./packages/env"
     },
     {
+      "path": "./packages/observability"
+    },
+    {
       "path": "./packages/ui"
     },
     {
