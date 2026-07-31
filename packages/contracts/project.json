@@ -18,10 +18,38 @@
         "command": "tsc -p packages/contracts/tsconfig.lib.json --noEmit"
       }
     },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/contracts"
+      }
+    },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run packages/contracts/src"
+      }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/packages/contracts/openapi/generated/openapi.json",
+        "{workspaceRoot}/packages/contracts/src/generated"
+      ],
+      "options": {
+        "command": "tsx packages/contracts/scripts/generate.ts"
+      }
+    },
+    "generate-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm nx run contracts:generate && git diff --exit-code -- packages/contracts/openapi/generated packages/contracts/src/generated"
+      }
+    },
+    "compatibility": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/contracts/scripts/check-compatibility.ts"
       }
     }
   }
