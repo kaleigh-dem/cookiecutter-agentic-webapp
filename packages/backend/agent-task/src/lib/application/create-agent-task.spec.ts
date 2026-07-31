@@ -12,12 +12,16 @@ describe('CreateAgentTask', () => {
           .fn()
           .mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
           .mockReturnValueOnce('22222222-2222-4222-8222-222222222222'),
+        createJobId: () => '44444444-4444-4444-8444-444444444444',
         now: () => new Date('2026-07-31T17:00:00.000Z'),
       },
     );
 
     const result = await useCase.execute({
       actorId: '33333333-3333-4333-8333-333333333333',
+      userId: '33333333-3333-4333-8333-333333333333',
+      requestId: 'request-1',
+      traceId: 'trace-1',
       title: '  Summarize customer feedback  ',
       prompt: '  Group the feedback into themes.  ',
     });
@@ -28,14 +32,18 @@ describe('CreateAgentTask', () => {
       status: 'queued',
       correlationId: '22222222-2222-4222-8222-222222222222',
     });
-    expect(create).toHaveBeenCalledWith(
-      result,
-      expect.objectContaining({
-        taskId: result.id,
-        correlationId: result.correlationId,
-        version: 1,
-      }),
-    );
+    expect(create).toHaveBeenCalledWith(result, {
+      version: 1,
+      taskId: result.id,
+      actorId: '33333333-3333-4333-8333-333333333333',
+      userId: '33333333-3333-4333-8333-333333333333',
+      prompt: 'Group the feedback into themes.',
+      requestId: 'request-1',
+      traceId: 'trace-1',
+      jobId: '44444444-4444-4444-8444-444444444444',
+      correlationId: result.correlationId,
+      occurredAt: '2026-07-31T17:00:00.000Z',
+    });
   });
 
   it('rejects blank prompts before persistence', async () => {
