@@ -2,6 +2,7 @@ import {
   CreateAgentTask,
   GetAgentTask,
 } from '@agentic-webapp/backend-agent-task';
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AgentTasksController } from './agent-tasks.controller';
@@ -32,5 +33,18 @@ describe('AgentTasksController', () => {
       expect.objectContaining({ ownerId: 'actor-1' }),
       expect.objectContaining({ correlationId: 'trace-1' }),
     );
+  });
+
+  it('rejects malformed task IDs before querying the repository', async () => {
+    const repository = { create: vi.fn(), findById: vi.fn() };
+    const controller = new AgentTasksController(
+      new CreateAgentTask(repository),
+      new GetAgentTask(repository),
+    );
+
+    await expect(
+      controller.get('not-a-uuid', 'actor-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.findById).not.toHaveBeenCalled();
   });
 });
