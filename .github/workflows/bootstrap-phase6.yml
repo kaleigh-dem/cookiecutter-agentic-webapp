@@ -43,6 +43,14 @@ jobs:
       - run: pnpm contracts:generate
       - run: pnpm nx sync
       - run: pnpm format
+
+      - name: Create local Phase 6 commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Agent Tasks reference feature"
+
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
@@ -54,12 +62,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm nx run web-feature-agent-tasks:e2e
       - run: pnpm nx run workspace-plugin:generated-output-smoke
-      - run: git diff --check
+      - run: git diff --exit-code
 
-      - name: Commit Phase 6 implementation
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add Agent Tasks reference feature"
-          git push origin HEAD:agent/add-agent-task-reference-feature
+      - name: Push Phase 6 implementation
+        run: git push origin HEAD:agent/add-agent-task-reference-feature
