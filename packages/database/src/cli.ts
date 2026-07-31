@@ -1,9 +1,20 @@
 import path from 'node:path';
+import { loadEnvFile } from 'node:process';
 
 import { createMigrationFile, runMigrations } from './migrations';
 import { resetDatabase } from './reset';
 import { seedDevelopmentData } from './seed';
 import { getMigrationStatus } from './status';
+
+function loadEnvironment(): void {
+  try {
+    loadEnvFile(path.resolve(process.cwd(), '.env'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
 
 function requireDatabaseUrl(): string {
   const value = process.env.DATABASE_URL;
@@ -20,6 +31,8 @@ function requireDatabaseUrl(): string {
 }
 
 async function main(): Promise<void> {
+  loadEnvironment();
+
   const [command, ...args] = process.argv.slice(2);
 
   switch (command) {
@@ -68,4 +81,8 @@ async function main(): Promise<void> {
   }
 }
 
-await main();
+void main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  process.exitCode = 1;
+});
