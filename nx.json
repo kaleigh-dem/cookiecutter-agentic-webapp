@@ -60,7 +60,7 @@
     "@nx/nest": {
       "application": {
         "linter": "eslint",
-        "unitTestRunner": "vitest"
+        "unitTestRunner": "none"
       }
     }
   }
