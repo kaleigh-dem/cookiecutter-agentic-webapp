@@ -4,8 +4,8 @@ import type {
   AgentTaskStatus,
 } from '@agentic-webapp/backend-agent-task';
 import {
-  agentTaskExecutionRequestedSchema,
-  type AgentTaskExecutionRequested,
+  agentTaskExecutionRequestedV2Schema,
+  type AgentTaskExecutionRequestedV2,
 } from '@agentic-webapp/contracts';
 import { eq } from 'drizzle-orm';
 
@@ -17,9 +17,10 @@ export class DrizzleAgentTaskRepository implements AgentTaskRepository {
 
   public async create(
     task: AgentTask,
-    executionRequested: AgentTaskExecutionRequested,
+    executionRequested: AgentTaskExecutionRequestedV2,
   ): Promise<void> {
-    const payload = agentTaskExecutionRequestedSchema.parse(executionRequested);
+    const payload =
+      agentTaskExecutionRequestedV2Schema.parse(executionRequested);
     await this.database.transaction(async (transaction) => {
       await transaction.insert(agentTasks).values({
         id: task.id,
@@ -32,7 +33,7 @@ export class DrizzleAgentTaskRepository implements AgentTaskRepository {
       });
       await transaction.insert(jobOutbox).values({
         id: payload.jobId,
-        kind: 'agent-task.execute.v1',
+        kind: 'agent-task.execute.v2',
         payload,
         correlationId: payload.correlationId,
         createdAt: task.createdAt,
