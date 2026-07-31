@@ -1,6 +1,15 @@
 {
   "name": "{{ cookiecutter.package_scope }}/database",
   "private": true,
-  "scripts": { "build": "tsc", "lint": "eslint src", "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "devDependencies": { "typescript": "^5.8.3", "vitest": "^3.2.4" }
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
 }
