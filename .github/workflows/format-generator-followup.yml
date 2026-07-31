@@ -1,0 +1,46 @@
+name: Format generator follow-up
+
+on:
+  push:
+    branches: [agent/add-data-foundation]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/add-data-foundation
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: >-
+          pnpm exec prettier --write
+          packages/database/src/cli.ts
+          packages/database/src/database.integration.test.ts
+          packages/database/README.md
+          tools/workspace-plugin/src/generators/generated-output.integration.ts
+          tools/workspace-plugin/project.json
+          .github/workflows/ci.yml
+
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Format generator and database follow-up"
+          git push origin HEAD:agent/add-data-foundation
