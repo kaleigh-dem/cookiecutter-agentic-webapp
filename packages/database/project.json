@@ -1,0 +1,70 @@
+{
+  "name": "database",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/database/src",
+  "projectType": "library",
+  "tags": ["scope:backend", "type:data-access", "runtime:node"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/database"],
+      "options": {
+        "command": "tsc -p packages/database/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/database/tsconfig.lib.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/database"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/database/src --passWithNoTests --testTimeout=120000"
+      }
+    },
+    "migration-create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts create"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts up"
+      }
+    },
+    "rollback": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts down"
+      }
+    },
+    "status": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts status"
+      }
+    },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts seed"
+      }
+    },
+    "reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts reset"
+      }
+    }
+  }
+}
