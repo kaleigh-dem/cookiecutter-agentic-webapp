@@ -5,5 +5,9 @@
   "exports": { ".": "./src/server.ts" },
   "dependencies": { "zod": "^4.0.10" },
   "scripts": { "build": "tsc", "lint": "eslint src", "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "devDependencies": { "typescript": "^5.8.3", "vitest": "^3.2.4" }
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
 }
