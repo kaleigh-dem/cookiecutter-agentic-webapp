@@ -25,14 +25,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: pnpm-lockfile
-          path: pnpm-lock.yaml
-          retention-days: 1
+      - run: pnpm install --frozen-lockfile
 
       - uses: nrwl/nx-set-shas@v5
 
