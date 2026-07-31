@@ -136,18 +136,18 @@ jobs:
       - run: pnpm exec prettier --write packages/contracts/scripts/generate.ts packages/contracts/scripts/generate.spec.ts packages/contracts/scripts/check-compatibility.ts packages/contracts/scripts/check-compatibility.spec.ts
       - run: pnpm contracts:generate
       - run: pnpm nx test contracts
+
+      - name: Create local review-fix commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/contracts/scripts packages/contracts/src/generated
+          git commit -m "Preserve required OpenAPI inputs"
+
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm format:check
       - run: pnpm typecheck
 
-      - name: Commit review fixes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/contracts/scripts packages/contracts/src/generated
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "Preserve required OpenAPI inputs"
-          git push origin HEAD:agent/add-openapi-contract-foundation
+      - name: Push review fixes
+        run: git push origin HEAD:agent/add-openapi-contract-foundation
