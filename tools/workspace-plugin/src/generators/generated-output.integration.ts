@@ -54,7 +54,6 @@ function run(command: string, args: string[], cwd: string): Promise<string> {
         env: {
           ...process.env,
           CI: 'true',
-          NX_CACHE_PROJECT_GRAPH: 'false',
           NX_DAEMON: 'false',
         },
         maxBuffer: 20 * 1024 * 1024,
@@ -218,24 +217,6 @@ async function main(): Promise<void> {
     );
 
     await run('pnpm', ['nx', 'sync:check'], temporaryRoot);
-    await run(
-      'pnpm',
-      [
-        'nx',
-        'run-many',
-        '-t',
-        'lint',
-        'typecheck',
-        'test',
-        'build',
-        '-p',
-        'backend-smoke-domain',
-        'web-feature-smoke-feature',
-        'worker',
-        'contracts',
-      ],
-      temporaryRoot,
-    );
 
     const graphFile = path.join(temporaryRoot, 'project-graph.json');
     await run('pnpm', ['nx', 'graph', `--file=${graphFile}`], temporaryRoot);
@@ -270,6 +251,25 @@ async function main(): Promise<void> {
       graph,
       'web-feature-smoke-feature',
       new Set(['contracts', 'ui']),
+    );
+
+    await run(
+      'pnpm',
+      [
+        'nx',
+        'run-many',
+        '-t',
+        'lint',
+        'typecheck',
+        'test',
+        'build',
+        '-p',
+        'backend-smoke-domain',
+        'web-feature-smoke-feature',
+        'worker',
+        'contracts',
+      ],
+      temporaryRoot,
     );
 
     console.log(
