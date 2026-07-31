@@ -180,6 +180,7 @@ void client.createItem({ body: { name: 'example' } });
       process.execPath,
       [
         typeScriptPath,
+        '--ignoreConfig',
         '--noEmit',
         '--strict',
         '--skipLibCheck',
