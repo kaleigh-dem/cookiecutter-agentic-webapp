@@ -37,7 +37,7 @@
         "{workspaceRoot}/packages/contracts/src/generated"
       ],
       "options": {
-        "command": "tsx packages/contracts/scripts/generate.ts"
+        "command": "tsx packages/contracts/scripts/generate.ts && prettier --write packages/contracts/openapi/generated/openapi.json packages/contracts/src/generated"
       }
     },
     "generate-check": {
