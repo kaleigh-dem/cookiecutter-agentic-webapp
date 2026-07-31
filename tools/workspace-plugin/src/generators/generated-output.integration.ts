@@ -1,12 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import {
-  cp,
-  mkdtemp,
-  readFile,
-  rm,
-  symlink,
-} from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -20,7 +14,11 @@ interface ProjectGraphNode {
 interface ProjectGraph {
   readonly dependencies: Record<
     string,
-    Array<{ readonly source: string; readonly target: string; readonly type: string }>
+    Array<{
+      readonly source: string;
+      readonly target: string;
+      readonly type: string;
+    }>
   >;
   readonly nodes: Record<string, ProjectGraphNode>;
 }
@@ -45,11 +43,7 @@ function commandName(name: string): string {
   return process.platform === 'win32' ? `${name}.cmd` : name;
 }
 
-function run(
-  command: string,
-  args: string[],
-  cwd: string,
-): Promise<string> {
+function run(command: string, args: string[], cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(
       commandName(command),
@@ -108,7 +102,10 @@ async function assertFileContains(
   relativePath: string,
   expected: string,
 ): Promise<void> {
-  const content = await readFile(path.join(workspaceRoot, relativePath), 'utf-8');
+  const content = await readFile(
+    path.join(workspaceRoot, relativePath),
+    'utf-8',
+  );
   assert.ok(
     content.includes(expected),
     `${relativePath} does not contain ${JSON.stringify(expected)}.`,
@@ -168,8 +165,16 @@ async function main(): Promise<void> {
     );
 
     const generator = '@agentic-webapp/workspace-plugin';
-    await run('pnpm', ['nx', 'g', `${generator}:domain`, 'smoke-domain'], temporaryRoot);
-    await run('pnpm', ['nx', 'g', `${generator}:feature`, 'smoke-feature'], temporaryRoot);
+    await run(
+      'pnpm',
+      ['nx', 'g', `${generator}:domain`, 'smoke-domain'],
+      temporaryRoot,
+    );
+    await run(
+      'pnpm',
+      ['nx', 'g', `${generator}:feature`, 'smoke-feature'],
+      temporaryRoot,
+    );
     await run(
       'pnpm',
       ['nx', 'g', `${generator}:job`, 'smoke-job', '--queue=smoke'],
@@ -233,11 +238,7 @@ async function main(): Promise<void> {
     );
 
     const graphFile = path.join(temporaryRoot, 'project-graph.json');
-    await run(
-      'pnpm',
-      ['nx', 'graph', `--file=${graphFile}`],
-      temporaryRoot,
-    );
+    await run('pnpm', ['nx', 'graph', `--file=${graphFile}`], temporaryRoot);
     const exportedGraph = await readJson<ExportedProjectGraph>(graphFile);
     const graph = exportedGraph.graph ?? {
       dependencies: exportedGraph.dependencies ?? {},
@@ -255,7 +256,10 @@ async function main(): Promise<void> {
       'runtime:browser',
     ]);
     assert.ok(graph.nodes.worker, 'Project graph does not contain worker.');
-    assert.ok(graph.nodes.contracts, 'Project graph does not contain contracts.');
+    assert.ok(
+      graph.nodes.contracts,
+      'Project graph does not contain contracts.',
+    );
 
     assertAllowedDependencies(
       graph,
