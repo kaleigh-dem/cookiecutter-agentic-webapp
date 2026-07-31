@@ -82,6 +82,58 @@ function contract(requiredParameter: boolean, requiredProperty: boolean) {
   };
 }
 
+function referencedInputContract(
+  requiredParameter: boolean,
+  requiredRequestBody: boolean,
+) {
+  return {
+    openapi: '3.1.0',
+    paths: {
+      '/items': {
+        parameters: [{ $ref: '#/components/parameters/Limit' }],
+        get: {
+          operationId: 'listItems',
+          responses: {
+            '200': { description: 'ok' },
+          },
+        },
+      },
+      '/items/create': {
+        post: {
+          operationId: 'createItem',
+          requestBody: {
+            $ref: '#/components/requestBodies/CreateItem',
+          },
+          responses: {
+            '201': { description: 'created' },
+          },
+        },
+      },
+    },
+    components: {
+      parameters: {
+        Limit: {
+          in: 'query',
+          name: 'limit',
+          required: requiredParameter,
+          schema: { type: 'integer' },
+        },
+      },
+      requestBodies: {
+        CreateItem: {
+          required: requiredRequestBody,
+          content: {
+            'application/json': {
+              schema: { type: 'object' },
+            },
+          },
+        },
+      },
+      schemas: {},
+    },
+  };
+}
+
 describe('OpenAPI compatibility checks', () => {
   it('rejects an existing optional parameter becoming required', async () => {
     const result = await runCompatibility(
@@ -104,6 +156,30 @@ describe('OpenAPI compatibility checks', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
       'Component schema CreateItem made property name required.',
+    );
+  });
+
+  it('rejects a referenced path-level parameter becoming required', async () => {
+    const result = await runCompatibility(
+      referencedInputContract(false, false),
+      referencedInputContract(true, false),
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      'GET /items made parameter query:limit required.',
+    );
+  });
+
+  it('rejects a referenced request body becoming required', async () => {
+    const result = await runCompatibility(
+      referencedInputContract(false, false),
+      referencedInputContract(false, true),
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      'POST /items/create made the request body required.',
     );
   });
 });
