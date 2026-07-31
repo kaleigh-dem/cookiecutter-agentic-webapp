@@ -5,6 +5,7 @@ import {
 
 import {
   agentTaskExecutionRequestedSchema,
+  type ExecuteAgentTaskJobEnvelope,
   type ExecuteAgentTaskJobPayload,
   type ExecuteAgentTaskJobResult,
 } from './contract';
@@ -22,15 +23,23 @@ const completeAgentTask: ExecuteAgentTask = async (payload) => ({
 export async function handleExecuteAgentTaskJob(
   payload: ExecuteAgentTaskJobPayload,
   execute: ExecuteAgentTask = completeAgentTask,
+  envelope: ExecuteAgentTaskJobEnvelope = {},
 ): Promise<ExecuteAgentTaskJobResult> {
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
-  const context = createCorrelationContext({
-    requestId: validated.requestId,
-    traceId: validated.traceId,
-    userId: validated.userId,
-    jobId: validated.jobId,
-    correlationId: validated.correlationId,
-  });
+  const context =
+    validated.version === 2
+      ? createCorrelationContext({
+          requestId: validated.requestId,
+          traceId: validated.traceId,
+          userId: validated.userId,
+          jobId: validated.jobId,
+          correlationId: validated.correlationId,
+        })
+      : createCorrelationContext({
+          userId: validated.actorId,
+          correlationId: validated.correlationId,
+          ...(envelope.jobId ? { jobId: envelope.jobId } : {}),
+        });
 
   return runWithCorrelationContext(context, () => execute(validated));
 }
