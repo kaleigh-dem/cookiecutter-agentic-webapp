@@ -35,6 +35,12 @@ jobs:
       - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm build
-      - name: Verify build leaves the checkout clean
+      - name: Verify local generators resolve
+        run: |
+          pnpm nx g @agentic-webapp/workspace-plugin:domain smoke-domain --dry-run --skipFormat
+          pnpm nx g @agentic-webapp/workspace-plugin:feature smoke-feature --dry-run --skipFormat
+          pnpm nx g @agentic-webapp/workspace-plugin:job smoke-job --dry-run --skipFormat
+          pnpm nx g @agentic-webapp/workspace-plugin:contract smoke-contract --dry-run --skipFormat
+      - name: Verify validation leaves the checkout clean
         run: git diff --exit-code
       - run: pnpm nx affected -t lint test
