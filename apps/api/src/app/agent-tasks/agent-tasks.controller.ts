@@ -23,8 +23,11 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
+
+const taskIdPipe = new ParseUUIDPipe();
 
 function toResponse(task: AgentTask): AgentTaskResponse {
   return {
@@ -45,6 +48,13 @@ function requireActor(actorId: string | undefined): string {
     });
   }
   return actorId.trim();
+}
+
+async function requireTaskId(taskId: string): Promise<string> {
+  return taskIdPipe.transform(taskId, {
+    type: 'param',
+    data: 'taskId',
+  });
 }
 
 @Controller('agent-tasks')
@@ -85,9 +95,11 @@ export class AgentTasksController {
 
   @Get(':taskId')
   public async get(
-    @Param('taskId') taskId: string,
+    @Param('taskId') rawTaskId: string,
     @Headers('x-actor-id') actorHeader?: string,
   ): Promise<GetAgentTaskSuccessResponse> {
+    const taskId = await requireTaskId(rawTaskId);
+
     try {
       return toResponse(
         await this.getAgentTask.execute(taskId, requireActor(actorHeader)),
