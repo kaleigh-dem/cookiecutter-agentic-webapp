@@ -1,9 +1,9 @@
+import type { GetHealthSuccessResponse } from '@agentic-webapp/contracts/server';
 import { Injectable } from '@nestjs/common';
-import type { HealthResponse } from '@agentic-webapp/contracts';
 
 @Injectable()
 export class AppService {
-  health(): HealthResponse {
+  health(): GetHealthSuccessResponse {
     return {
       service: 'api',
       status: 'ok',
