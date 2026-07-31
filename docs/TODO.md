@@ -49,12 +49,12 @@ Exit criteria: all four generators run by package name, generator unit tests pas
 - [x] **P4-03** Define schema naming, timestamps, identifiers, soft-delete policy, and transaction conventions.
 - [x] **P4-04** Add migration create/apply/rollback/status commands.
 - [x] **P4-05** Add deterministic development seed data and a reset command.
-- [ ] **P4-06** Add repository adapters for the reference domain without leaking database types into domain projects.
+- [x] **P4-06** Add repository adapters for the reference domain without leaking database types into domain projects.
 - [x] **P4-07** Add isolated PostgreSQL integration tests with automatic setup and teardown.
 - [x] **P4-08** Add CI migration validation against an empty database and an upgrade-from-previous-schema fixture.
 - [x] **P4-09** Document backup, restore, and destructive migration review requirements.
 
-PR #4 completes the shared database platform. P4-06 remains sequenced after the reference domain is selected so adapters implement a real domain port rather than a placeholder abstraction.
+PR #4 established the shared database platform. Phase 6 closes P4-06 with the real Agent Task repository and transactional job-outbox adapter.
 
 Exit criteria: migrations are reproducible, repository integration tests run in CI, and domain projects remain database-framework-free.
 
@@ -66,22 +66,22 @@ Exit criteria: migrations are reproducible, repository integration tests run in 
 - [x] **P5-04** Generate a browser-safe typed client.
 - [x] **P5-05** Add contract drift and backward-compatibility checks.
 - [x] **P5-06** Add versioning and deprecation guidance for HTTP and event contracts.
-- [ ] **P5-07** Prevent handwritten duplicate API types in web features.
+- [x] **P5-07** Prevent handwritten duplicate API types in web features.
 
-PR #5 completes the Phase 5 contract foundation and proves generated server/browser consumption through the health operation. P5-07 remains planned for executable duplicate-type enforcement as feature contracts expand.
+PR #5 established the contract foundation. Phase 6 closes P5-07 with executable lint enforcement in browser feature projects and generated-client consumption in the Agent Tasks feature.
 
 Exit criteria: generated artifacts are reproducible, drift fails CI, and the web application consumes the generated client.
 
 ## Phase 6 — Vertical reference feature
 
-- [ ] **P6-01** Select a representative domain workflow with create, read, validation, and authorization behavior.
-- [ ] **P6-02** Generate the domain, feature, contract, and any worker job through Phase 3 generators.
-- [ ] **P6-03** Implement the NestJS presentation and composition adapters.
-- [ ] **P6-04** Implement persistence and migration support.
-- [ ] **P6-05** Implement the Next.js route and feature states.
-- [ ] **P6-06** Add unit, integration, contract, and Playwright tests.
-- [ ] **P6-07** Add trace propagation from browser request through API, database, and job execution.
-- [ ] **P6-08** Document the feature as the canonical example for agents and contributors.
+- [x] **P6-01** Select a representative domain workflow with create, read, validation, and authorization behavior.
+- [x] **P6-02** Generate the domain, feature, contract, and any worker job through Phase 3 generators.
+- [x] **P6-03** Implement the NestJS presentation and composition adapters.
+- [x] **P6-04** Implement persistence and migration support.
+- [x] **P6-05** Implement the Next.js route and feature states.
+- [x] **P6-06** Add unit, integration, contract, and Playwright tests.
+- [x] **P6-07** Add trace propagation from browser request through API, database, and job execution.
+- [x] **P6-08** Document the feature as the canonical example for agents and contributors.
 
 Exit criteria: one workflow proves the intended architecture from UI to database and is covered at every important boundary.
 

@@ -25,7 +25,14 @@
   ],
   "exclude": ["dist", "node_modules", ".next"],
   "references": [
-    { "path": "../../packages/contracts" },
-    { "path": "../../packages/ui" }
+    {
+      "path": "../../packages/web/features/agent-tasks"
+    },
+    {
+      "path": "../../packages/ui"
+    },
+    {
+      "path": "../../packages/contracts"
+    }
   ]
 }

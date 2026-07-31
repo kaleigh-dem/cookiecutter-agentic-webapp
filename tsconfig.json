@@ -2,13 +2,35 @@
   "extends": "./tsconfig.base.json",
   "files": [],
   "references": [
-    { "path": "./apps/web" },
-    { "path": "./apps/api" },
-    { "path": "./apps/worker" },
-    { "path": "./packages/ui" },
-    { "path": "./packages/contracts" },
-    { "path": "./packages/env" },
-    { "path": "./packages/database" },
-    { "path": "./tools/workspace-plugin" }
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/worker"
+    },
+    {
+      "path": "./packages/backend/agent-task"
+    },
+    {
+      "path": "./packages/contracts"
+    },
+    {
+      "path": "./packages/database"
+    },
+    {
+      "path": "./packages/env"
+    },
+    {
+      "path": "./packages/ui"
+    },
+    {
+      "path": "./packages/web/features/agent-tasks"
+    },
+    {
+      "path": "./tools/workspace-plugin"
+    }
   ]
 }

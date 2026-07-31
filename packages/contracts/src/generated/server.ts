@@ -22,7 +22,19 @@ export type SuccessResponse<T> = T extends { responses: infer Responses }
             : never
   : never;
 
+export type AgentTaskResponse = components['schemas']['AgentTaskResponse'];
+export type CreateAgentTaskRequest =
+  components['schemas']['CreateAgentTaskRequest'];
+export type ErrorResponse = components['schemas']['ErrorResponse'];
 export type HealthResponse = components['schemas']['HealthResponse'];
+
+export type CreateAgentTaskOperation = operations['createAgentTask'];
+export type CreateAgentTaskSuccessResponse =
+  SuccessResponse<CreateAgentTaskOperation>;
+
+export type GetAgentTaskOperation = operations['getAgentTask'];
+export type GetAgentTaskSuccessResponse =
+  SuccessResponse<GetAgentTaskOperation>;
 
 export type GetHealthOperation = operations['getHealth'];
 export type GetHealthSuccessResponse = SuccessResponse<GetHealthOperation>;

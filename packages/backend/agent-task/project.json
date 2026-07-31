@@ -1,0 +1,34 @@
+{
+  "name": "backend-agent-task",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/backend/agent-task/src",
+  "projectType": "library",
+  "tags": ["scope:backend", "type:domain", "runtime:node"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/backend/agent-task"],
+      "options": {
+        "command": "tsc -p packages/backend/agent-task/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/backend/agent-task/tsconfig.lib.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/backend/agent-task"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/backend/agent-task/src --passWithNoTests"
+      }
+    }
+  }
+}

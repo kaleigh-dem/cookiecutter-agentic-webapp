@@ -15,7 +15,13 @@
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"],
   "references": [
     {
+      "path": "../../packages/database/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/contracts/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/backend/agent-task/tsconfig.lib.json"
     }
   ]
 }

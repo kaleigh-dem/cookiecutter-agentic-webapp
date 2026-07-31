@@ -1,6 +1,96 @@
 {
   "components": {
+    "parameters": {
+      "ActorId": {
+        "description": "Development actor context. Phase 8 replaces this adapter with authenticated identity.",
+        "in": "header",
+        "name": "x-actor-id",
+        "required": true,
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "CorrelationId": {
+        "description": "Optional caller correlation identifier propagated into persistence and jobs.",
+        "in": "header",
+        "name": "x-correlation-id",
+        "required": false,
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      }
+    },
     "schemas": {
+      "AgentTaskResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "correlationId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["queued", "running", "completed", "failed"],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "prompt",
+          "status",
+          "correlationId",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "CreateAgentTaskRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "prompt": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["title", "prompt"],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "type": "object"
+      },
       "HealthResponse": {
         "additionalProperties": false,
         "properties": {
@@ -23,11 +113,114 @@
   "info": {
     "description": "The canonical HTTP contract for the API application.",
     "title": "Agentic Webapp API",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.0",
   "paths": {
+    "/api/agent-tasks": {
+      "post": {
+        "operationId": "createAgentTask",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTaskResponse"
+                }
+              }
+            },
+            "description": "The task was validated and queued."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was invalid."
+          }
+        },
+        "summary": "Create an agent task",
+        "tags": ["agent-tasks"]
+      }
+    },
+    "/api/agent-tasks/{taskId}": {
+      "get": {
+        "operationId": "getAgentTask",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "taskId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTaskResponse"
+                }
+              }
+            },
+            "description": "The owned task."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The task belongs to another actor."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The task does not exist."
+          }
+        },
+        "summary": "Read an owned agent task",
+        "tags": ["agent-tasks"]
+      }
+    },
     "/api/health": {
       "get": {
         "description": "Returns a stable public health response for the API process.",
@@ -59,6 +252,10 @@
     {
       "description": "Service health and readiness signals.",
       "name": "health"
+    },
+    {
+      "description": "Actor-scoped tasks queued for agent execution.",
+      "name": "agent-tasks"
     }
   ]
 }
