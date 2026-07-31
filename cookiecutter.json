@@ -1,0 +1,14 @@
+{
+  "project_name": "Agent-Ready Web Application",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
+  "project_description": "A scalable, agent-friendly web application.",
+  "package_scope": "@{{ cookiecutter.project_slug }}",
+  "author_name": "Your Name",
+  "author_email": "you@example.com",
+  "github_owner": "your-github-handle",
+  "node_version": "22",
+  "pnpm_version": "10.13.1",
+  "license": ["MIT", "Apache-2.0", "Proprietary"],
+  "include_worker": ["yes", "no"],
+  "include_redis": ["yes", "no"]
+}
