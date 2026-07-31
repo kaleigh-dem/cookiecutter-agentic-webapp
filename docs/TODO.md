@@ -44,17 +44,17 @@ Exit criteria: all four generators run by package name, generator unit tests pas
 
 ## Phase 4 — Data foundation
 
-- [-] **P4-01** Record the ORM/query-layer decision in an ADR, including migration and testing tradeoffs.
-- [-] **P4-02** Add the database project with Node-only and data-access tags.
-- [-] **P4-03** Define schema naming, timestamps, identifiers, soft-delete policy, and transaction conventions.
-- [-] **P4-04** Add migration create/apply/rollback/status commands.
-- [-] **P4-05** Add deterministic development seed data and a reset command.
+- [x] **P4-01** Record the ORM/query-layer decision in an ADR, including migration and testing tradeoffs.
+- [x] **P4-02** Add the database project with Node-only and data-access tags.
+- [x] **P4-03** Define schema naming, timestamps, identifiers, soft-delete policy, and transaction conventions.
+- [x] **P4-04** Add migration create/apply/rollback/status commands.
+- [x] **P4-05** Add deterministic development seed data and a reset command.
 - [ ] **P4-06** Add repository adapters for the reference domain without leaking database types into domain projects.
-- [-] **P4-07** Add isolated PostgreSQL integration tests with automatic setup and teardown.
-- [-] **P4-08** Add CI migration validation against an empty database and an upgrade-from-previous-schema fixture.
-- [-] **P4-09** Document backup, restore, and destructive migration review requirements.
+- [x] **P4-07** Add isolated PostgreSQL integration tests with automatic setup and teardown.
+- [x] **P4-08** Add CI migration validation against an empty database and an upgrade-from-previous-schema fixture.
+- [x] **P4-09** Document backup, restore, and destructive migration review requirements.
 
-Current increment: PR #4 builds the shared database platform. P4-06 remains sequenced after the reference domain is selected so adapters implement a real domain port rather than a placeholder abstraction.
+PR #4 completes the shared database platform. P4-06 remains sequenced after the reference domain is selected so adapters implement a real domain port rather than a placeholder abstraction.
 
 Exit criteria: migrations are reproducible, repository integration tests run in CI, and domain projects remain database-framework-free.
 
