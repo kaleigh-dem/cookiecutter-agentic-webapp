@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@agentic-webapp/contracts": "workspace:*"
+    "@agentic-webapp/contracts": "workspace:*",
+    "@agentic-webapp/observability": "workspace:*"
   }
 }
