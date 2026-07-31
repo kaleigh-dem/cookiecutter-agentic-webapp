@@ -4,5 +4,7 @@
 /apps/api/ @kaleigh-dem
 /apps/worker/ @kaleigh-dem
 /packages/ @kaleigh-dem
+/tools/ @kaleigh-dem
 /docs/architecture/ @kaleigh-dem
+/docs/TODO.md @kaleigh-dem
 /AGENTS.md @kaleigh-dem

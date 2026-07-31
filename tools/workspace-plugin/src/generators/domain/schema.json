@@ -1,0 +1,20 @@
+{
+  "cli": "nx",
+  "$schema": "https://json-schema.org/schema",
+  "title": "Backend domain generator",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Domain name",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "What is the domain name?"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": ["name"]
+}

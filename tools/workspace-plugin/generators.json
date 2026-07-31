@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/nx/schemas/nx-schema.json",
+  "generators": {
+    "domain": {
+      "factory": "./src/generators/domain/generator",
+      "schema": "./src/generators/domain/schema.json",
+      "description": "Generate a backend domain library"
+    },
+    "feature": {
+      "factory": "./src/generators/feature/generator",
+      "schema": "./src/generators/feature/schema.json",
+      "description": "Generate a frontend feature library"
+    },
+    "job": {
+      "factory": "./src/generators/job/generator",
+      "schema": "./src/generators/job/schema.json",
+      "description": "Generate a worker job slice"
+    },
+    "contract": {
+      "factory": "./src/generators/contract/generator",
+      "schema": "./src/generators/contract/schema.json",
+      "description": "Generate a shared contract slice"
+    }
+  }
+}
