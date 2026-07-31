@@ -51,6 +51,31 @@ jobs:
           )
           path.write_text(text)
           PY
+      - name: Preserve exact optional correlation semantics
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('apps/api/src/app/agent-tasks/agent-tasks.controller.ts')
+          text = path.read_text()
+          old = '''      const task = await this.createAgentTask.execute({
+        actorId: requireActor(actorHeader),
+        title: body.title,
+        prompt: body.prompt,
+        correlationId: correlationId?.trim() || undefined,
+      });'''
+          new = '''      const normalizedCorrelationId = correlationId?.trim();
+      const task = await this.createAgentTask.execute({
+        actorId: requireActor(actorHeader),
+        title: body.title,
+        prompt: body.prompt,
+        ...(normalizedCorrelationId
+          ? { correlationId: normalizedCorrelationId }
+          : {}),
+      });'''
+          if old not in text:
+              raise SystemExit('correlation command block did not match')
+          path.write_text(text.replace(old, new, 1))
+          PY
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm contracts:generate
       - run: pnpm nx sync
