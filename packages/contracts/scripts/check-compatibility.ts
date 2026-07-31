@@ -22,8 +22,14 @@ const HTTP_METHODS = [
 ] as const;
 
 const packageRoot = path.resolve(process.cwd(), 'packages/contracts');
-const baselinePath = path.join(packageRoot, 'openapi/baseline/openapi.json');
-const currentPath = path.join(packageRoot, 'openapi/generated/openapi.json');
+const baselinePath = path.resolve(
+  process.env.OPENAPI_BASELINE_PATH ??
+    path.join(packageRoot, 'openapi/baseline/openapi.json'),
+);
+const currentPath = path.resolve(
+  process.env.OPENAPI_CURRENT_PATH ??
+    path.join(packageRoot, 'openapi/generated/openapi.json'),
+);
 
 function isObject(value: JsonValue | undefined): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -73,36 +79,38 @@ function compareParameters(
       : undefined;
   };
 
-  const currentByKey = new Map(
-    currentParameters
-      .map((parameter) => [parameterKey(parameter), parameter] as const)
-      .filter(
-        (entry): entry is readonly [string, JsonValue] =>
-          entry[0] !== undefined,
-      ),
-  );
+  const parametersByKey = (parameters: JsonValue[]) =>
+    new Map(
+      parameters
+        .map((parameter) => [parameterKey(parameter), parameter] as const)
+        .filter(
+          (entry): entry is readonly [string, JsonValue] =>
+            entry[0] !== undefined,
+        ),
+    );
 
-  for (const baselineParameter of baselineParameters) {
-    const key = parameterKey(baselineParameter);
-    if (key && !currentByKey.has(key)) {
+  const baselineByKey = parametersByKey(baselineParameters);
+  const currentByKey = parametersByKey(currentParameters);
+
+  for (const [key] of baselineByKey) {
+    if (!currentByKey.has(key)) {
       issues.push(`${operationLabel} removed parameter ${key}.`);
     }
   }
 
-  const baselineKeys = new Set(
-    baselineParameters
-      .map(parameterKey)
-      .filter((key): key is string => key !== undefined),
-  );
-  for (const currentParameter of currentParameters) {
-    const key = parameterKey(currentParameter);
-    if (
-      key &&
-      !baselineKeys.has(key) &&
-      isObject(currentParameter) &&
-      currentParameter.required === true
-    ) {
+  for (const [key, currentParameter] of currentByKey) {
+    if (!isObject(currentParameter) || currentParameter.required !== true) {
+      continue;
+    }
+
+    const baselineParameter = baselineByKey.get(key);
+    if (baselineParameter === undefined) {
       issues.push(`${operationLabel} added required parameter ${key}.`);
+    } else if (
+      !isObject(baselineParameter) ||
+      baselineParameter.required !== true
+    ) {
+      issues.push(`${operationLabel} made parameter ${key} required.`);
     }
   }
 }
@@ -143,6 +151,29 @@ function compareSchemas(
       if (!(propertyName in currentProperties)) {
         issues.push(
           `Component schema ${schemaName} removed property ${propertyName}.`,
+        );
+      }
+    }
+
+    const baselineRequired = new Set(
+      Array.isArray(baselineSchemaValue.required)
+        ? baselineSchemaValue.required.filter(
+            (property): property is string => typeof property === 'string',
+          )
+        : [],
+    );
+    const currentRequired = Array.isArray(currentSchemaValue.required)
+      ? currentSchemaValue.required.filter(
+          (property): property is string => typeof property === 'string',
+        )
+      : [];
+    for (const propertyName of currentRequired) {
+      if (
+        propertyName in baselineProperties &&
+        !baselineRequired.has(propertyName)
+      ) {
+        issues.push(
+          `Component schema ${schemaName} made property ${propertyName} required.`,
         );
       }
     }
