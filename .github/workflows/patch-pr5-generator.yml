@@ -35,6 +35,7 @@ jobs:
       - name: Patch generator required-input detection
         run: |
           python <<'PY'
+          import re
           from pathlib import Path
 
           generator = Path('packages/contracts/scripts/generate.ts')
@@ -122,11 +123,11 @@ jobs:
               "    const pathItem = resolveLocalReference(\n      document,\n      pathItemValue,\n      `Path item ${routePath}`,\n    );",
           )
 
-          old_operation = '''      const operation = asObject(
-                operationValue,
-                `Operation ${method.toUpperCase()} ${routePath}`,
-              );
-              const operationId = operation.operationId;'''
+          operation_pattern = re.compile(
+              r"      const operation = asObject\(\s*operationValue,\s*"
+              r"`Operation \$\{method\.toUpperCase\(\)\} \$\{routePath\}`,\s*"
+              r"\);\s*const operationId = operation\.operationId;"
+          )
           new_operation = '''      const operationLabel = `${method.toUpperCase()} ${routePath}`;
               const operation = resolveLocalReference(
                 document,
@@ -134,24 +135,15 @@ jobs:
                 `Operation ${operationLabel}`,
               );
               const operationId = operation.operationId;'''
-          if old_operation in text:
-              text = text.replace(old_operation, new_operation, 1)
-          elif 'const operationLabel =' not in text:
-              raise SystemExit('operation block not found')
+          text, operation_count = operation_pattern.subn(new_operation, text, count=1)
+          if operation_count != 1 and 'const operationLabel =' not in text:
+              raise SystemExit(f'operation block matches: {operation_count}')
 
-          old_requiredness = '''      const parameters = Array.isArray(operation.parameters)
-                ? operation.parameters
-                : [];
-              const hasRequiredParameter = parameters.some((parameter) => {
-                if (!isObject(parameter)) {
-                  return false;
-                }
-                return parameter.required === true || parameter.in === 'path';
-              });
-              const requestBody = operation.requestBody;
-              const hasRequiredBody =
-                isObject(requestBody) && requestBody.required === true;
-              const hasPathTemplate = routePath.includes('{');'''
+          requiredness_pattern = re.compile(
+              r"      const parameters = Array\.isArray\(operation\.parameters\)"
+              r"[\s\S]*?"
+              r"      const hasPathTemplate = routePath\.includes\('\{'\);"
+          )
           new_requiredness = '''      const parameters = collectEffectiveParameters(
                 document,
                 pathItem,
@@ -173,10 +165,13 @@ jobs:
                     );
               const hasRequiredBody = resolvedRequestBody?.required === true;
               const hasPathTemplate = routePath.includes('{');'''
-          if old_requiredness in text:
-              text = text.replace(old_requiredness, new_requiredness, 1)
-          elif 'const resolvedRequestBody =' not in text:
-              raise SystemExit('requiredness block not found')
+          text, requiredness_count = requiredness_pattern.subn(
+              new_requiredness,
+              text,
+              count=1,
+          )
+          if requiredness_count != 1 and 'const resolvedRequestBody =' not in text:
+              raise SystemExit(f'requiredness block matches: {requiredness_count}')
 
           generator.write_text(text)
           PY
