@@ -10,6 +10,9 @@ export default function HomePage() {
         description="Next.js, NestJS, Nx boundaries, affected CI, and workspace-aware agents."
       />
       <ApiHealth />
+      <p>
+        <a href="/agent-tasks">Open the Agent Tasks reference feature</a>
+      </p>
     </main>
   );
 }

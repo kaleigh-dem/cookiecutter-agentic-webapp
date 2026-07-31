@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -164,10 +164,10 @@ async function main(): Promise<void> {
       filter: (source) => shouldCopy(workspaceRoot, source),
       recursive: true,
     });
-    await symlink(
-      path.join(workspaceRoot, 'node_modules'),
-      path.join(temporaryRoot, 'node_modules'),
-      process.platform === 'win32' ? 'junction' : 'dir',
+    await run(
+      'pnpm',
+      ['install', '--offline', '--frozen-lockfile', '--ignore-scripts'],
+      temporaryRoot,
     );
 
     const generator = '@agentic-webapp/workspace-plugin';

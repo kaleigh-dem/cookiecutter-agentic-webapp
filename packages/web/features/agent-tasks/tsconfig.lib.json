@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../../../dist/packages/web/features/agent-tasks",
+    "rootDir": "src",
+    "types": ["node", "react", "react-dom"],
+    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    {
+      "path": "../../../contracts/tsconfig.lib.json"
+    }
+  ]
+}

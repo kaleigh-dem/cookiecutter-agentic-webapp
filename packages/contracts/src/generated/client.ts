@@ -152,6 +152,12 @@ async function parseResponse(response: Response): Promise<unknown> {
 }
 
 export interface ApiClient {
+  createAgentTask(
+    request: OperationRequest<operations['createAgentTask']>,
+  ): Promise<SuccessResponse<operations['createAgentTask']>>;
+  getAgentTask(
+    request: OperationRequest<operations['getAgentTask']>,
+  ): Promise<SuccessResponse<operations['getAgentTask']>>;
   getHealth(
     request?: OperationRequest<operations['getHealth']>,
   ): Promise<SuccessResponse<operations['getHealth']>>;
@@ -207,6 +213,20 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
   }
 
   return {
+    createAgentTask(request) {
+      return execute<SuccessResponse<operations['createAgentTask']>>(
+        'POST',
+        '/api/agent-tasks',
+        request as RuntimeRequest,
+      );
+    },
+    getAgentTask(request) {
+      return execute<SuccessResponse<operations['getAgentTask']>>(
+        'GET',
+        '/api/agent-tasks/{taskId}',
+        request as RuntimeRequest,
+      );
+    },
     getHealth(request = {}) {
       return execute<SuccessResponse<operations['getHealth']>>(
         'GET',

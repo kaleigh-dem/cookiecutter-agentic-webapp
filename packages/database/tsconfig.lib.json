@@ -8,5 +8,13 @@
     "tsBuildInfoFile": "../../dist/packages/database/tsconfig.tsbuildinfo",
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts", "migrations/**/*.ts"]
+  "include": ["src/**/*.ts", "migrations/**/*.ts"],
+  "references": [
+    {
+      "path": "../contracts/tsconfig.lib.json"
+    },
+    {
+      "path": "../backend/agent-task/tsconfig.lib.json"
+    }
+  ]
 }

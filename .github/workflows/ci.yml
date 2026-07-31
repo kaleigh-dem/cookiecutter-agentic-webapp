@@ -36,7 +36,10 @@ jobs:
       - run: pnpm nx sync:check
       - run: pnpm format:check
       - run: pnpm typecheck
-      - run: pnpm build
+      - name: Build workspace
+        run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm nx affected -t e2e --parallel=1
       - name: Verify generated output and project graph
         run: pnpm nx run workspace-plugin:generated-output-smoke
       - name: Verify validation leaves the checkout clean

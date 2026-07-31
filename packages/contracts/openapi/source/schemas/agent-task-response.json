@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "prompt", "status", "correlationId", "createdAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["queued", "running", "completed", "failed"]
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -19,7 +19,7 @@ importers:
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       next:
         specifier: ~16.2.10
-        version: 16.2.12(@babel/core@7.29.7)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
+        version: 16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -65,7 +65,7 @@ importers:
         version: 23.1.0(@babel/traverse@7.29.7)(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nx/jest@23.1.0(@babel/traverse@7.29.7)(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(nx@23.1.0(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47))(typescript@6.0.3))(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47)(@types/node@24.13.3)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(chokidar@4.0.3)(eslint@9.39.5(jiti@2.7.0))(express@5.2.1)(nx@23.1.0(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47))(prettier@3.6.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typescript@6.0.3)
       '@nx/next':
         specifier: 23.1.0
-        version: 23.1.0(7e8be1dcd65b22e8474298b4c94ce98d)
+        version: 23.1.0(d87d3c6c49ce826c8a5562addc0b7c7c)
       '@nx/node':
         specifier: 23.1.0
         version: 23.1.0(@babel/traverse@7.29.7)(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47)(@types/node@24.13.3)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(eslint@9.39.5(jiti@2.7.0))(express@5.2.1)(nx@23.1.0(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47))(typescript@6.0.3)
@@ -75,6 +75,9 @@ importers:
       '@nx/workspace':
         specifier: 23.1.0
         version: 23.1.0(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47)
+      '@playwright/test':
+        specifier: ^1.62.1
+        version: 1.62.1
       '@swc-node/register':
         specifier: ~1.11.1
         version: 1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3)
@@ -120,9 +123,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@agentic-webapp/backend-agent-task':
+        specifier: workspace:*
+        version: link:../../packages/backend/agent-task
       '@agentic-webapp/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@agentic-webapp/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@nestjs/common':
         specifier: ^11.1.0
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -150,9 +159,12 @@ importers:
       '@agentic-webapp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@agentic-webapp/web-feature-agent-tasks':
+        specifier: workspace:*
+        version: link:../../packages/web/features/agent-tasks
       next:
         specifier: ~16.2.10
-        version: 16.2.12(@babel/core@7.29.7)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
+        version: 16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -166,6 +178,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/contracts
 
+  packages/backend/agent-task:
+    dependencies:
+      '@agentic-webapp/contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+
   packages/contracts:
     devDependencies:
       openapi-typescript:
@@ -174,6 +192,12 @@ importers:
 
   packages/database:
     dependencies:
+      '@agentic-webapp/backend-agent-task':
+        specifier: workspace:*
+        version: link:../backend/agent-task
+      '@agentic-webapp/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@types/pg@8.20.0)(pg@8.22.0)
@@ -199,6 +223,15 @@ importers:
 
   packages/ui:
     dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+
+  packages/web/features/agent-tasks:
+    dependencies:
+      '@agentic-webapp/contracts':
+        specifier: workspace:*
+        version: link:../../../contracts
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -1942,6 +1975,11 @@ packages:
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
+
+  '@playwright/test@1.62.1':
+    resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -4301,6 +4339,11 @@ packages:
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
 
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -5567,6 +5610,16 @@ packages:
   pkg-dir@7.0.0:
     resolution: {integrity: sha512-Ie9z/WINcxxLp27BKOCHGde4ITq9UklYKDzVo1nhk5sqGEXU3FpkwP5GM2voTGJkGd9B3Otl+Q4uwSOeSUtOBA==}
     engines: {node: '>=14.16'}
+
+  playwright-core@1.62.1:
+    resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.62.1:
+    resolution: {integrity: sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
@@ -8793,7 +8846,7 @@ snapshots:
       - typescript
       - verdaccio
 
-  '@nx/next@23.1.0(7e8be1dcd65b22e8474298b4c94ce98d)':
+  '@nx/next@23.1.0(d87d3c6c49ce826c8a5562addc0b7c7c)':
     dependencies:
       '@babel/plugin-proposal-decorators': 7.29.7(@babel/core@7.29.7)
       '@nx/devkit': 23.1.0(nx@23.1.0(@swc-node/register@1.11.1(@swc/core@1.15.47)(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.47))
@@ -8806,7 +8859,7 @@ snapshots:
       '@svgr/webpack': 8.1.0(typescript@6.0.3)
       copy-webpack-plugin: 14.0.0(webpack@5.105.2(@swc/core@1.15.47)(postcss@8.5.25))
       ignore: 7.0.6
-      next: 16.2.12(@babel/core@7.29.7)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
+      next: 16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0)
       semver: 7.8.5
       tslib: 2.8.1
       webpack-merge: 5.10.0
@@ -9284,6 +9337,10 @@ snapshots:
     optional: true
 
   '@pkgr/core@0.3.6': {}
+
+  '@playwright/test@1.62.1':
+    dependencies:
+      playwright: 1.62.1
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -11869,6 +11926,9 @@ snapshots:
 
   fs.realpath@1.0.0: {}
 
+  fsevents@2.3.2:
+    optional: true
+
   fsevents@2.3.3:
     optional: true
 
@@ -12950,7 +13010,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@16.2.12(@babel/core@7.29.7)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0):
+  next@16.2.12(@babel/core@7.29.7)(@playwright/test@1.62.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.102.0):
     dependencies:
       '@next/env': 16.2.12
       '@swc/helpers': 0.5.15
@@ -12969,6 +13029,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.2.12
       '@next/swc-win32-arm64-msvc': 16.2.12
       '@next/swc-win32-x64-msvc': 16.2.12
+      '@playwright/test': 1.62.1
       sass: 1.102.0
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -13402,6 +13463,14 @@ snapshots:
   pkg-dir@7.0.0:
     dependencies:
       find-up: 6.3.0
+
+  playwright-core@1.62.1: {}
+
+  playwright@1.62.1:
+    dependencies:
+      playwright-core: 1.62.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   pluralize@8.0.0: {}
 

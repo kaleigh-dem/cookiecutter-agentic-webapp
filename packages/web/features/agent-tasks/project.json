@@ -1,0 +1,40 @@
+{
+  "name": "web-feature-agent-tasks",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/features/agent-tasks/src",
+  "projectType": "library",
+  "tags": ["scope:web", "type:feature", "runtime:browser"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/packages/web/features/agent-tasks"],
+      "options": {
+        "command": "tsc -p packages/web/features/agent-tasks/tsconfig.lib.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p packages/web/features/agent-tasks/tsconfig.lib.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/web/features/agent-tasks"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run packages/web/features/agent-tasks/src --passWithNoTests"
+      }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test -c packages/web/features/agent-tasks/playwright.config.ts"
+      }
+    }
+  }
+}

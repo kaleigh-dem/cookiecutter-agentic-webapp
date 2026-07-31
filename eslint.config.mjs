@@ -7,6 +7,28 @@ export default [
   {
     ignores: ['**/dist', '**/.next', '**/coverage', '**/test-output'],
   },
+
+  {
+    files: ['packages/web/features/**/*.{ts,tsx}'],
+    ignores: ['**/*.spec.ts', '**/*.config.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'TSInterfaceDeclaration[id.name=/.*(Request|Response|Dto)$/]',
+          message:
+            'Web features must consume generated API types instead of handwritten request/response/DTO interfaces.',
+        },
+        {
+          selector:
+            'TSTypeAliasDeclaration[id.name=/.*(Request|Response|Dto)$/]',
+          message:
+            'Web features must consume generated API types instead of handwritten request/response/DTO aliases.',
+        },
+      ],
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {

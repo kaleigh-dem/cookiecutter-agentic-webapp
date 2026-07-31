@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "Agentic Webapp API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "The canonical HTTP contract for the API application."
   },
   "servers": [
@@ -16,6 +16,10 @@
     {
       "name": "health",
       "description": "Service health and readiness signals."
+    },
+    {
+      "name": "agent-tasks",
+      "description": "Actor-scoped tasks queued for agent execution."
     }
   ],
   "paths": {
@@ -38,12 +42,146 @@
           }
         }
       }
+    },
+    "/api/agent-tasks": {
+      "post": {
+        "operationId": "createAgentTask",
+        "summary": "Create an agent task",
+        "tags": ["agent-tasks"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The task was validated and queued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTaskResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent-tasks/{taskId}": {
+      "get": {
+        "operationId": "getAgentTask",
+        "summary": "Read an owned agent task",
+        "tags": ["agent-tasks"],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The owned task.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTaskResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The task belongs to another actor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The task does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "HealthResponse": {
         "$ref": "./schemas/health-response.json"
+      },
+      "CreateAgentTaskRequest": {
+        "$ref": "./schemas/create-agent-task-request.json"
+      },
+      "AgentTaskResponse": {
+        "$ref": "./schemas/agent-task-response.json"
+      },
+      "ErrorResponse": {
+        "$ref": "./schemas/error-response.json"
+      }
+    },
+    "parameters": {
+      "ActorId": {
+        "name": "x-actor-id",
+        "in": "header",
+        "required": true,
+        "description": "Development actor context. Phase 8 replaces this adapter with authenticated identity.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "CorrelationId": {
+        "name": "x-correlation-id",
+        "in": "header",
+        "required": false,
+        "description": "Optional caller correlation identifier propagated into persistence and jobs.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     }
   }
