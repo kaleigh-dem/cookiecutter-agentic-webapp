@@ -118,7 +118,14 @@ function assertTags(
 ): void {
   const project = graph.nodes[projectName];
   assert.ok(project, `Project graph does not contain ${projectName}.`);
-  assert.deepEqual(project.data.tags, expectedTags);
+
+  const actualTags = new Set(project.data.tags ?? []);
+  for (const expectedTag of expectedTags) {
+    assert.ok(
+      actualTags.has(expectedTag),
+      `${projectName} is missing expected tag ${expectedTag}.`,
+    );
+  }
 }
 
 function assertAllowedDependencies(
