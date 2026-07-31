@@ -39,6 +39,18 @@ jobs:
       - run: pnpm nx g @agentic-webapp/workspace-plugin:contract agent-task-execution-requested --skipFormat
       - run: pnpm add -Dw @playwright/test
       - run: python tools/phase6-bootstrap.py
+      - name: Fix Testcontainers cleanup return type
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('packages/database/src/adapters/agent-task-repository.integration.test.ts')
+          text = path.read_text()
+          text = text.replace(
+              'stop = () => container.stop();',
+              'stop = async () => {\n      await container.stop();\n    };',
+          )
+          path.write_text(text)
+          PY
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm contracts:generate
       - run: pnpm nx sync
