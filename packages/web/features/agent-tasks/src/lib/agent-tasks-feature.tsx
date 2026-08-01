@@ -4,27 +4,32 @@ import { createApiClient } from '@agentic-webapp/contracts/client';
 import { type FormEvent, useMemo, useState } from 'react';
 
 import {
+  createAuthenticationHeaders,
+  createDevelopmentAuthenticationAdapter,
+} from './authentication';
+import {
   type AgentTaskFeatureState,
   validateAgentTaskDraft,
 } from './agent-tasks-model';
 
-const defaultActorId = '00000000-0000-4000-8000-000000000001';
-
 export function AgentTasksFeature() {
-  const client = useMemo(
-    () =>
-      createApiClient({
-        baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
-      }),
-    [],
-  );
-  const [actorId, setActorId] = useState(defaultActorId);
+  const client = useMemo(() => {
+    const authentication = createDevelopmentAuthenticationAdapter({
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN:
+        process.env.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN,
+    });
+    return createApiClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
+      headers: createAuthenticationHeaders(authentication),
+    });
+  }, []);
   const [title, setTitle] = useState('');
   const [prompt, setPrompt] = useState('');
   const [taskId, setTaskId] = useState('');
   const [state, setState] = useState<AgentTaskFeatureState>({
     status: 'idle',
-    message: 'Create a task to queue an agent workflow.',
+    message: 'Create a task to queue an authenticated agent workflow.',
   });
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
@@ -40,7 +45,6 @@ export function AgentTasksFeature() {
     try {
       const task = await client.createAgentTask({
         headers: {
-          'x-actor-id': actorId,
           'x-correlation-id': correlationId,
         },
         body: { title, prompt },
@@ -68,7 +72,6 @@ export function AgentTasksFeature() {
     try {
       const task = await client.getAgentTask({
         path: { taskId: taskId.trim() },
-        headers: { 'x-actor-id': actorId },
       });
       setState({
         status: 'success',
@@ -86,21 +89,12 @@ export function AgentTasksFeature() {
     <section aria-labelledby="agent-tasks-heading">
       <h1 id="agent-tasks-heading">Agent tasks</h1>
       <p>
-        This reference workflow validates input, persists an actor-owned task,
-        writes a correlated execution request to the outbox, and exposes the
-        generated client to the browser.
+        This reference workflow authenticates the browser, validates input,
+        persists an actor-owned task, writes a correlated execution request to
+        the outbox, and exposes the generated client to the browser.
       </p>
 
       <form onSubmit={createTask}>
-        <label>
-          Development actor
-          <input
-            name="actorId"
-            value={actorId}
-            onChange={(event) => setActorId(event.target.value)}
-            required
-          />
-        </label>
         <label>
           Task title
           <input
