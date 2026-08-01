@@ -47,9 +47,9 @@ Initialization rewrites package scopes, service and image names, Compose project
 
 ## Template releases
 
-Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball. CI packages and installs the same artifact, invokes its public `preset` entry point, and verifies the generated manifest before the release workflow can publish it.
+Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball. CI packages and installs the same artifact, invokes its public `preset` entry point, and runs a differently named generated repository through frozen installation, validation, migrations, seed data, production images, preview smoke tests, performance budgets, deterministic teardown, identity checks, and Git-cleanliness checks before the release workflow can publish it.
 
-See `docs/template-releases.md` for versioning rules, release preparation, publishing, and artifact installation.
+See `docs/template-releases.md` for versioning and publishing, and `docs/template-validation.md` for the generated-workspace lifecycle.
 
 ## Runtime requirements
 
