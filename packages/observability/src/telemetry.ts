@@ -39,13 +39,13 @@ export interface NodeTelemetryHandle {
   shutdown(): Promise<void>;
 }
 
-interface TelemetrySdk {
+export interface NodeTelemetrySdk {
   start(): void;
   shutdown(): Promise<void>;
 }
 
-interface NodeTelemetryDependencies {
-  createSdk(config: NodeTelemetryConfig): TelemetrySdk;
+export interface NodeTelemetryDependencies {
+  createSdk(config: NodeTelemetryConfig): NodeTelemetrySdk;
 }
 
 interface TelemetryState {
