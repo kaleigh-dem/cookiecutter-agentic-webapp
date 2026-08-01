@@ -25,15 +25,17 @@ export function evaluateScenario(scenario, measurements) {
     maximumErrorRate: scenario.maximumErrorRate,
     maximumP95Ms: scenario.maximumP95Ms,
     passed:
-      errorRate <= scenario.maximumErrorRate &&
-      p95Ms <= scenario.maximumP95Ms,
+      errorRate <= scenario.maximumErrorRate && p95Ms <= scenario.maximumP95Ms,
   };
 }
 
 export function validateBudgets(budgets) {
   const issues = [];
   if (budgets.schemaVersion !== 1) issues.push('schemaVersion must be 1.');
-  if (!Number.isInteger(budgets.defaults?.requests) || budgets.defaults.requests < 1) {
+  if (
+    !Number.isInteger(budgets.defaults?.requests) ||
+    budgets.defaults.requests < 1
+  ) {
     issues.push('defaults.requests must be a positive integer.');
   }
   if (
@@ -49,17 +51,19 @@ export function validateBudgets(budgets) {
   for (const scenario of budgets.scenarios ?? []) {
     if (!scenario.name) issues.push('Every scenario requires a name.');
     if (!scenario.baseUrlEnvironment) {
-      issues.push(`${scenario.name ?? 'Scenario'} requires baseUrlEnvironment.`);
+      issues.push(
+        `${scenario.name ?? 'Scenario'} requires baseUrlEnvironment.`,
+      );
     }
     if (!scenario.path?.startsWith('/')) {
       issues.push(`${scenario.name ?? 'Scenario'} path must start with '/'.`);
     }
     if (!(scenario.maximumP95Ms > 0)) {
-      issues.push(`${scenario.name ?? 'Scenario'} maximumP95Ms must be positive.`);
+      issues.push(
+        `${scenario.name ?? 'Scenario'} maximumP95Ms must be positive.`,
+      );
     }
-    if (
-      !(scenario.maximumErrorRate >= 0 && scenario.maximumErrorRate <= 1)
-    ) {
+    if (!(scenario.maximumErrorRate >= 0 && scenario.maximumErrorRate <= 1)) {
       issues.push(
         `${scenario.name ?? 'Scenario'} maximumErrorRate must be between 0 and 1.`,
       );
