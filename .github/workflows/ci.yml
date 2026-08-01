@@ -39,7 +39,7 @@ jobs:
       - run: pnpm delivery:check
       - name: Verify release tooling
         run: |
-          pnpm release:plan -- \
+          node tools/delivery/release-plan.mjs \
             --environment preview \
             --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
             --version 0.0.0-ci \
