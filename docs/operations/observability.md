@@ -31,10 +31,9 @@ The API accepts and propagates:
 
 - `x-request-id`
 - `x-correlation-id`
-- `x-actor-id` until Phase 8 replaces it with authenticated identity
 - W3C `traceparent`
 
-When absent, the API creates a request identifier and trace identifier and returns them as `x-request-id` and `x-trace-id`. AsyncLocalStorage keeps that context available to downstream logging within the request lifecycle.
+When absent, the API creates a request identifier and trace identifier and returns them as `x-request-id` and `x-trace-id`. AsyncLocalStorage keeps that context available to downstream logging within the request lifecycle. Authenticated identity comes from the verified bearer principal; clients must not use `x-actor-id` to supply identity.
 
 OpenTelemetry initializes for four service identities:
 
@@ -74,7 +73,7 @@ The browser uses build-time public equivalents:
 - `NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
 - `NEXT_PUBLIC_OTEL_SDK_DISABLED=true`
 - `NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT`
-- `NEXT_PUBLIC_API_URL` to constrain which origin receives propagated trace headers
+- `NEXT_PUBLIC_API_BASE_URL` to constrain which origin receives propagated trace headers
 
 A shared OTLP base URL is normalized to `/v1/traces` and `/v1/metrics`. Signal-specific endpoint variables are used exactly as supplied.
 
