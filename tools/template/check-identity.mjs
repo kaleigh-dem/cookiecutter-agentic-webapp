@@ -77,9 +77,7 @@ function removeAllowedUpstreamReferences(relativePath, content) {
   const normalizedPath = relativePath.split(path.sep).join('/');
   if (!allowedUpstreamPaths.has(normalizedPath)) return content;
 
-  return content
-    .replaceAll(upstreamUrl, '')
-    .replaceAll(upstreamRepository, '');
+  return content.replaceAll(upstreamUrl, '').replaceAll(upstreamRepository, '');
 }
 
 async function main() {
@@ -87,7 +85,9 @@ async function main() {
   const manifestPath = path.join(root, 'workspace.template.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
   if (manifest.schemaVersion < 2) {
-    throw new Error('workspace.template.json must use identity schema version 2 or newer.');
+    throw new Error(
+      'workspace.template.json must use identity schema version 2 or newer.',
+    );
   }
 
   const findings = [];
@@ -113,9 +113,10 @@ async function main() {
 
   if (findings.length > 0) {
     throw new Error(
-      ['Generated workspace still contains template identity:', ...findings].join(
-        '\n',
-      ),
+      [
+        'Generated workspace still contains template identity:',
+        ...findings,
+      ].join('\n'),
     );
   }
 
