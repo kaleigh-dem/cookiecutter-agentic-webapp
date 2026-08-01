@@ -16,6 +16,7 @@ import {
   createCorrelationContext,
   getCorrelationContext,
 } from '@agentic-webapp/observability';
+import { getActiveTraceParent } from '@agentic-webapp/observability/telemetry';
 import {
   BadRequestException,
   Body,
@@ -86,11 +87,13 @@ export class AgentTasksController {
             ? { correlationId: normalizedCorrelationId }
             : {}),
         });
+      const traceParent = getActiveTraceParent();
       const task = await this.createAgentTask.execute({
         actorId,
         userId: context.userId ?? actorId,
         requestId: context.requestId,
         traceId: context.traceId,
+        ...(traceParent ? { traceParent } : {}),
         title: body.title,
         prompt: body.prompt,
         ...(normalizedCorrelationId
