@@ -11,19 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  dependency-review:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Review dependency vulnerabilities and licenses
-        uses: actions/dependency-review-action@v5
-        with:
-          fail-on-severity: high
-          fail-on-scopes: runtime, development
-          deny-licenses: AGPL-3.0-only, GPL-3.0-only, SSPL-1.0
-
-  package-audit:
+  package-policy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,7 +24,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Audit dependency vulnerabilities
-        run: pnpm audit --audit-level high
+        run: pnpm security:audit
+      - name: Enforce production dependency licenses
+        run: pnpm security:licenses
 
   secret-scan:
     runs-on: ubuntu-latest
