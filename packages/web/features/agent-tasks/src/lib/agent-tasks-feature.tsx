@@ -16,8 +16,6 @@ export function AgentTasksFeature() {
   const client = useMemo(() => {
     const authentication = createDevelopmentAuthenticationAdapter({
       NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN:
-        process.env.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN,
     });
     return createApiClient({
       baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
