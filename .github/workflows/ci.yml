@@ -51,7 +51,7 @@ jobs:
       - run: pnpm nx affected -t e2e --parallel=1
       - name: Verify generated output and project graph
         run: pnpm nx run workspace-plugin:generated-output-smoke
-      - name: Verify parameterized workspace initialization
+      - name: Verify generated workspace identity
         run: pnpm nx run workspace-plugin:initialization-output-smoke
       - name: Verify validation leaves the checkout clean
         run: git diff --exit-code
