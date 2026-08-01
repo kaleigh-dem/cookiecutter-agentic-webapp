@@ -5,6 +5,7 @@ const deploymentEnvironments = new Set([
   'preview',
   'production',
 ]);
+const placeholderHostnames = new Set(['example.com', 'example.test']);
 
 export function parseEnvironmentFile(content) {
   const values = {};
@@ -61,13 +62,29 @@ function validateUrl(value, protocols) {
   }
 }
 
+function normalizeHostname(hostname) {
+  return hostname.toLowerCase().replace(/\.$/u, '');
+}
+
+function hasPlaceholderHostname(value) {
+  const normalized = value.trim().toLowerCase();
+  if (placeholderHostnames.has(normalized)) return true;
+
+  try {
+    return placeholderHostnames.has(
+      normalizeHostname(new URL(value).hostname),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function containsPlaceholder(value) {
   const normalized = value.toLowerCase();
   return (
     normalized.includes('changeme') ||
     normalized.includes('replace-me') ||
-    normalized.includes('example.com') ||
-    normalized.includes('example.test') ||
+    hasPlaceholderHostname(value) ||
     value.includes('<') ||
     value.includes('>')
   );
