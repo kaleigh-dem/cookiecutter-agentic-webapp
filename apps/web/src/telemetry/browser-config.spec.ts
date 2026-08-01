@@ -9,7 +9,7 @@ describe('browser telemetry configuration', () => {
   it('is disabled without an explicitly configured endpoint', () => {
     expect(
       resolveBrowserTelemetryConfig({
-        NEXT_PUBLIC_API_URL: 'http://localhost:4000/api',
+        NEXT_PUBLIC_API_BASE_URL: 'http://localhost:4000/api',
       }),
     ).toEqual({
       enabled: false,
@@ -21,7 +21,7 @@ describe('browser telemetry configuration', () => {
   it('normalizes a shared OTLP endpoint and API origin', () => {
     expect(
       resolveBrowserTelemetryConfig({
-        NEXT_PUBLIC_API_URL: 'https://api.example.test/api',
+        NEXT_PUBLIC_API_BASE_URL: 'https://api.example.test/api',
         NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT:
           'https://telemetry.example.test/otlp/',
         NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: 'preview',
