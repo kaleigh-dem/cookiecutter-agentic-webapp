@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, cp, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -47,23 +47,56 @@ function rewritePackageValue(value, key = '') {
   return compiledTarget(value, key);
 }
 
-async function writeManifest(packageDirectory, transform) {
-  const manifestPath = path.join(packageDirectory, 'package.json');
-  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  const transformed = transform(manifest);
-  await writeFile(manifestPath, `${JSON.stringify(transformed, null, 2)}\n`);
+async function replaceDirectory(source, destination) {
+  await rm(destination, { force: true, recursive: true });
+  await cp(source, destination, { recursive: true });
+}
+
+async function readManifest(packageDirectory) {
+  return JSON.parse(
+    await readFile(path.join(packageDirectory, 'package.json'), 'utf8'),
+  );
+}
+
+async function writeManifest(packageDirectory, manifest) {
+  await writeFile(
+    path.join(packageDirectory, 'package.json'),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
 }
 
 async function stageCompiledPackage(packageDirectory, buildDirectory) {
-  const destination = path.join(packageDirectory, 'dist');
-  await rm(destination, { force: true, recursive: true });
-  await mkdir(destination, { recursive: true });
-  await cp(buildDirectory, destination, { recursive: true });
-
-  await writeManifest(packageDirectory, (manifest) => ({
-    ...rewritePackageValue(manifest),
+  await replaceDirectory(buildDirectory, path.join(packageDirectory, 'dist'));
+  const manifest = {
+    ...rewritePackageValue(await readManifest(packageDirectory)),
     files: ['dist'],
-  }));
+  };
+  await writeManifest(packageDirectory, manifest);
+  return { buildDirectory, manifest };
+}
+
+function deployedPackageDirectory(deployDirectory, packageName) {
+  return path.join(deployDirectory, 'node_modules', ...packageName.split('/'));
+}
+
+async function installCompiledArtifacts(
+  deployDirectory,
+  service,
+  stagedPackages,
+) {
+  const appDestination = path.join(deployDirectory, 'dist');
+  await replaceDirectory(service.buildDirectory, appDestination);
+  await access(path.join(appDestination, 'main.js'));
+
+  for (const { buildDirectory, manifest } of stagedPackages) {
+    const packageDirectory = deployedPackageDirectory(
+      deployDirectory,
+      manifest.name,
+    );
+    await replaceDirectory(buildDirectory, path.join(packageDirectory, 'dist'));
+    await writeManifest(packageDirectory, manifest);
+    await access(path.join(packageDirectory, 'dist', 'index.js'));
+  }
 }
 
 async function main() {
@@ -76,17 +109,21 @@ async function main() {
     );
   }
 
-  const appDist = path.join(service.appDirectory, 'dist');
-  await rm(appDist, { force: true, recursive: true });
-  await mkdir(appDist, { recursive: true });
-  await cp(service.buildDirectory, appDist, { recursive: true });
-  await writeManifest(service.appDirectory, (manifest) => ({
-    ...manifest,
+  await replaceDirectory(
+    service.buildDirectory,
+    path.join(service.appDirectory, 'dist'),
+  );
+  const appManifest = {
+    ...(await readManifest(service.appDirectory)),
     files: ['dist'],
-  }));
+  };
+  await writeManifest(service.appDirectory, appManifest);
 
+  const stagedPackages = [];
   for (const [packageDirectory, buildDirectory] of service.workspacePackages) {
-    await stageCompiledPackage(packageDirectory, buildDirectory);
+    stagedPackages.push(
+      await stageCompiledPackage(packageDirectory, buildDirectory),
+    );
   }
 
   await rm(deployDirectory, { force: true, recursive: true });
@@ -108,6 +145,8 @@ async function main() {
       `pnpm deploy failed with status ${result.status ?? 'unknown'}.`,
     );
   }
+
+  await installCompiledArtifacts(deployDirectory, service, stagedPackages);
 }
 
 void main().catch((error) => {
