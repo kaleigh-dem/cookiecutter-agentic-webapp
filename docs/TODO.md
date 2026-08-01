@@ -47,18 +47,13 @@ Relevant merged work is recorded in PRs #2–#10 and `docs/adr/`.
 
 Goal: make workspace creation, customization, validation, release, and downstream upgrades reliable across multiple independent repositories.
 
+Tasks are listed in implementation order. Existing task IDs remain stable for review and issue references, so P10-02 intentionally follows its P10-03 through P10-05 prerequisites.
+
 - [ ] **P10-01 Replace Node 25 with an active LTS baseline.**
   - Pin Node 24 in `package.json`, GitHub Actions, Docker build arguments, and developer tooling.
   - Add `.node-version` or `.tool-versions` and document the runtime support policy.
   - Add a non-blocking compatibility job for the current even-numbered Node release when useful.
   - Verify local builds, production images, Playwright, Testcontainers, and release tooling on the LTS version.
-
-- [ ] **P10-02 Add generated-workspace end-to-end CI.**
-  - Create a clean temporary workspace through the documented Nx template command.
-  - Use a name and package scope that differ from this repository.
-  - Install with a frozen lockfile and run the generated workspace validation contract.
-  - Apply migrations and seeds, build images, start the preview stack, run smoke and performance checks, and verify deterministic teardown.
-  - Fail when the generated repository is dirty after validation.
 
 - [ ] **P10-03 Introduce a parameterized Nx preset or initialization generator.**
   - Accept application slug, display name, package scope, repository owner, CODEOWNERS, ports, database name, and selected applications.
@@ -77,7 +72,15 @@ Goal: make workspace creation, customization, validation, release, and downstrea
   - Generate changelogs and tagged releases.
   - Record the originating template version in each generated repository.
   - Publish the preset or plugin through a stable distribution channel.
-  - Test workspace creation from a released tag rather than only from `main`.
+  - Add a minimal release smoke test that installs the published artifact and invokes its preset entry point.
+
+- [ ] **P10-02 Add generated-workspace end-to-end CI.**
+  - Depend on P10-03, P10-04, and P10-05 so CI validates a parameterized, identity-neutral, released artifact.
+  - Create a clean temporary workspace from the released preset or tagged template through the documented Nx command.
+  - Use a name and package scope that differ from this repository.
+  - Install with a frozen lockfile and run the generated workspace validation contract.
+  - Apply migrations and seeds, build images, start the preview stack, run smoke and performance checks, and verify deterministic teardown.
+  - Fail when the generated repository is dirty or retains unintended upstream-template identity after validation.
 
 - [ ] **P10-06 Add a downstream upgrade strategy.**
   - Implement Nx migrations or explicit codemods for breaking template changes.
