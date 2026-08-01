@@ -35,9 +35,11 @@ After the release preparation PR is merged, run the **Release template** workflo
 3. installs the local tarball and invokes the `preset` entry point;
 4. creates a draft `template-v<version>` GitHub Release and uploads the tarball;
 5. downloads and installs the draft release artifact;
-6. publishes the release only after the downloaded artifact passes the same preset smoke test.
+6. uses the downloaded artifact to generate an independently named repository;
+7. runs the generated repository's frozen install, validation, migration, seed, preview, smoke, performance, teardown, identity, and cleanliness checks;
+8. publishes the release only after the complete generated-workspace lifecycle passes.
 
-A failed published-artifact smoke test deletes the draft release and its tag.
+A failed artifact smoke test or generated-workspace lifecycle deletes the draft release and its tag. Compose logs from generated-workspace failures are uploaded as a short-lived workflow artifact.
 
 ## Consuming a release
 
@@ -50,4 +52,6 @@ pnpm nx g @agentic-webapp/workspace-plugin:preset my-application \
   --repositoryOwner=my-org
 ```
 
-Generated repositories record the originating release in `workspace.template.json` under `upstream.version`. Template-maintainer release scripts, workflows, and changelog files are removed during initialization so downstream repositories cannot accidentally publish upstream template releases.
+Generated repositories record the originating release in `workspace.template.json` under `upstream.version`. Template-maintainer release and generated-workspace validation scripts, workflows, and documentation are removed during initialization so downstream repositories cannot accidentally operate the upstream template lifecycle.
+
+See `docs/template-validation.md` for the generated profile, lifecycle contract, diagnostics, and local command.
