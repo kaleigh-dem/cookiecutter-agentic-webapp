@@ -140,12 +140,13 @@ async function main(): Promise<void> {
     const first = await captureOutputs(temporaryRoot);
     await run('pnpm', args, temporaryRoot);
     const second = await captureOutputs(temporaryRoot);
-    assert.deepEqual(second, first, 'Initialization output is not deterministic.');
-
-    assert.match(
-      first['workspace.template.json'] ?? '',
-      /"slug": "smoke-app"/,
+    assert.deepEqual(
+      second,
+      first,
+      'Initialization output is not deterministic.',
     );
+
+    assert.match(first['workspace.template.json'] ?? '', /"slug": "smoke-app"/);
     assert.match(first['workspace.template.json'] ?? '', /"ai": true/);
     assert.match(first['package.json'] ?? '', /"name": "@smoke\/smoke-app"/);
     assert.match(
@@ -153,13 +154,12 @@ async function main(): Promise<void> {
       /\/apps\/worker\/ @smoke-org\/platform @smoke-org\/security/,
     );
     assert.match(first['.env.example'] ?? '', /WEB_PORT=3100/);
-    assert.match(
-      first['.env.example'] ?? '',
-      /localhost:55432\/smoke_app/,
-    );
+    assert.match(first['.env.example'] ?? '', /localhost:55432\/smoke_app/);
 
     await run('pnpm', ['nx', 'sync:check'], temporaryRoot);
-    console.log('Parameterized workspace initialization is deterministic and valid.');
+    console.log(
+      'Parameterized workspace initialization is deterministic and valid.',
+    );
   } catch (error) {
     primaryError = error;
   } finally {
