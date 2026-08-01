@@ -57,9 +57,6 @@ jobs:
   end-to-end:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      RELEASE_DIRECTORY: ${{ runner.temp }}/template-release
-      GENERATED_WORKSPACE: ${{ runner.temp }}/generated-workspace
     steps:
       - uses: actions/checkout@v7
         with:
@@ -80,25 +77,26 @@ jobs:
         id: artifact
         run: |
           version=$(node -p "require('./package.json').version")
+          release_directory="$RUNNER_TEMP/template-release"
           pnpm template:release:verify -- --version "$version"
           pnpm template:release:pack -- \
             --version "$version" \
-            --output "$RELEASE_DIRECTORY"
+            --output "$release_directory"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "path=$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
+          echo "path=$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Validate generated workspace lifecycle
         run: |
           pnpm template:workspace:e2e -- \
             --artifact "${{ steps.artifact.outputs.path }}" \
             --expected-version "${{ steps.artifact.outputs.version }}" \
-            --workspace "$GENERATED_WORKSPACE"
+            --workspace "$RUNNER_TEMP/generated-workspace"
 
       - name: Upload generated-workspace diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: generated-workspace-diagnostics
-          path: ${{ env.GENERATED_WORKSPACE }}/test-output
+          path: ${{ runner.temp }}/generated-workspace/test-output
           if-no-files-found: ignore
           retention-days: 7
