@@ -32,12 +32,7 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "queued",
-              "running",
-              "completed",
-              "failed"
-            ],
+            "enum": ["queued", "running", "completed", "failed"],
             "type": "string"
           },
           "title": {
@@ -69,10 +64,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "title",
-          "prompt"
-        ],
+        "required": ["title", "prompt"],
         "type": "object"
       },
       "ErrorResponse": {
@@ -86,10 +78,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "type": "object"
       },
       "HealthResponse": {
@@ -106,10 +95,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "service",
-          "status"
-        ],
+        "required": ["service", "status"],
         "type": "object"
       }
     },
@@ -176,9 +162,7 @@
           }
         ],
         "summary": "Create an agent task",
-        "tags": [
-          "agent-tasks"
-        ]
+        "tags": ["agent-tasks"]
       }
     },
     "/api/agent-tasks/{taskId}": {
@@ -236,9 +220,7 @@
           }
         ],
         "summary": "Read an owned agent task",
-        "tags": [
-          "agent-tasks"
-        ]
+        "tags": ["agent-tasks"]
       }
     },
     "/api/health": {
@@ -258,9 +240,7 @@
           }
         },
         "summary": "Read API health",
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     }
   },
