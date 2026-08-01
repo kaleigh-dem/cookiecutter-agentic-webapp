@@ -111,10 +111,7 @@ function createWorkspaceTree(): Tree {
     'README.md',
     'Upstream template: https://github.com/kaleigh-dem/cookiecutter-agentic-webapp\n',
   );
-  tree.write(
-    '.github/CODEOWNERS',
-    `* @${['kaleigh', 'dem'].join('-')}\n`,
-  );
+  tree.write('.github/CODEOWNERS', `* @${['kaleigh', 'dem'].join('-')}\n`);
   return tree;
 }
 
