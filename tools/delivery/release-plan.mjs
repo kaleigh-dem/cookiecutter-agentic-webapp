@@ -66,7 +66,8 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
       },
       {
         id: 'capture-backup',
-        command: 'Run the provider-specific database snapshot command and record its identifier.',
+        command:
+          'Run the provider-specific database snapshot command and record its identifier.',
       },
       {
         id: 'inspect-migrations',
@@ -86,7 +87,8 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
       },
       {
         id: 'observe',
-        command: 'Observe release SLIs for at least one complete rollback window.',
+        command:
+          'Observe release SLIs for at least one complete rollback window.',
       },
     ],
   };
