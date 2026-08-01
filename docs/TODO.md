@@ -101,15 +101,15 @@ Exit criteria: the reference feature can be followed across services without exp
 
 ## Phase 8 — Authentication and security
 
-- [-] **P8-01** Record the identity-provider and session/token architecture decision.
-- [-] **P8-02** Add authentication adapters for web and API.
-- [-] **P8-03** Add authorization policy boundaries and test helpers.
-- [-] **P8-04** Add secure HTTP defaults, rate limiting, validation, and error normalization.
-- [-] **P8-05** Add dependency, license, secret, and static-analysis checks.
-- [-] **P8-06** Add `SECURITY.md`, vulnerability reporting, and threat-model guidance.
-- [-] **P8-07** Add audit-event conventions for security-sensitive actions.
+- [x] **P8-01** Record the identity-provider and session/token architecture decision.
+- [x] **P8-02** Add authentication adapters for web and API.
+- [x] **P8-03** Add authorization policy boundaries and test helpers.
+- [x] **P8-04** Add secure HTTP defaults, rate limiting, validation, and error normalization.
+- [x] **P8-05** Add dependency, license, secret, and static-analysis checks.
+- [x] **P8-06** Add `SECURITY.md`, vulnerability reporting, and threat-model guidance.
+- [x] **P8-07** Add audit-event conventions for security-sensitive actions.
 
-The Phase 8 branch implements all seven workstreams. Items remain in progress until contract generation, formatting, typechecking, tests, builds, browser coverage, and the new security workflows pass in CI.
+CI run #205 verified contract generation and compatibility, Nx synchronization, formatting, typechecking, production builds, authenticated Playwright coverage, generator smoke tests, a clean checkout, and affected lint and unit tests. Security run #28 verified the expiring dependency-audit baseline, production license policy, tracked-file secret scan, and CodeQL extended analysis.
 
 Exit criteria: protected reference-feature behavior has automated authorization tests and CI security gates.
 
