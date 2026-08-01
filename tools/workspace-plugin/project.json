@@ -37,6 +37,13 @@
       "options": {
         "command": "tsx tools/workspace-plugin/src/generators/generated-output.integration.ts"
       }
+    },
+    "initialization-output-smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "tsx tools/workspace-plugin/src/generators/init-output.integration.ts"
+      }
     }
   }
 }

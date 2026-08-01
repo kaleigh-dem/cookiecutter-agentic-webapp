@@ -31,6 +31,17 @@ npx create-nx-workspace@23.1.0 my-workspace \
 
 Or clone this repository directly while the template migration is under review.
 
+After installing dependencies, record the generated repository's identity and profiles:
+
+```bash
+pnpm initialize:workspace my-workspace \
+  --displayName="My Workspace" \
+  --packageScope=@my-org \
+  --repositoryOwner=my-org
+```
+
+See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, and optional AI settings.
+
 ## Runtime requirements
 
 Use Node.js 24 LTS and pnpm 10.13.1. The repository includes `.node-version` for compatible version managers, and `package.json` enforces the supported Node.js major release.

@@ -1,0 +1,91 @@
+{
+  "cli": "nx",
+  "$schema": "https://json-schema.org/schema",
+  "title": "Template initialization generator",
+  "description": "Record and apply validated workspace initialization choices",
+  "type": "object",
+  "properties": {
+    "applicationSlug": {
+      "type": "string",
+      "description": "Lowercase kebab-case application identifier",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "What is the application slug?"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable application name; defaults from the slug"
+    },
+    "packageScope": {
+      "type": "string",
+      "description": "Lowercase npm package scope such as @acme",
+      "x-prompt": "What npm package scope should the workspace use?"
+    },
+    "repositoryOwner": {
+      "type": "string",
+      "description": "GitHub user or organization that owns the generated repository",
+      "x-prompt": "Which GitHub user or organization owns the repository?"
+    },
+    "codeowners": {
+      "type": "string",
+      "description": "Comma-separated @users, @org/teams, or email CODEOWNERS; defaults to the repository owner"
+    },
+    "applications": {
+      "type": "string",
+      "default": "web,api,worker",
+      "description": "Comma-separated selection from web, api, and worker"
+    },
+    "webPort": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 3000
+    },
+    "apiPort": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 4000
+    },
+    "databasePort": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 5432
+    },
+    "databaseName": {
+      "type": "string",
+      "description": "PostgreSQL database name; defaults from the application slug"
+    },
+    "authentication": {
+      "type": "string",
+      "enum": ["development", "none", "oidc", "session"],
+      "description": "Authentication profile; defaults to development when api is selected and none otherwise"
+    },
+    "workerTransport": {
+      "type": "string",
+      "enum": ["none", "postgres", "redis"],
+      "description": "Worker delivery transport; defaults to postgres when worker is selected and none otherwise"
+    },
+    "telemetry": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable local OpenTelemetry exporter defaults"
+    },
+    "deploymentProfile": {
+      "type": "string",
+      "enum": ["containers", "kubernetes", "local"],
+      "default": "containers"
+    },
+    "ai": {
+      "type": "boolean",
+      "default": false,
+      "description": "Select optional AI capabilities; requires web and api"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "x-priority": "internal"
+    }
+  },
+  "required": ["applicationSlug", "packageScope", "repositoryOwner"]
+}
