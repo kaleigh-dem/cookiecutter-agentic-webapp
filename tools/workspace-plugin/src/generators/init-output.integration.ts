@@ -4,6 +4,8 @@ import { cp, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import { templateVersion } from '../template-version';
+
 const ignoredCopySegments = new Set([
   '.git',
   '.next',
@@ -180,10 +182,19 @@ async function main(): Promise<void> {
       first['workspace.template.json'] ?? '',
       /"repository": "kaleigh-dem\/cookiecutter-agentic-webapp"/,
     );
+    assert.match(
+      first['workspace.template.json'] ?? '',
+      new RegExp(`"version": "${templateVersion.replaceAll('.', '\\.')}"`),
+    );
     assert.match(first['package.json'] ?? '', /"name": "@smoke\/smoke-app"/);
+    assert.doesNotMatch(first['package.json'] ?? '', /template:release:/);
     assert.match(
       first['tools/workspace-plugin/package.json'] ?? '',
       /"name": "@smoke\/workspace-plugin"/,
+    );
+    assert.match(
+      first['tools/workspace-plugin/package.json'] ?? '',
+      /"private": true/,
     );
     assert.match(
       first['tsconfig.base.json'] ?? '',
@@ -215,11 +226,16 @@ async function main(): Promise<void> {
       first['README.md'] ?? '',
       /kaleigh-dem\/cookiecutter-agentic-webapp/,
     );
+    assert.equal(first['.github/workflows/template-release.yml'], undefined);
+    assert.equal(first['CHANGELOG.md'], undefined);
+    assert.equal(first['docs/template-releases.md'], undefined);
+    assert.equal(first['tools/template/release.mjs'], undefined);
+    assert.equal(first['tools/template/smoke-release-artifact.mjs'], undefined);
 
     await run('pnpm', ['template:identity:check'], temporaryRoot);
     await run('pnpm', ['nx', 'sync:check'], temporaryRoot);
     console.log(
-      'Generated workspace identity is deterministic, identity-neutral, and valid.',
+      'Generated workspace identity is deterministic, versioned, identity-neutral, and valid.',
     );
   } catch (error) {
     primaryError = error;

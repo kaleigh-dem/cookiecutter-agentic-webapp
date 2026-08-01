@@ -1,0 +1,104 @@
+name: Release template
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Prepared semantic template version
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_DIRECTORY: ${{ runner.temp }}/template-release
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify prepared release
+        run: pnpm template:release:verify -- --version "$VERSION"
+
+      - name: Ensure release tag is new
+        run: |
+          if git rev-parse --verify --quiet "refs/tags/template-v${VERSION}"; then
+            echo "template-v${VERSION} already exists" >&2
+            exit 1
+          fi
+
+      - name: Pack workspace plugin
+        run: |
+          pnpm template:release:pack -- \
+            --version "$VERSION" \
+            --output "$RELEASE_DIRECTORY"
+
+      - name: Smoke local release artifact
+        run: |
+          pnpm template:release:smoke -- \
+            --artifact "$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --expected-version "$VERSION"
+
+      - name: Generate release notes
+        run: |
+          pnpm template:release:notes -- \
+            --version "$VERSION" \
+            --output "$RELEASE_DIRECTORY/release-notes.md"
+
+      - name: Create draft release
+        id: create_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="template-v${VERSION}"
+          gh release create "$tag" \
+            "$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --target "$GITHUB_SHA" \
+            --draft \
+            --title "Template ${VERSION}" \
+            --notes-file "$RELEASE_DIRECTORY/release-notes.md"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download draft release artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RELEASE_DIRECTORY/published"
+          gh release download "${{ steps.create_release.outputs.tag }}" \
+            --pattern '*.tgz' \
+            --dir "$RELEASE_DIRECTORY/published"
+
+      - name: Smoke published release artifact
+        run: |
+          pnpm template:release:smoke -- \
+            --artifact "$RELEASE_DIRECTORY/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --expected-version "$VERSION"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ steps.create_release.outputs.tag }}" --draft=false
+
+      - name: Remove failed draft release
+        if: failure() && steps.create_release.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "${{ steps.create_release.outputs.tag }}" --yes --cleanup-tag
