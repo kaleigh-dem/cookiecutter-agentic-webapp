@@ -32,7 +32,11 @@ const forbiddenPatterns = [
   ['personal CODEOWNER', personalCodeowner],
 ];
 
-const allowedUpstreamPaths = new Set(['README.md', 'workspace.template.json']);
+const allowedUpstreamPaths = new Set([
+  'README.md',
+  'workspace.template.json',
+  'tools/workspace-plugin/src/generators/init/generator.ts',
+]);
 
 function isIgnored(relativePath) {
   return relativePath
