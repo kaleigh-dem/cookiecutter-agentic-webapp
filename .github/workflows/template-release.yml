@@ -15,10 +15,11 @@ jobs:
   release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     env:
       VERSION: ${{ inputs.version }}
       RELEASE_DIRECTORY: ${{ runner.temp }}/template-release
+      GENERATED_WORKSPACE: ${{ runner.temp }}/generated-workspace
     steps:
       - uses: actions/checkout@v7
         with:
@@ -91,6 +92,22 @@ jobs:
           pnpm template:release:smoke -- \
             --artifact "$RELEASE_DIRECTORY/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
             --expected-version "$VERSION"
+
+      - name: Validate published artifact in a generated workspace
+        run: |
+          pnpm template:workspace:e2e -- \
+            --artifact "$RELEASE_DIRECTORY/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --expected-version "$VERSION" \
+            --workspace "$GENERATED_WORKSPACE"
+
+      - name: Upload generated-workspace diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-workspace-release-diagnostics
+          path: ${{ env.GENERATED_WORKSPACE }}/test-output
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Publish release
         env:
