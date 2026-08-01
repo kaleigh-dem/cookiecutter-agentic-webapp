@@ -21,6 +21,11 @@ import {
   AgentTasksModule,
   ApiDatabaseConnection,
 } from '../agent-tasks/agent-tasks.module';
+import {
+  Public,
+  RequirePermissions,
+  SkipRateLimit,
+} from '../security/security.module';
 
 const logger = createStructuredLogger('api');
 const metrics = new MetricsRegistry();
@@ -40,14 +45,12 @@ class RequestContextMiddleware {
     const requestId = request.headers['x-request-id'];
     const correlationId = request.headers['x-correlation-id'];
     const traceParent = request.headers.traceparent;
-    const userId = request.headers['x-actor-id'];
     const traceId =
       typeof traceParent === 'string' ? traceParent.split('-')[1] : undefined;
     const context = createCorrelationContext({
       ...(typeof requestId === 'string' ? { requestId } : {}),
       ...(typeof correlationId === 'string' ? { correlationId } : {}),
       ...(typeof traceId === 'string' ? { traceId } : {}),
-      ...(typeof userId === 'string' ? { userId } : {}),
     });
 
     response.setHeader('x-request-id', context.requestId);
@@ -81,11 +84,15 @@ class OperationsController {
   public constructor(private readonly connection: ApiDatabaseConnection) {}
 
   @Get('health/live')
+  @Public()
+  @SkipRateLimit()
   public live() {
     return { status: 'ok', service: 'api' } as const;
   }
 
   @Get('health/ready')
+  @Public()
+  @SkipRateLimit()
   public async ready() {
     const report = await checkDependencies([
       {
@@ -104,6 +111,7 @@ class OperationsController {
   }
 
   @Get('metrics')
+  @RequirePermissions('operations:read')
   public snapshot() {
     return metrics.snapshot();
   }
