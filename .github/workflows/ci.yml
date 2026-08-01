@@ -2,20 +2,20 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
-  contents: write
+  actions: read
+  contents: read
 
 jobs:
-  refresh-lockfile:
-    if: >-
-      github.event.pull_request.head.ref == 'agent/finish-phase-7-telemetry' &&
-      github.actor != 'github-actions[bot]'
+  affected:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: agent/finish-phase-7-telemetry
+          filter: tree:0
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
@@ -27,18 +27,22 @@ jobs:
           node-version: 25
           cache: pnpm
 
-      - run: pnpm install --no-frozen-lockfile
-      - run: pnpm nx sync
-      - run: pnpm format
-      - run: pnpm telemetry:check
+      - run: pnpm install --frozen-lockfile
 
-      - name: Commit generated workspace metadata
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add pnpm-lock.yaml tsconfig.json apps/web/tsconfig.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "chore(telemetry): refresh generated metadata"
-          git push origin HEAD:agent/finish-phase-7-telemetry
+      - uses: nrwl/nx-set-shas@v5
+
+      - run: pnpm telemetry:check
+      - run: pnpm contracts:check
+      - run: pnpm contracts:compat
+      - run: pnpm nx sync:check
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - name: Build workspace
+        run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm nx affected -t e2e --parallel=1
+      - name: Verify generated output and project graph
+        run: pnpm nx run workspace-plugin:generated-output-smoke
+      - name: Verify validation leaves the checkout clean
+        run: git diff --exit-code
+      - run: pnpm nx affected -t lint test
