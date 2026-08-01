@@ -34,8 +34,7 @@ function createWorkspaceTree(): Tree {
     scripts: {
       build: 'nx run-many -t build',
       'containers:build': 'old-command',
-      'initialize:workspace':
-        'nx g @agentic-webapp/workspace-plugin:init',
+      'initialize:workspace': 'nx g @agentic-webapp/workspace-plugin:init',
     },
     devDependencies: {
       '@agentic-webapp/workspace-plugin': 'workspace:*',
@@ -264,14 +263,10 @@ describe('init generator', () => {
     expect(
       readJson<{ references: Array<{ path: string }> }>(tree, 'tsconfig.json')
         .references,
-    ).toEqual([
-      { path: './apps/web' },
-      { path: './packages/contracts' },
-    ]);
+    ).toEqual([{ path: './apps/web' }, { path: './packages/contracts' }]);
     expect(
-      readJson<{ scripts: Record<string, string> }>(tree, 'package.json').scripts[
-        'containers:build'
-      ],
+      readJson<{ scripts: Record<string, string> }>(tree, 'package.json')
+        .scripts['containers:build'],
     ).toBe('nx run-many -t container --projects=web --parallel=1');
   });
 
