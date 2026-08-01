@@ -25,9 +25,10 @@ describe('browser authentication adapter', () => {
     expect(await adapter.getAccessToken()).toBe('local-development-token');
   });
 
-  it('requires a provider-backed adapter in production', async () => {
+  it('requires a provider-backed adapter in every production build', async () => {
     const adapter = createDevelopmentAuthenticationAdapter({
       NODE_ENV: 'production',
+      NEXT_PUBLIC_AUTH_DEVELOPMENT_ENABLED: 'true',
       NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN: 'must-not-be-used',
     });
 
