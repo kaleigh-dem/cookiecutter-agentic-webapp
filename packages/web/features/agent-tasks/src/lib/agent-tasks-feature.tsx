@@ -16,6 +16,8 @@ export function AgentTasksFeature() {
   const client = useMemo(() => {
     const authentication = createDevelopmentAuthenticationAdapter({
       NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_AUTH_DEVELOPMENT_ENABLED:
+        process.env.NEXT_PUBLIC_AUTH_DEVELOPMENT_ENABLED,
       NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN:
         process.env.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN,
     });
