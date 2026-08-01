@@ -102,9 +102,7 @@ export function normalizeInitOptions(
 
   const repositoryOwner = schema.repositoryOwner.trim();
   if (
-    !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(
-      repositoryOwner,
-    )
+    !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(repositoryOwner)
   ) {
     throw new Error(
       'repositoryOwner must be a valid GitHub user or organization name.',
@@ -252,9 +250,7 @@ function updateEnvironmentValue(
   }
 
   const prefix =
-    content.length === 0 || content.endsWith('\n')
-      ? content
-      : `${content}\n`;
+    content.length === 0 || content.endsWith('\n') ? content : `${content}\n`;
   return `${prefix}${line}\n`;
 }
 
