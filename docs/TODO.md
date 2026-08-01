@@ -61,7 +61,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Validate names and incompatible option combinations before writing files.
   - Keep generation deterministic and covered by unit and snapshot tests.
 
-- [ ] **P10-04 Remove hard-coded template identity.**
+- [x] **P10-04 Remove hard-coded template identity.**
   - Parameterize `@agentic-webapp`, service names, Compose project names, OCI image names and labels, database defaults, telemetry service names, and custom TypeScript conditions.
   - Replace personal CODEOWNERS entries with generated owners or documented placeholders.
   - Add a repository-wide placeholder detector to CI.
