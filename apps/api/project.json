@@ -33,6 +33,12 @@
         }
       }
     },
+    "container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build --build-arg SERVICE=api --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} -f infra/docker/Dockerfile.node-service -t ${API_IMAGE:-agentic-webapp-api:local} ."
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
