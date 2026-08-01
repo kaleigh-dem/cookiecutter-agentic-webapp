@@ -75,9 +75,9 @@ function makeWorkspacePluginPrivate(tree: Tree): void {
   if (!tree.exists(path)) return;
 
   const packageJson = readJson<Record<string, unknown>>(tree, path);
-  const { publishConfig: _publishConfig, ...withoutPublishConfig } = packageJson;
+  delete packageJson.publishConfig;
   writeJson(tree, path, {
-    ...withoutPublishConfig,
+    ...packageJson,
     private: true,
   });
 }
