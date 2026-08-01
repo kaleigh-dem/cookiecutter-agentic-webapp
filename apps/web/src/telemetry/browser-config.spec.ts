@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveBrowserTelemetryConfig } from './browser-config';
+import {
+  createApiTracePropagationMatcher,
+  resolveBrowserTelemetryConfig,
+} from './browser-config';
 
 describe('browser telemetry configuration', () => {
   it('is disabled without an explicitly configured endpoint', () => {
@@ -38,5 +41,19 @@ describe('browser telemetry configuration', () => {
         NEXT_PUBLIC_OTEL_SDK_DISABLED: 'true',
       }).enabled,
     ).toBe(false);
+  });
+
+  it('matches API paths while rejecting lookalike origins', () => {
+    const matcher = createApiTracePropagationMatcher(
+      'https://api.example.test',
+    );
+
+    expect(matcher.test('https://api.example.test/api/agent-tasks')).toBe(
+      true,
+    );
+    expect(matcher.test('https://api.example.test')).toBe(true);
+    expect(matcher.test('https://api.example.test.evil.test/api')).toBe(
+      false,
+    );
   });
 });
