@@ -58,6 +58,13 @@ jobs:
           pnpm template:release:smoke -- \
             --artifact "$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" \
             --expected-version "$version"
+      - name: Exercise generated workspace lifecycle
+        run: |
+          version=$(node -p "require('./package.json').version")
+          pnpm template:workspace:e2e -- \
+            --artifact "$RUNNER_TEMP/template-release/agentic-webapp-workspace-plugin-${version}.tgz" \
+            --expected-version "$version" \
+            --workspace "$RUNNER_TEMP/generated-workspace-visible-ci"
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm nx affected -t e2e --parallel=1
       - name: Verify generated output and project graph
