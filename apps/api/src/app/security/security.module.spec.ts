@@ -68,24 +68,19 @@ describe('security boundary', () => {
   });
 
   it('uses a stable client identity across changing methods and URLs', () => {
-    const identity = {
+    const firstRequest = {
       socket: { remoteAddress: '203.0.113.10' },
+      method: 'GET',
+      url: '/api/agent-tasks?nonce=1',
+    };
+    const secondRequest = {
+      socket: { remoteAddress: '203.0.113.10' },
+      method: 'POST',
+      url: '/api/agent-tasks?nonce=2',
     };
 
-    expect(
-      createRateLimitKey({
-        ...identity,
-        method: 'GET',
-        url: '/api/agent-tasks?nonce=1',
-      }),
-    ).toBe('ip:203.0.113.10');
-    expect(
-      createRateLimitKey({
-        ...identity,
-        method: 'POST',
-        url: '/api/agent-tasks?nonce=2',
-      }),
-    ).toBe('ip:203.0.113.10');
+    expect(createRateLimitKey(firstRequest)).toBe('ip:203.0.113.10');
+    expect(createRateLimitKey(secondRequest)).toBe('ip:203.0.113.10');
   });
 
   it('prefers the authenticated subject when one is available', () => {
@@ -93,7 +88,6 @@ describe('security boundary', () => {
       createRateLimitKey({
         principal: { subject: 'actor-1' },
         socket: { remoteAddress: '203.0.113.10' },
-        url: '/api/agent-tasks?nonce=1',
       }),
     ).toBe('subject:actor-1');
   });
