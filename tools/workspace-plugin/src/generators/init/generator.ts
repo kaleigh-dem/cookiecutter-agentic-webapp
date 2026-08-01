@@ -312,16 +312,10 @@ function rewriteDatabaseDefaults(
   options: NormalizedInitOptions,
 ): string {
   return content
-    .replace(
-      /(POSTGRES_DB:\s*)app\b/g,
-      `$1${options.databaseName}`,
-    )
+    .replace(/(POSTGRES_DB:\s*)app\b/g, `$1${options.databaseName}`)
     .replace(/(POSTGRES_DB=)app\b/g, `$1${options.databaseName}`)
     .replace(/(\bpg_isready\b[^\n]*\s-d\s+)app\b/g, `$1${options.databaseName}`)
-    .replace(
-      /(postgresql:\/\/[^\s'"`]+\/)app\b/g,
-      `$1${options.databaseName}`,
-    );
+    .replace(/(postgresql:\/\/[^\s'"`]+\/)app\b/g, `$1${options.databaseName}`);
 }
 
 function rewriteIdentityContent(
