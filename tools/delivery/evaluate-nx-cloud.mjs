@@ -20,11 +20,12 @@ export function evaluateNxCloud(baseline) {
     );
   }
   if (p95 >= thresholds.p95TotalSeconds) {
-    reasons.push(`P95 CI duration ${p95}s exceeds ${thresholds.p95TotalSeconds}s.`);
+    reasons.push(
+      `P95 CI duration ${p95}s exceeds ${thresholds.p95TotalSeconds}s.`,
+    );
   }
   if (
-    baseline.peakConcurrentPullRequests >=
-    thresholds.peakConcurrentPullRequests
+    baseline.peakConcurrentPullRequests >= thresholds.peakConcurrentPullRequests
   ) {
     reasons.push(
       `Peak concurrent pull requests ${baseline.peakConcurrentPullRequests} meets ${thresholds.peakConcurrentPullRequests}.`,
@@ -51,7 +52,9 @@ export function evaluateNxCloud(baseline) {
 async function main() {
   const filePath = process.argv[2] ?? 'infra/ci/baseline.json';
   const baseline = JSON.parse(await readFile(filePath, 'utf8'));
-  process.stdout.write(`${JSON.stringify(evaluateNxCloud(baseline), null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify(evaluateNxCloud(baseline), null, 2)}\n`,
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
