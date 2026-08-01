@@ -28,6 +28,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 const IS_PUBLIC_KEY = 'security:is-public';
 const REQUIRED_PERMISSIONS_KEY = 'security:required-permissions';
 const SKIP_RATE_LIMIT_KEY = 'security:skip-rate-limit';
+const MAX_AUTHORIZATION_HEADER_LENGTH = 8_192;
+const BEARER_SCHEME = 'bearer';
 
 export const ACCESS_TOKEN_VERIFIER = Symbol('ACCESS_TOKEN_VERIFIER');
 
@@ -47,6 +49,7 @@ export interface SecurityEnvironment {
   readonly AUTH_DEVELOPMENT_PERMISSIONS?: string;
   readonly API_RATE_LIMIT_MAX?: string;
   readonly API_RATE_LIMIT_WINDOW_MS?: string;
+  readonly API_RATE_LIMIT_MAX_BUCKETS?: string;
 }
 
 interface AuthenticatedRequest extends IncomingMessage {
@@ -65,6 +68,15 @@ export interface SecurityAuditEvent {
   readonly resourceType: string;
   readonly resourceId?: string;
   readonly reason?: string;
+}
+
+export interface RateLimitRequestIdentity {
+  readonly principal?: Pick<AuthenticatedPrincipal, 'subject'>;
+  readonly socket: {
+    readonly remoteAddress?: string;
+  };
+  readonly method?: string;
+  readonly url?: string;
 }
 
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -87,12 +99,39 @@ export const CurrentPrincipal = createParamDecorator(
   },
 );
 
+function isHttpWhitespace(characterCode: number): boolean {
+  return characterCode === 0x20 || characterCode === 0x09;
+}
+
 export function extractBearerToken(
   authorizationHeader: string | string[] | undefined,
 ): string | undefined {
-  if (typeof authorizationHeader !== 'string') return undefined;
-  const match = /^Bearer\s+(.+)$/i.exec(authorizationHeader.trim());
-  return match?.[1]?.trim() || undefined;
+  if (
+    typeof authorizationHeader !== 'string' ||
+    authorizationHeader.length > MAX_AUTHORIZATION_HEADER_LENGTH
+  ) {
+    return undefined;
+  }
+
+  const value = authorizationHeader.trim();
+  if (
+    value.length <= BEARER_SCHEME.length ||
+    value.slice(0, BEARER_SCHEME.length).toLowerCase() !== BEARER_SCHEME
+  ) {
+    return undefined;
+  }
+
+  let tokenStart = BEARER_SCHEME.length;
+  if (!isHttpWhitespace(value.charCodeAt(tokenStart))) return undefined;
+  while (
+    tokenStart < value.length &&
+    isHttpWhitespace(value.charCodeAt(tokenStart))
+  ) {
+    tokenStart += 1;
+  }
+
+  const accessToken = value.slice(tokenStart).trim();
+  return accessToken || undefined;
 }
 
 export function hasRequiredPermissions(
@@ -217,30 +256,58 @@ interface RateLimitBucket {
   resetAt: number;
 }
 
+export function createRateLimitKey(
+  request: RateLimitRequestIdentity,
+): string {
+  const subject = request.principal?.subject.trim();
+  if (subject) return `subject:${subject}`;
+
+  const remoteAddress = request.socket.remoteAddress?.trim() || 'unknown';
+  return `ip:${remoteAddress}`;
+}
+
 export class FixedWindowRateLimiter {
   private readonly buckets = new Map<string, RateLimitBucket>();
 
   public constructor(
     private readonly maximumRequests: number,
     private readonly windowMs: number,
-  ) {}
+    private readonly maximumBuckets = 10_000,
+  ) {
+    if (maximumBuckets < 1) {
+      throw new Error('maximumBuckets must be a positive integer.');
+    }
+  }
+
+  public get bucketCount(): number {
+    return this.buckets.size;
+  }
 
   public consume(key: string, now = Date.now()): RateLimitBucket | undefined {
     const current = this.buckets.get(key);
-    const bucket =
-      !current || current.resetAt <= now
-        ? { count: 0, resetAt: now + this.windowMs }
-        : current;
-    bucket.count += 1;
-    this.buckets.set(key, bucket);
-
-    if (this.buckets.size > 10_000) {
-      for (const [bucketKey, value] of this.buckets) {
-        if (value.resetAt <= now) this.buckets.delete(bucketKey);
-      }
+    if (current && current.resetAt > now) {
+      current.count += 1;
+      return current.count > this.maximumRequests ? current : undefined;
     }
 
-    return bucket.count > this.maximumRequests ? bucket : undefined;
+    if (!current) this.reserveBucket(now);
+    const bucket = { count: 1, resetAt: now + this.windowMs };
+    this.buckets.set(key, bucket);
+    return undefined;
+  }
+
+  private reserveBucket(now: number): void {
+    if (this.buckets.size < this.maximumBuckets) return;
+
+    for (const [bucketKey, bucket] of this.buckets) {
+      if (bucket.resetAt <= now) this.buckets.delete(bucketKey);
+    }
+    if (this.buckets.size < this.maximumBuckets) return;
+
+    const oldestBucketKey = this.buckets.keys().next().value;
+    if (typeof oldestBucketKey === 'string') {
+      this.buckets.delete(oldestBucketKey);
+    }
   }
 }
 
@@ -254,6 +321,7 @@ export class RateLimitGuard implements CanActivate {
   private readonly limiter = new FixedWindowRateLimiter(
     positiveInteger(process.env.API_RATE_LIMIT_MAX, 120),
     positiveInteger(process.env.API_RATE_LIMIT_WINDOW_MS, 60_000),
+    positiveInteger(process.env.API_RATE_LIMIT_MAX_BUCKETS, 10_000),
   );
 
   public constructor(private readonly reflector: Reflector) {}
@@ -267,8 +335,7 @@ export class RateLimitGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const response = context.switchToHttp().getResponse<ServerResponse>();
-    const key = `${request.socket.remoteAddress ?? 'unknown'}:${request.method ?? 'UNKNOWN'}:${request.url ?? '/'}`;
-    const rejected = this.limiter.consume(key);
+    const rejected = this.limiter.consume(createRateLimitKey(request));
     if (!rejected) return true;
 
     response.setHeader(
