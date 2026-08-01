@@ -11,8 +11,7 @@ describe('preset generator', () => {
     writeJson(tree, 'package.json', {
       name: '@agentic-webapp/source',
       scripts: {
-        'initialize:workspace':
-          'nx g @agentic-webapp/workspace-plugin:preset',
+        'initialize:workspace': 'nx g @agentic-webapp/workspace-plugin:preset',
         'template:release:prepare': 'node tools/template/release.mjs prepare',
         'template:release:verify': 'node tools/template/release.mjs verify',
         'template:release:pack': 'node tools/template/release.mjs pack',
@@ -30,10 +29,7 @@ describe('preset generator', () => {
     tree.write('CHANGELOG.md', '# Changelog\n');
     tree.write('docs/template-releases.md', '# Releases\n');
     tree.write('tools/template/release.mjs', 'export {};\n');
-    tree.write(
-      'tools/template/smoke-release-artifact.mjs',
-      'export {};\n',
-    );
+    tree.write('tools/template/smoke-release-artifact.mjs', 'export {};\n');
 
     await presetGenerator(tree, {
       applicationSlug: 'smoke-app',
