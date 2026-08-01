@@ -3,6 +3,8 @@ name: Format diagnostic
 on:
   push:
     branches: [agent/phase-8-auth-security]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
