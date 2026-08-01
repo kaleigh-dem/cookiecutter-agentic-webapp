@@ -9,7 +9,13 @@ export interface BrowserAuthenticationAdapter {
 export function createDevelopmentAuthenticationAdapter(
   environment: BrowserAuthenticationEnvironment,
 ): BrowserAuthenticationAdapter {
-  if (environment.NODE_ENV === 'production') {
+  const production = environment.NODE_ENV === 'production';
+  const explicitlyEnabled =
+    environment.NEXT_PUBLIC_AUTH_DEVELOPMENT_ENABLED === 'true';
+  const configuredToken =
+    environment.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN?.trim();
+
+  if (production && (!explicitlyEnabled || !configuredToken)) {
     return {
       getAccessToken() {
         throw new Error(
@@ -19,9 +25,7 @@ export function createDevelopmentAuthenticationAdapter(
     };
   }
 
-  const accessToken =
-    environment.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN?.trim() ||
-    'local-development-token';
+  const accessToken = configuredToken || 'local-development-token';
   return {
     getAccessToken: () => accessToken,
   };
