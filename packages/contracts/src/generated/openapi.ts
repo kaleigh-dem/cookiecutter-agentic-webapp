@@ -94,8 +94,8 @@ export type components = {
   responses: never;
   parameters: {
     /**
-     * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
      * @deprecated
+     * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
      */
     ActorId: string;
     /** @description Optional caller correlation identifier propagated into persistence and jobs. */
@@ -120,8 +120,8 @@ export interface operations {
       query?: never;
       header?: {
         /**
-         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
          * @deprecated
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
          */
         'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
@@ -161,8 +161,8 @@ export interface operations {
       query?: never;
       header?: {
         /**
-         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
          * @deprecated
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
          */
         'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
