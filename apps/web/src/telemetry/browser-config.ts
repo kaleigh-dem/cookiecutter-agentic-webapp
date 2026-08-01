@@ -48,7 +48,7 @@ export function resolveBrowserTelemetryConfig(
         }
       : {}),
     apiOrigin: normalizeOrigin(
-      environment.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
+      environment.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000',
     ),
     deploymentEnvironment:
       environment.NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT ?? 'development',
