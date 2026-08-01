@@ -14,9 +14,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
-export type TelemetryEnvironment = Readonly<
-  Record<string, string | undefined>
->;
+export type TelemetryEnvironment = Readonly<Record<string, string | undefined>>;
 
 export interface NodeTelemetryOptions {
   readonly serviceName: string;
@@ -82,10 +80,14 @@ export function resolveNodeTelemetryConfig(
   const baseEndpoint = environment.OTEL_EXPORTER_OTLP_ENDPOINT?.trim();
   const traceEndpoint =
     environment.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?.trim() ||
-    (baseEndpoint ? normalizeBaseEndpoint(baseEndpoint, '/v1/traces') : undefined);
+    (baseEndpoint
+      ? normalizeBaseEndpoint(baseEndpoint, '/v1/traces')
+      : undefined);
   const metricEndpoint =
     environment.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT?.trim() ||
-    (baseEndpoint ? normalizeBaseEndpoint(baseEndpoint, '/v1/metrics') : undefined);
+    (baseEndpoint
+      ? normalizeBaseEndpoint(baseEndpoint, '/v1/metrics')
+      : undefined);
 
   return {
     enabled: !disabled && Boolean(traceEndpoint || metricEndpoint),
@@ -187,27 +189,25 @@ export async function runWithRemoteTrace<T>(
     ? propagation.extract(ROOT_CONTEXT, { traceparent: options.traceParent })
     : context.active();
 
-  return trace
-    .getTracer('@agentic-webapp/observability')
-    .startActiveSpan(
-      options.name,
-      {
-        kind: SpanKind.CONSUMER,
-        ...(options.attributes ? { attributes: options.attributes } : {}),
-      },
-      parentContext,
-      async (span) => {
-        try {
-          return await callback();
-        } catch (error) {
-          span.recordException(
-            error instanceof Error ? error : new Error(String(error)),
-          );
-          span.setStatus({ code: SpanStatusCode.ERROR });
-          throw error;
-        } finally {
-          span.end();
-        }
-      },
-    );
+  return trace.getTracer('@agentic-webapp/observability').startActiveSpan(
+    options.name,
+    {
+      kind: SpanKind.CONSUMER,
+      ...(options.attributes ? { attributes: options.attributes } : {}),
+    },
+    parentContext,
+    async (span) => {
+      try {
+        return await callback();
+      } catch (error) {
+        span.recordException(
+          error instanceof Error ? error : new Error(String(error)),
+        );
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw error;
+      } finally {
+        span.end();
+      }
+    },
+  );
 }

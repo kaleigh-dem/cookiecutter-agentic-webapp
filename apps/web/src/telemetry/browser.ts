@@ -12,9 +12,7 @@ import type { BrowserTelemetryConfig } from './browser-config';
 
 let started = false;
 
-export function startBrowserTelemetry(
-  config: BrowserTelemetryConfig,
-): boolean {
+export function startBrowserTelemetry(config: BrowserTelemetryConfig): boolean {
   if (!config.enabled || !config.traceEndpoint || started) return false;
 
   const provider = new WebTracerProvider({

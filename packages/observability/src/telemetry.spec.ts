@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  resolveNodeTelemetryConfig,
-  startNodeTelemetry,
-} from './telemetry';
+import { resolveNodeTelemetryConfig, startNodeTelemetry } from './telemetry';
 
 describe('node telemetry', () => {
   it('remains disabled when no OTLP endpoint is configured', () => {

@@ -33,10 +33,10 @@ export function resolveBrowserTelemetryConfig(
     enabled: !disabled && Boolean(endpoint),
     ...(endpoint
       ? {
-          traceEndpoint: environment
-            .NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-            ? endpoint
-            : normalizeTraceEndpoint(endpoint),
+          traceEndpoint:
+            environment.NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              ? endpoint
+              : normalizeTraceEndpoint(endpoint),
         }
       : {}),
     apiOrigin: normalizeOrigin(
