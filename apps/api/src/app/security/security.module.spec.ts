@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   FixedWindowRateLimiter,
+  createRateLimitKey,
   createTestPrincipal,
   extractBearerToken,
   hasRequiredPermissions,
@@ -15,6 +16,10 @@ describe('security boundary', () => {
     expect(extractBearerToken('bearer   spaced-token')).toBe('spaced-token');
     expect(extractBearerToken('Basic credentials')).toBeUndefined();
     expect(extractBearerToken(undefined)).toBeUndefined();
+  });
+
+  it('rejects oversized authorization headers without regular-expression work', () => {
+    expect(extractBearerToken(`Bearer ${' '.repeat(8_192)}token`)).toBeUndefined();
   });
 
   it('requires every declared permission', () => {
@@ -60,6 +65,37 @@ describe('security boundary', () => {
     ).toThrow(UnauthorizedException);
   });
 
+  it('uses a stable client identity across changing methods and URLs', () => {
+    const identity = {
+      socket: { remoteAddress: '203.0.113.10' },
+    };
+
+    expect(
+      createRateLimitKey({
+        ...identity,
+        method: 'GET',
+        url: '/api/agent-tasks?nonce=1',
+      }),
+    ).toBe('ip:203.0.113.10');
+    expect(
+      createRateLimitKey({
+        ...identity,
+        method: 'POST',
+        url: '/api/agent-tasks?nonce=2',
+      }),
+    ).toBe('ip:203.0.113.10');
+  });
+
+  it('prefers the authenticated subject when one is available', () => {
+    expect(
+      createRateLimitKey({
+        principal: { subject: 'actor-1' },
+        socket: { remoteAddress: '203.0.113.10' },
+        url: '/api/agent-tasks?nonce=1',
+      }),
+    ).toBe('subject:actor-1');
+  });
+
   it('enforces a fixed request window and resets after expiry', () => {
     const limiter = new FixedWindowRateLimiter(1, 1_000);
 
@@ -69,5 +105,17 @@ describe('security boundary', () => {
       resetAt: 2_000,
     });
     expect(limiter.consume('client', 2_000)).toBeUndefined();
+  });
+
+  it('strictly bounds stored client buckets under identity churn', () => {
+    const limiter = new FixedWindowRateLimiter(10, 60_000, 2);
+
+    limiter.consume('client-1', 1_000);
+    limiter.consume('client-2', 1_000);
+    limiter.consume('client-3', 1_000);
+
+    expect(limiter.bucketCount).toBe(2);
+    expect(limiter.consume('client-1', 1_001)).toBeUndefined();
+    expect(limiter.bucketCount).toBe(2);
   });
 });
