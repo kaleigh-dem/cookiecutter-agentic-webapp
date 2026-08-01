@@ -10,10 +10,25 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./migrations": {
+      "types": "./src/migrations.ts",
+      "import": "./src/migrations.ts",
+      "default": "./src/migrations.ts"
+    },
     "./schema": {
       "types": "./src/schema/index.ts",
       "import": "./src/schema/index.ts",
       "default": "./src/schema/index.ts"
+    },
+    "./seed": {
+      "types": "./src/seed.ts",
+      "import": "./src/seed.ts",
+      "default": "./src/seed.ts"
+    },
+    "./status": {
+      "types": "./src/status.ts",
+      "import": "./src/status.ts",
+      "default": "./src/status.ts"
     }
   },
   "dependencies": {
