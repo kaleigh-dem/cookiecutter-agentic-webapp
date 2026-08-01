@@ -71,9 +71,7 @@ function hasPlaceholderHostname(value) {
   if (placeholderHostnames.has(normalized)) return true;
 
   try {
-    return placeholderHostnames.has(
-      normalizeHostname(new URL(value).hostname),
-    );
+    return placeholderHostnames.has(normalizeHostname(new URL(value).hostname));
   } catch {
     return false;
   }
