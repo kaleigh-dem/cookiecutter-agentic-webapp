@@ -8,8 +8,23 @@ async function bootstrap() {
     import('./app/app.module.js'),
   ]);
   const app = await NestFactory.create(AppModule);
+  const expressApplication = app.getHttpAdapter().getInstance() as {
+    disable?: (setting: string) => void;
+  };
+  expressApplication.disable?.('x-powered-by');
   app.enableCors({
     origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    allowedHeaders: [
+      'authorization',
+      'content-type',
+      'traceparent',
+      'x-correlation-id',
+      'x-request-id',
+    ],
+    exposedHeaders: ['x-request-id', 'x-trace-id'],
+    credentials: false,
+    maxAge: 600,
   });
   app.setGlobalPrefix('api');
 
