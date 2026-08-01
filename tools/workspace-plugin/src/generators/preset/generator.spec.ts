@@ -3,6 +3,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { describe, expect, it } from 'vitest';
 
 import { templateVersion } from '../../template-version';
+import { upstreamTemplateRepository } from '../../upstream-template';
 import presetGenerator from './generator';
 
 describe('preset generator', () => {
@@ -53,7 +54,7 @@ describe('preset generator', () => {
         upstream: { repository: string; version: string };
       }>(tree, 'workspace.template.json').upstream,
     ).toEqual({
-      repository: 'kaleigh-dem/cookiecutter-agentic-webapp',
+      repository: upstreamTemplateRepository,
       version: templateVersion,
     });
 
