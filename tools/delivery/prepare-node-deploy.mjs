@@ -52,13 +52,13 @@ async function replaceDirectory(source, destination) {
   await cp(source, destination, { recursive: true });
 }
 
-async function findFiles(directory, fileName) {
+async function findFiles(directory, predicate) {
   const matches = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      matches.push(...(await findFiles(entryPath, fileName)));
-    } else if (entry.isFile() && entry.name === fileName) {
+      matches.push(...(await findFiles(entryPath, predicate)));
+    } else if (entry.isFile() && predicate(entry.name)) {
       matches.push(entryPath);
     }
   }
@@ -66,7 +66,10 @@ async function findFiles(directory, fileName) {
 }
 
 async function findCompiledRoot(buildDirectory, entryFile) {
-  const candidates = await findFiles(buildDirectory, entryFile);
+  const candidates = await findFiles(
+    buildDirectory,
+    (fileName) => fileName === entryFile,
+  );
   if (candidates.length === 0) {
     throw new Error(`${entryFile} was not emitted under ${buildDirectory}.`);
   }
@@ -78,6 +81,128 @@ async function findCompiledRoot(buildDirectory, entryFile) {
     return depthDifference || left.localeCompare(right);
   });
   return path.dirname(candidates[0]);
+}
+
+function moduleSpecifierPrefix(content, quoteIndex) {
+  const prefix = content
+    .slice(Math.max(0, quoteIndex - 80), quoteIndex)
+    .trimEnd();
+  return (
+    prefix.endsWith('from') ||
+    prefix.endsWith('import') ||
+    prefix.endsWith('import(')
+  );
+}
+
+function moduleSpecifierRanges(content) {
+  const ranges = [];
+
+  for (let index = 0; index < content.length; index += 1) {
+    const quote = content[index];
+    if (quote !== "'" && quote !== '"') continue;
+
+    const start = index + 1;
+    let end = start;
+    let escaped = false;
+    for (; end < content.length; end += 1) {
+      const character = content[end];
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (character === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (character === quote) break;
+    }
+
+    if (end >= content.length) break;
+    if (moduleSpecifierPrefix(content, index)) {
+      ranges.push({
+        end,
+        start,
+        value: content.slice(start, end),
+      });
+    }
+    index = end;
+  }
+
+  return ranges;
+}
+
+function splitSpecifierSuffix(specifier) {
+  const queryIndex = specifier.indexOf('?');
+  const hashIndex = specifier.indexOf('#');
+  const candidates = [queryIndex, hashIndex].filter((index) => index >= 0);
+  const suffixIndex = candidates.length > 0 ? Math.min(...candidates) : -1;
+
+  return suffixIndex < 0
+    ? { bare: specifier, suffix: '' }
+    : {
+        bare: specifier.slice(0, suffixIndex),
+        suffix: specifier.slice(suffixIndex),
+      };
+}
+
+async function exists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveRelativeSpecifier(filePath, specifier) {
+  if (!specifier.startsWith('./') && !specifier.startsWith('../')) {
+    return specifier;
+  }
+
+  const { bare, suffix } = splitSpecifierSuffix(specifier);
+  if (path.posix.extname(bare)) return specifier;
+
+  const target = path.resolve(path.dirname(filePath), bare);
+  if (await exists(`${target}.js`)) return `${bare}.js${suffix}`;
+  if (await exists(path.join(target, 'index.js'))) {
+    return `${bare.replace(/\/$/u, '')}/index.js${suffix}`;
+  }
+
+  throw new Error(
+    `Unable to resolve emitted module specifier ${specifier} from ${filePath}.`,
+  );
+}
+
+export async function rewriteModuleSpecifiers(filePath, content) {
+  const replacements = [];
+  for (const range of moduleSpecifierRanges(content)) {
+    const value = await resolveRelativeSpecifier(filePath, range.value);
+    if (value !== range.value) replacements.push({ ...range, value });
+  }
+
+  if (replacements.length === 0) return content;
+
+  let cursor = 0;
+  let rewritten = '';
+  for (const replacement of replacements) {
+    rewritten += content.slice(cursor, replacement.start);
+    rewritten += replacement.value;
+    cursor = replacement.end;
+  }
+  return rewritten + content.slice(cursor);
+}
+
+async function normalizeModuleSpecifiers(compiledRoot) {
+  const JavaScriptFiles = await findFiles(
+    compiledRoot,
+    (fileName) => path.extname(fileName) === '.js',
+  );
+
+  for (const filePath of JavaScriptFiles) {
+    const content = await readFile(filePath, 'utf8');
+    const rewritten = await rewriteModuleSpecifiers(filePath, content);
+    if (rewritten !== content) await writeFile(filePath, rewritten);
+  }
 }
 
 async function readManifest(packageDirectory) {
@@ -95,6 +220,7 @@ async function writeManifest(packageDirectory, manifest) {
 
 async function stageCompiledPackage(packageDirectory, buildDirectory) {
   const compiledRoot = await findCompiledRoot(buildDirectory, 'index.js');
+  await normalizeModuleSpecifiers(compiledRoot);
   await replaceDirectory(compiledRoot, path.join(packageDirectory, 'dist'));
   const manifest = {
     ...rewritePackageValue(await readManifest(packageDirectory)),
@@ -142,6 +268,7 @@ async function main() {
     service.buildDirectory,
     'main.js',
   );
+  await normalizeModuleSpecifiers(serviceCompiledRoot);
   await replaceDirectory(
     serviceCompiledRoot,
     path.join(service.appDirectory, 'dist'),
@@ -186,7 +313,9 @@ async function main() {
   );
 }
 
-void main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
+}
