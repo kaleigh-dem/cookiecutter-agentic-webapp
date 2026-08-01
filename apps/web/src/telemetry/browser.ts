@@ -12,6 +12,14 @@ import type { BrowserTelemetryConfig } from './browser-config';
 
 let started = false;
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function apiOriginTracePropagationMatcher(apiOrigin: string): RegExp {
+  return new RegExp(`^${escapeRegExp(apiOrigin)}(?:/|$)`);
+}
+
 export function startBrowserTelemetry(config: BrowserTelemetryConfig): boolean {
   if (!config.enabled || !config.traceEndpoint || started) return false;
 
@@ -39,7 +47,9 @@ export function startBrowserTelemetry(config: BrowserTelemetryConfig): boolean {
     instrumentations: [
       new DocumentLoadInstrumentation(),
       new FetchInstrumentation({
-        propagateTraceHeaderCorsUrls: [config.apiOrigin],
+        propagateTraceHeaderCorsUrls: [
+          apiOriginTracePropagationMatcher(config.apiOrigin),
+        ],
       }),
     ],
   });
