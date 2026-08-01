@@ -93,14 +93,15 @@ export type components = {
   };
   responses: never;
   parameters: {
-    /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
-    ActorId: string;
     /** @description Optional caller correlation identifier propagated into persistence and jobs. */
     CorrelationId: string;
   };
   requestBodies: never;
   headers: never;
   pathItems: never;
+  securitySchemes: {
+    BearerAuth: never;
+  };
 };
 export type SchemaAgentTaskResponse =
   components['schemas']['AgentTaskResponse'];
@@ -108,16 +109,13 @@ export type SchemaCreateAgentTaskRequest =
   components['schemas']['CreateAgentTaskRequest'];
 export type SchemaErrorResponse = components['schemas']['ErrorResponse'];
 export type SchemaHealthResponse = components['schemas']['HealthResponse'];
-export type ParameterActorId = components['parameters']['ActorId'];
 export type ParameterCorrelationId = components['parameters']['CorrelationId'];
 export type $defs = Record<string, never>;
 export interface operations {
   createAgentTask: {
     parameters: {
       query?: never;
-      header: {
-        /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
-        'x-actor-id': components['parameters']['ActorId'];
+      header?: {
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };
@@ -153,9 +151,7 @@ export interface operations {
   getAgentTask: {
     parameters: {
       query?: never;
-      header: {
-        /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
-        'x-actor-id': components['parameters']['ActorId'];
+      header?: {
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };
