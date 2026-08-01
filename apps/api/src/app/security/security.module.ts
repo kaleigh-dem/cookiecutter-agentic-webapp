@@ -72,9 +72,7 @@ export interface SecurityAuditEvent {
 
 export interface RateLimitRequestIdentity {
   readonly principal?: Pick<AuthenticatedPrincipal, 'subject'>;
-  readonly socket: {
-    readonly remoteAddress?: string;
-  };
+  readonly socket: Pick<IncomingMessage['socket'], 'remoteAddress'>;
   readonly method?: string;
   readonly url?: string;
 }
