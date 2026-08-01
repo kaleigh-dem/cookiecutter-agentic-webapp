@@ -36,6 +36,7 @@ jobs:
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
       - run: pnpm format:check
+      - run: pnpm delivery:check
       - run: pnpm typecheck
       - name: Build workspace
         run: pnpm build
