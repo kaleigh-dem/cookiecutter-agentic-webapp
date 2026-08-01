@@ -2,10 +2,11 @@
   "components": {
     "parameters": {
       "ActorId": {
-        "description": "Development actor context. Phase 8 replaces this adapter with authenticated identity.",
+        "deprecated": true,
+        "description": "Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.",
         "in": "header",
         "name": "x-actor-id",
-        "required": true,
+        "required": false,
         "schema": {
           "minLength": 1,
           "type": "string"
@@ -108,12 +109,20 @@
         "required": ["service", "status"],
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "Provider-issued access token validated by the API authentication adapter.",
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
     "description": "The canonical HTTP contract for the API application.",
     "title": "Agentic Webapp API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.0",
@@ -161,6 +170,11 @@
             "description": "The request was invalid."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create an agent task",
         "tags": ["agent-tasks"]
       }
@@ -217,6 +231,11 @@
             "description": "The task does not exist."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Read an owned agent task",
         "tags": ["agent-tasks"]
       }
@@ -254,7 +273,7 @@
       "name": "health"
     },
     {
-      "description": "Actor-scoped tasks queued for agent execution.",
+      "description": "Authenticated actor-scoped tasks queued for agent execution.",
       "name": "agent-tasks"
     }
   ]

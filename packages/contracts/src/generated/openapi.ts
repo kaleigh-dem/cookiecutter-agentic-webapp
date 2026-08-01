@@ -93,7 +93,10 @@ export type components = {
   };
   responses: never;
   parameters: {
-    /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
+    /**
+     * @deprecated
+     * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+     */
     ActorId: string;
     /** @description Optional caller correlation identifier propagated into persistence and jobs. */
     CorrelationId: string;
@@ -115,9 +118,12 @@ export interface operations {
   createAgentTask: {
     parameters: {
       query?: never;
-      header: {
-        /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
-        'x-actor-id': components['parameters']['ActorId'];
+      header?: {
+        /**
+         * @deprecated
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+         */
+        'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };
@@ -153,9 +159,12 @@ export interface operations {
   getAgentTask: {
     parameters: {
       query?: never;
-      header: {
-        /** @description Development actor context. Phase 8 replaces this adapter with authenticated identity. */
-        'x-actor-id': components['parameters']['ActorId'];
+      header?: {
+        /**
+         * @deprecated
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+         */
+        'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };

@@ -33,7 +33,7 @@
     "e2e": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "playwright test -c packages/web/features/agent-tasks/playwright.config.ts"
+        "command": "node packages/web/features/agent-tasks/scripts/run-e2e.mjs"
       }
     }
   }

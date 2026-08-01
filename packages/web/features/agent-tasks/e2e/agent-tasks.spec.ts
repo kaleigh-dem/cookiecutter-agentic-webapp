@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('creates a correlated task through the generated browser client', async ({
+test('creates an authenticated correlated task through the generated client', async ({
   page,
 }) => {
   const taskId = '11111111-1111-4111-8111-111111111111';
   await page.route('http://localhost:4000/api/agent-tasks', async (route) => {
     const request = route.request();
     expect(request.method()).toBe('POST');
-    expect(request.headers()['x-actor-id']).toBe(
-      '00000000-0000-4000-8000-000000000001',
+    expect(request.headers().authorization).toBe(
+      'Bearer local-development-token',
     );
+    expect(request.headers()['x-actor-id']).toBeUndefined();
     const body = request.postDataJSON() as { title: string; prompt: string };
     expect(body).toEqual({
       title: 'Summarize feedback',

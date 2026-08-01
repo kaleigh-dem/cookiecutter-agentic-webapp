@@ -32,6 +32,13 @@ import {
   Post,
 } from '@nestjs/common';
 
+import {
+  type AuthenticatedPrincipal,
+  CurrentPrincipal,
+  RequirePermissions,
+  SecurityAuditService,
+} from '../security/security.module';
+
 const taskIdPipe = new ParseUUIDPipe();
 
 function toResponse(task: AgentTask): AgentTaskResponse {
@@ -43,16 +50,6 @@ function toResponse(task: AgentTask): AgentTaskResponse {
     correlationId: task.correlationId,
     createdAt: task.createdAt.toISOString(),
   };
-}
-
-function requireActor(actorId: string | undefined): string {
-  if (!actorId?.trim()) {
-    throw new BadRequestException({
-      code: 'actor_required',
-      message: 'x-actor-id is required.',
-    });
-  }
-  return actorId.trim();
 }
 
 async function requireTaskId(taskId: string): Promise<string> {
@@ -67,17 +64,19 @@ export class AgentTasksController {
   public constructor(
     private readonly createAgentTask: CreateAgentTask,
     private readonly getAgentTask: GetAgentTask,
+    private readonly audit: SecurityAuditService,
   ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions('agent-tasks:write')
   public async create(
     @Body() body: CreateAgentTaskRequest,
-    @Headers('x-actor-id') actorHeader?: string,
+    @CurrentPrincipal() principal: AuthenticatedPrincipal,
     @Headers('x-correlation-id') correlationId?: string,
   ): Promise<CreateAgentTaskSuccessResponse> {
     try {
-      const actorId = requireActor(actorHeader);
+      const actorId = principal.subject;
       const normalizedCorrelationId = correlationId?.trim();
       const context =
         getCorrelationContext() ??
@@ -102,6 +101,13 @@ export class AgentTasksController {
             ? { correlationId: context.correlationId }
             : {}),
       });
+      this.audit.record({
+        action: 'agent-task.create',
+        actorId,
+        outcome: 'allowed',
+        resourceType: 'agent-task',
+        resourceId: task.id,
+      });
       return toResponse(task);
     } catch (error) {
       if (error instanceof AgentTaskValidationError) {
@@ -115,16 +121,23 @@ export class AgentTasksController {
   }
 
   @Get(':taskId')
+  @RequirePermissions('agent-tasks:read')
   public async get(
     @Param('taskId') rawTaskId: string,
-    @Headers('x-actor-id') actorHeader?: string,
+    @CurrentPrincipal() principal: AuthenticatedPrincipal,
   ): Promise<GetAgentTaskSuccessResponse> {
     const taskId = await requireTaskId(rawTaskId);
 
     try {
-      return toResponse(
-        await this.getAgentTask.execute(taskId, requireActor(actorHeader)),
-      );
+      const task = await this.getAgentTask.execute(taskId, principal.subject);
+      this.audit.record({
+        action: 'agent-task.read',
+        actorId: principal.subject,
+        outcome: 'allowed',
+        resourceType: 'agent-task',
+        resourceId: task.id,
+      });
+      return toResponse(task);
     } catch (error) {
       if (error instanceof AgentTaskNotFoundError) {
         throw new NotFoundException({
@@ -133,6 +146,14 @@ export class AgentTasksController {
         });
       }
       if (error instanceof AgentTaskForbiddenError) {
+        this.audit.record({
+          action: 'agent-task.read',
+          actorId: principal.subject,
+          outcome: 'denied',
+          resourceType: 'agent-task',
+          resourceId: taskId,
+          reason: 'not_owner',
+        });
         throw new ForbiddenException({
           code: 'forbidden',
           message: error.message,

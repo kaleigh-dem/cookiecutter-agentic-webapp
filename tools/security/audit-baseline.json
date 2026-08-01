@@ -1,0 +1,55 @@
+{
+  "expiresOn": "2026-09-01",
+  "advisories": [
+    {
+      "id": "GHSA-3jxr-9vmj-r5cp",
+      "package": "brace-expansion",
+      "reason": "Transitive through the current stable Nx release; remove when Nx resolves the patched dependency."
+    },
+    {
+      "id": "GHSA-mh99-v99m-4gvg",
+      "package": "brace-expansion",
+      "reason": "Transitive through the current stable Nx release; remove when Nx resolves the patched dependency."
+    },
+    {
+      "id": "GHSA-gcfj-64vw-6mp9",
+      "package": "axios",
+      "reason": "Transitive through the current stable Nx release; remove when Nx resolves axios 1.18 or later."
+    },
+    {
+      "id": "GHSA-f88m-g3jw-g9cj",
+      "package": "sharp",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
+    },
+    {
+      "id": "GHSA-2fcj-gj27-279x",
+      "package": "sharp",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
+    },
+    {
+      "id": "GHSA-523x-vhfw-6r76",
+      "package": "sharp",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
+    },
+    {
+      "id": "GHSA-jmwm-wc68-mhwm",
+      "package": "sharp",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
+    },
+    {
+      "id": "GHSA-r98w-4fp7-m9c7",
+      "package": "sharp",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
+    },
+    {
+      "id": "GHSA-6g55-p6wh-862q",
+      "package": "postcss",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js resolves the patched PostCSS release."
+    },
+    {
+      "id": "GHSA-r28c-9q8g-f849",
+      "package": "postcss",
+      "reason": "Transitive through the current stable Next.js release; remove when Next.js resolves the patched PostCSS release."
+    }
+  ]
+}
