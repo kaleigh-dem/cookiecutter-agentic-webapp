@@ -1,6 +1,7 @@
 name: Format diagnostic
 
 on:
+  pull_request:
   push:
     branches: [agent/phase-8-auth-security]
 
