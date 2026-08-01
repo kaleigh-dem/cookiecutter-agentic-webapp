@@ -32,6 +32,7 @@
     "preview:down": "node tools/delivery/start-preview.mjs down",
     "preview:smoke": "node tools/delivery/smoke-test.mjs",
     "release:plan": "node tools/delivery/release-plan.mjs",
+    "initialize:workspace": "nx g @agentic-webapp/workspace-plugin:init",
     "generate:domain": "nx g @agentic-webapp/workspace-plugin:domain",
     "generate:feature": "nx g @agentic-webapp/workspace-plugin:feature",
     "generate:job": "nx g @agentic-webapp/workspace-plugin:job",
