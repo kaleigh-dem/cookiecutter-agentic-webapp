@@ -6,7 +6,9 @@ const baseline = JSON.parse(
 );
 const expiresAt = Date.parse(`${baseline.expiresOn}T23:59:59Z`);
 if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) {
-  console.error(`The security audit baseline expired on ${baseline.expiresOn}.`);
+  console.error(
+    `The security audit baseline expired on ${baseline.expiresOn}.`,
+  );
   process.exit(1);
 }
 
@@ -44,7 +46,11 @@ function visit(value, path = []) {
       (match) => match[0],
     );
     const packageName =
-      value.name ?? value.module_name ?? value.package ?? path.at(-1) ?? 'unknown';
+      value.name ??
+      value.module_name ??
+      value.package ??
+      path.at(-1) ??
+      'unknown';
     if (ids.length === 0) {
       highSeverity.set(`unidentified:${path.join('.')}`, {
         id: 'unidentified',
