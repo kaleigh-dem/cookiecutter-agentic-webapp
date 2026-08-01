@@ -1,6 +1,17 @@
 {
   "components": {
     "parameters": {
+      "ActorId": {
+        "deprecated": true,
+        "description": "Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.",
+        "in": "header",
+        "name": "x-actor-id",
+        "required": false,
+        "schema": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
       "CorrelationId": {
         "description": "Optional caller correlation identifier propagated into persistence and jobs.",
         "in": "header",
@@ -121,6 +132,9 @@
         "operationId": "createAgentTask",
         "parameters": [
           {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
             "$ref": "#/components/parameters/CorrelationId"
           }
         ],
@@ -177,6 +191,9 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ActorId"
           },
           {
             "$ref": "#/components/parameters/CorrelationId"
