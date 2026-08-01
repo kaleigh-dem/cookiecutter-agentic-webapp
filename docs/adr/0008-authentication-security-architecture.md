@@ -17,7 +17,7 @@ Use a provider-neutral authentication boundary:
 - Authorization decisions remain inside application policy boundaries and domain services.
 - Security-sensitive actions emit audit events with actor, action, resource, and correlation identifiers.
 
-Development environments may use deterministic test identities, but production deployments must use managed identity providers, key rotation, and HTTPS-only transport.
+Development environments may use deterministic test identities. The browser development adapter is disabled for every production build and cannot be re-enabled with public build-time configuration. Production deployments must use managed identity providers, key rotation, and HTTPS-only transport.
 
 ## Consequences
 
