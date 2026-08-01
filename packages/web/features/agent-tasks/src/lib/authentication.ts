@@ -19,11 +19,8 @@ export function createDevelopmentAuthenticationAdapter(
     };
   }
 
-  const accessToken =
-    environment.NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN?.trim() ||
-    'local-development-token';
   return {
-    getAccessToken: () => accessToken,
+    getAccessToken: () => 'local-development-token',
   };
 }
 
