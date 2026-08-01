@@ -10,6 +10,7 @@ import {
   type ExecutionContext,
   ForbiddenException,
   type ExceptionFilter,
+  Global,
   HttpException,
   HttpStatus,
   Inject,
@@ -50,7 +51,6 @@ export interface SecurityEnvironment {
 
 interface AuthenticatedRequest extends IncomingMessage {
   principal?: AuthenticatedPrincipal;
-  originalUrl?: string;
 }
 
 interface JsonResponse extends ServerResponse {
@@ -150,8 +150,8 @@ export function verifyDevelopmentAccessToken(
 
 @Injectable()
 export class EnvironmentAccessTokenVerifier implements AccessTokenVerifier {
-  public async verify(accessToken: string): Promise<AuthenticatedPrincipal> {
-    return verifyDevelopmentAccessToken(accessToken, process.env);
+  public verify(accessToken: string): Promise<AuthenticatedPrincipal> {
+    return Promise.resolve(verifyDevelopmentAccessToken(accessToken, process.env));
   }
 }
 
@@ -179,7 +179,10 @@ export class AuthenticationGuard implements CanActivate {
       });
     }
 
-    request.principal = await this.verifier.verify(accessToken);
+    const principal = await this.verifier.verify(accessToken);
+    request.principal = principal;
+    const correlation = getCorrelationContext();
+    if (correlation) correlation.userId = principal.subject;
     return true;
   }
 }
@@ -240,11 +243,16 @@ export class FixedWindowRateLimiter {
   }
 }
 
+function positiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private readonly limiter = new FixedWindowRateLimiter(
-    Number(process.env.API_RATE_LIMIT_MAX ?? 120),
-    Number(process.env.API_RATE_LIMIT_WINDOW_MS ?? 60_000),
+    positiveInteger(process.env.API_RATE_LIMIT_MAX, 120),
+    positiveInteger(process.env.API_RATE_LIMIT_WINDOW_MS, 60_000),
   );
 
   public constructor(private readonly reflector: Reflector) {}
@@ -287,7 +295,10 @@ export class SecurityHeadersMiddleware {
       'content-security-policy',
       "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
     );
-    response.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=()');
+    response.setHeader(
+      'permissions-policy',
+      'camera=(), microphone=(), geolocation=()',
+    );
     response.setHeader('referrer-policy', 'no-referrer');
     response.setHeader('x-content-type-options', 'nosniff');
     response.setHeader('x-frame-options', 'DENY');
@@ -353,6 +364,7 @@ export class SecurityAuditService {
   }
 }
 
+@Global()
 @Module({
   providers: [
     SecurityAuditService,
