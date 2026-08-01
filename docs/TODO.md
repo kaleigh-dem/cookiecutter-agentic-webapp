@@ -74,7 +74,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Publish the preset or plugin through a stable distribution channel.
   - Add a minimal release smoke test that installs the published artifact and invokes its preset entry point.
 
-- [ ] **P10-02 Add generated-workspace end-to-end CI.**
+- [x] **P10-02 Add generated-workspace end-to-end CI.**
   - Depend on P10-03, P10-04, and P10-05 so CI validates a parameterized, identity-neutral, released artifact.
   - Create a clean temporary workspace from the released preset or tagged template through the documented Nx command.
   - Use a name and package scope that differ from this repository.
