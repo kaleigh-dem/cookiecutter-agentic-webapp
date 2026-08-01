@@ -1,7 +1,7 @@
 import { resolveBrowserTelemetryConfig } from './telemetry/browser-config';
 
 const config = resolveBrowserTelemetryConfig({
-  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT:
     process.env.NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT,
   NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT:
