@@ -52,7 +52,7 @@ interface TelemetryState {
   readonly handles: Map<string, Promise<NodeTelemetryHandle>>;
 }
 
-const telemetryStateKey = Symbol.for('agentic-webapp.telemetry.state');
+const telemetryStateKey = '__agenticWebappTelemetryState__' as const;
 
 function getTelemetryState(): TelemetryState {
   const globalRecord = globalThis as typeof globalThis & {
@@ -191,7 +191,10 @@ export async function runWithRemoteTrace<T>(
     .getTracer('@agentic-webapp/observability')
     .startActiveSpan(
       options.name,
-      { kind: SpanKind.CONSUMER, attributes: options.attributes },
+      {
+        kind: SpanKind.CONSUMER,
+        ...(options.attributes ? { attributes: options.attributes } : {}),
+      },
       parentContext,
       async (span) => {
         try {
