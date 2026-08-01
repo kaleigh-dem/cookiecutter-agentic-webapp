@@ -47,16 +47,23 @@ function rewritePackageValue(value, key = '') {
   return compiledTarget(value, key);
 }
 
+async function writeManifest(packageDirectory, transform) {
+  const manifestPath = path.join(packageDirectory, 'package.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const transformed = transform(manifest);
+  await writeFile(manifestPath, `${JSON.stringify(transformed, null, 2)}\n`);
+}
+
 async function stageCompiledPackage(packageDirectory, buildDirectory) {
   const destination = path.join(packageDirectory, 'dist');
   await rm(destination, { force: true, recursive: true });
   await mkdir(destination, { recursive: true });
   await cp(buildDirectory, destination, { recursive: true });
 
-  const manifestPath = path.join(packageDirectory, 'package.json');
-  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  const rewritten = rewritePackageValue(manifest);
-  await writeFile(manifestPath, `${JSON.stringify(rewritten, null, 2)}\n`);
+  await writeManifest(packageDirectory, (manifest) => ({
+    ...rewritePackageValue(manifest),
+    files: ['dist'],
+  }));
 }
 
 async function main() {
@@ -73,6 +80,10 @@ async function main() {
   await rm(appDist, { force: true, recursive: true });
   await mkdir(appDist, { recursive: true });
   await cp(service.buildDirectory, appDist, { recursive: true });
+  await writeManifest(service.appDirectory, (manifest) => ({
+    ...manifest,
+    files: ['dist'],
+  }));
 
   for (const [packageDirectory, buildDirectory] of service.workspacePackages) {
     await stageCompiledPackage(packageDirectory, buildDirectory);
