@@ -115,12 +115,14 @@ Exit criteria: protected reference-feature behavior has automated authorization 
 
 ## Phase 9 — Delivery, performance, and scale
 
-- [ ] **P9-01** Add production container targets and minimal runtime images.
-- [ ] **P9-02** Add environment-specific deployment examples and configuration validation.
-- [ ] **P9-03** Add release/versioning and migration-order automation.
-- [ ] **P9-04** Add baseline load tests and performance budgets.
-- [ ] **P9-05** Add preview-environment guidance and smoke tests.
-- [ ] **P9-06** Evaluate Nx Cloud using measured CI duration and team-concurrency thresholds.
-- [ ] **P9-07** Add disaster-recovery and rollback runbooks.
+- [x] **P9-01** Add production container targets and minimal runtime images.
+- [x] **P9-02** Add environment-specific deployment examples and configuration validation.
+- [x] **P9-03** Add release/versioning and migration-order automation.
+- [x] **P9-04** Add baseline load tests and performance budgets.
+- [x] **P9-05** Add preview-environment guidance and smoke tests.
+- [x] **P9-06** Evaluate Nx Cloud using measured CI duration and team-concurrency thresholds.
+- [x] **P9-07** Add disaster-recovery and rollback runbooks.
+
+CI run #265 verified deterministic contracts, formatting, delivery policy, typechecking, production builds, authenticated Playwright coverage, generated-output validation, a clean checkout, lint, and unit tests. Security run #88 verified dependency audit and license policy, tracked-file secret scanning, and CodeQL analysis. Delivery run #29 built the production API, worker, and web images, applied migrations, started the preview stack, passed smoke checks and live performance budgets, and completed deterministic teardown.
 
 Exit criteria: releases are repeatable, observable, reversible, and measured against explicit performance budgets.
