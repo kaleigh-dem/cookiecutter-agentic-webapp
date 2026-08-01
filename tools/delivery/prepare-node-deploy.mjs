@@ -93,7 +93,9 @@ async function main() {
   );
 
   if (result.status !== 0) {
-    throw new Error(`pnpm deploy failed with status ${result.status ?? 'unknown'}.`);
+    throw new Error(
+      `pnpm deploy failed with status ${result.status ?? 'unknown'}.`,
+    );
   }
 }
 
