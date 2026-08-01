@@ -12,9 +12,5 @@
   "generators": "./generators.json",
   "nx": {
     "generators": "./generators.json"
-  },
-  "peerDependencies": {
-    "@nx/devkit": "23.1.0",
-    "nx": "23.1.0"
   }
 }
