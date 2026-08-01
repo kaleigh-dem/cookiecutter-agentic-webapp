@@ -22,6 +22,8 @@ describe('CreateAgentTask', () => {
       userId: '33333333-3333-4333-8333-333333333333',
       requestId: 'request-1',
       traceId: 'trace-1',
+      traceParent:
+        '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       title: '  Summarize customer feedback  ',
       prompt: '  Group the feedback into themes.  ',
     });
@@ -40,6 +42,8 @@ describe('CreateAgentTask', () => {
       prompt: 'Group the feedback into themes.',
       requestId: 'request-1',
       traceId: 'trace-1',
+      traceParent:
+        '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       jobId: '44444444-4444-4444-8444-444444444444',
       correlationId: result.correlationId,
       occurredAt: '2026-07-31T17:00:00.000Z',
