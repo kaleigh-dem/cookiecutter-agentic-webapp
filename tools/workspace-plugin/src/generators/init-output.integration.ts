@@ -184,13 +184,10 @@ async function main(): Promise<void> {
     );
     assert.match(
       first['workspace.template.json'] ?? '',
-      new RegExp(`"version": "${templateVersion.replaceAll('.', '\\.') }"`),
+      new RegExp(`"version": "${templateVersion.replaceAll('.', '\\.')}"`),
     );
     assert.match(first['package.json'] ?? '', /"name": "@smoke\/smoke-app"/);
-    assert.doesNotMatch(
-      first['package.json'] ?? '',
-      /template:release:/,
-    );
+    assert.doesNotMatch(first['package.json'] ?? '', /template:release:/);
     assert.match(
       first['tools/workspace-plugin/package.json'] ?? '',
       /"name": "@smoke\/workspace-plugin"/,
