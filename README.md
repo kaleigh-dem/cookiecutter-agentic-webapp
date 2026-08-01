@@ -2,7 +2,7 @@
 
 A production-minded Nx monorepo template for a large TypeScript web application operated by humans and coding agents.
 
-> The repository name is retained from the original Cookiecutter prototype. The template itself now uses Nx directly.
+> Upstream template: https://github.com/kaleigh-dem/cookiecutter-agentic-webapp. The repository name is retained from the original Cookiecutter prototype; generated workspaces use their configured identity throughout.
 
 ## Why Nx
 
@@ -31,16 +31,18 @@ npx create-nx-workspace@23.1.0 my-workspace \
 
 Or clone this repository directly while the template migration is under review.
 
-After installing dependencies, record the generated repository's identity and profiles:
+After installing dependencies, replace the template identity and record the generated repository's profiles:
 
 ```bash
 pnpm initialize:workspace my-workspace \
   --displayName="My Workspace" \
   --packageScope=@my-org \
   --repositoryOwner=my-org
+pnpm install --frozen-lockfile
+pnpm template:identity:check
 ```
 
-See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, and optional AI settings.
+Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
 
 ## Runtime requirements
 
