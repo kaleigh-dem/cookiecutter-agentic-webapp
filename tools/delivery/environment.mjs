@@ -114,7 +114,9 @@ export function validateDeploymentEnvironment(
     deploymentEnvironment !== 'development' &&
     values.NODE_ENV !== 'production'
   ) {
-    issues.push('Preview and production deployments require NODE_ENV=production.');
+    issues.push(
+      'Preview and production deployments require NODE_ENV=production.',
+    );
   }
 
   if (values.API_PORT && !isPositiveInteger(values.API_PORT)) {
@@ -171,10 +173,7 @@ export function validateDeploymentEnvironment(
     issues.push('OTEL_EXPORTER_OTLP_ENDPOINT must be an HTTP(S) URL.');
   }
 
-  if (
-    deploymentEnvironment === 'production' &&
-    values.AUTH_DEVELOPMENT_TOKEN
-  ) {
+  if (deploymentEnvironment === 'production' && values.AUTH_DEVELOPMENT_TOKEN) {
     issues.push('AUTH_DEVELOPMENT_TOKEN must not be configured in production.');
   }
 
