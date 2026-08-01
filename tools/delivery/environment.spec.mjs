@@ -21,7 +21,9 @@ const validProduction = {
 describe('deployment environment validation', () => {
   it('parses comments, whitespace, and quoted values', () => {
     expect(
-      parseEnvironmentFile("# comment\n API_PORT = '4000' \nNODE_ENV=production\n"),
+      parseEnvironmentFile(
+        "# comment\n API_PORT = '4000' \nNODE_ENV=production\n",
+      ),
     ).toEqual({ API_PORT: '4000', NODE_ENV: 'production' });
   });
 
