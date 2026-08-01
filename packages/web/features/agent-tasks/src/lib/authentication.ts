@@ -33,7 +33,9 @@ export function createAuthenticationHeaders(
   return async () => {
     const accessToken = (await adapter.getAccessToken()).trim();
     if (!accessToken) {
-      throw new Error('The authentication adapter returned an empty access token.');
+      throw new Error(
+        'The authentication adapter returned an empty access token.',
+      );
     }
     return { authorization: `Bearer ${accessToken}` };
   };
