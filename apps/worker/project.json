@@ -24,6 +24,12 @@
         "runBuildTargetDependencies": false
       }
     },
+    "container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build --build-arg SERVICE=worker --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} -f infra/docker/Dockerfile.node-service -t ${WORKER_IMAGE:-agentic-webapp-worker:local} ."
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {

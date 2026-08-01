@@ -19,6 +19,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - Nx project graph, caching, affected commands, and local generators
 - Nx MCP configuration and agent instructions
 - PostgreSQL and Redis development services
+- production OCI images, preview orchestration, release plans, and performance budgets
 - GitHub Actions using standalone and affected Nx validation
 
 ## Create a workspace
@@ -46,18 +47,27 @@ pnpm dev
 pnpm check
 ```
 
-The expanded validation contract is:
+The validation contract includes workspace synchronization, generated contracts, formatting, security policy, delivery configuration, performance budgets, linting, typechecking, tests, and production builds. A production build must leave the Git working tree clean.
+
+## Build and validate release artifacts
 
 ```bash
-pnpm sync:check
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm containers:build
+pnpm preview:up
+pnpm performance:load
+pnpm preview:down
 ```
 
-A production build must leave the Git working tree clean.
+Generate an immutable, migration-ordered release plan:
+
+```bash
+node tools/delivery/release-plan.mjs \
+  --environment production \
+  --image-prefix ghcr.io/OWNER/agentic-webapp \
+  --version 1.2.3
+```
+
+See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/disaster-recovery.md` before operating an environment.
 
 ## Generate approved structure
 

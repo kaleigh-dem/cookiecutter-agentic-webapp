@@ -1,0 +1,72 @@
+name: agentic-webapp-production
+
+services:
+  api:
+    image: ${API_IMAGE}
+    init: true
+    restart: always
+    environment:
+      API_PORT: ${API_PORT}
+      API_RATE_LIMIT_MAX: ${API_RATE_LIMIT_MAX}
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS}
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      NODE_ENV: production
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_SERVICE_VERSION: ${APP_VERSION}
+      REDIS_URL: ${REDIS_URL}
+      WEB_ORIGIN: ${WEB_ORIGIN}
+    expose:
+      - '4000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/api/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    labels:
+      app.agentic-webapp/version: ${APP_VERSION}
+
+  worker:
+    image: ${WORKER_IMAGE}
+    init: true
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      NODE_ENV: production
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_SERVICE_VERSION: ${APP_VERSION}
+      REDIS_URL: ${REDIS_URL}
+    labels:
+      app.agentic-webapp/version: ${APP_VERSION}
+
+  web:
+    image: ${WEB_IMAGE}
+    init: true
+    restart: always
+    expose:
+      - '3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    labels:
+      app.agentic-webapp/version: ${APP_VERSION}

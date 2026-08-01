@@ -1,0 +1,77 @@
+name: Release images
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic release version
+        required: true
+        type: string
+      environment:
+        description: Release environment
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+      api_base_url:
+        description: Public API URL compiled into the web image
+        required: true
+        type: string
+      push_images:
+        description: Push versioned images to GHCR
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_VERSION: ${{ inputs.version }}
+      API_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-api:${{ inputs.version }}
+      WORKER_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-worker:${{ inputs.version }}
+      WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-web:${{ inputs.version }}
+      NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_base_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate ordered release plan
+        run: |
+          node tools/delivery/release-plan.mjs \
+            --environment "${{ inputs.environment }}" \
+            --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
+            --version "${{ inputs.version }}" \
+            --output release-plan.json
+          cat release-plan.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build versioned images
+        run: pnpm containers:build
+
+      - name: Authenticate to GHCR
+        if: inputs.push_images
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push versioned images
+        if: inputs.push_images
+        run: |
+          docker push "$API_IMAGE"
+          docker push "$WORKER_IMAGE"
+          docker push "$WEB_IMAGE"

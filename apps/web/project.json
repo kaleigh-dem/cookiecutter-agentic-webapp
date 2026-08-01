@@ -5,6 +5,12 @@
   "projectType": "application",
   "tags": ["scope:web", "type:app", "runtime:browser"],
   "targets": {
+    "container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} --build-arg NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:4000} -f infra/docker/Dockerfile.web -t ${WEB_IMAGE:-agentic-webapp-web:local} ."
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {

@@ -1,0 +1,42 @@
+{
+  "name": "delivery",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/delivery",
+  "projectType": "library",
+  "tags": ["scope:tooling", "type:tooling", "runtime:node"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint tools/delivery"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run tools/delivery"
+      }
+    },
+    "config-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node tools/delivery/validate-environment.mjs infra/environments/preview.env.example --allow-placeholders",
+          "node tools/delivery/validate-environment.mjs infra/environments/production.env.example --allow-placeholders",
+          "node tools/delivery/validate-environment.mjs infra/environments/preview.local.env --allow-local"
+        ],
+        "parallel": false
+      }
+    },
+    "performance-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node tools/delivery/load-test.mjs performance/budgets.json --validate-only",
+          "node tools/delivery/evaluate-nx-cloud.mjs infra/ci/baseline.json"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

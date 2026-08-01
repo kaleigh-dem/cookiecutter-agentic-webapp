@@ -18,7 +18,7 @@ export function AgentTasksFeature() {
       NODE_ENV: process.env.NODE_ENV,
     });
     return createApiClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
+      baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000',
       headers: createAuthenticationHeaders(authentication),
     });
   }, []);

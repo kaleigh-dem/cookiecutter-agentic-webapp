@@ -1,0 +1,32 @@
+ARG NODE_VERSION=25
+
+FROM node:${NODE_VERSION}-bookworm-slim AS build
+ARG SERVICE
+WORKDIR /workspace
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN npm install --global pnpm@10.13.1
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml nx.json tsconfig.base.json ./
+COPY apps ./apps
+COPY packages ./packages
+COPY tools ./tools
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+RUN node tools/delivery/prepare-node-deploy.mjs "${SERVICE}" /deploy
+
+FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+ARG APP_VERSION=development
+ARG VCS_REF=unknown
+
+LABEL org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/kaleigh-dem/cookiecutter-agentic-webapp"
+
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build --chown=node:node /deploy ./
+USER node
+
+CMD ["node", "dist/main.js"]
