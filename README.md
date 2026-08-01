@@ -94,3 +94,26 @@ node tools/delivery/release-plan.mjs \
 ```
 
 See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/disaster-recovery.md` before operating an environment.
+
+## Generate approved structure
+
+Use the local plugin instead of creating repeated structures manually:
+
+```bash
+pnpm generate:domain billing
+pnpm generate:feature account-settings
+pnpm generate:job refresh-search-index --queue=search
+pnpm generate:contract project-created
+```
+
+Generator details and output contracts are documented in `tools/workspace-plugin/README.md`.
+
+## Explore the workspace
+
+```bash
+pnpm graph
+pnpm nx show projects
+pnpm nx show project web
+```
+
+Read `AGENTS.md`, the closest nested `AGENTS.md`, and `docs/TODO.md` before changing a subsystem. Update the TODO ledger whenever a PR changes roadmap status or scope.
