@@ -30,13 +30,7 @@ async function loadEnvironment() {
 
 async function up() {
   const values = await loadEnvironment();
-  const compose = [
-    'compose',
-    '--env-file',
-    environmentFile,
-    '-f',
-    composeFile,
-  ];
+  const compose = ['compose', '--env-file', environmentFile, '-f', composeFile];
 
   run('pnpm', ['containers:build'], {
     env: { ...process.env, ...values },
