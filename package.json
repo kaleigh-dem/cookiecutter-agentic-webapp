@@ -34,7 +34,11 @@
     "db:seed": "nx run database:seed",
     "db:reset": "nx run database:reset",
     "infra:up": "docker compose up -d",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "telemetry:up": "docker compose --profile telemetry up -d otel-collector",
+    "telemetry:logs": "docker compose logs -f otel-collector",
+    "telemetry:down": "docker compose --profile telemetry stop otel-collector",
+    "telemetry:check": "docker compose --profile telemetry config --quiet"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

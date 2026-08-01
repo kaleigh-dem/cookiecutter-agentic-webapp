@@ -31,6 +31,7 @@ jobs:
 
       - uses: nrwl/nx-set-shas@v5
 
+      - run: pnpm telemetry:check
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check

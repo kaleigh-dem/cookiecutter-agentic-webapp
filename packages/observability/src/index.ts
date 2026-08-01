@@ -1,3 +1,4 @@
+import { metrics, type Counter, type Histogram } from '@opentelemetry/api';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 
@@ -138,9 +139,16 @@ interface DurationAggregate {
 export class MetricsRegistry {
   private readonly counters = new Map<string, number>();
   private readonly durations = new Map<string, DurationAggregate>();
+  private readonly meter = metrics.getMeter('@agentic-webapp/observability');
+  private readonly exportedCounters = new Map<string, Counter>();
+  private readonly exportedDurations = new Map<string, Histogram>();
 
   public increment(name: string, value = 1): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + value);
+    const counter =
+      this.exportedCounters.get(name) ?? this.meter.createCounter(name);
+    this.exportedCounters.set(name, counter);
+    counter.add(value);
   }
 
   public observe(name: string, milliseconds: number): void {
@@ -153,6 +161,12 @@ export class MetricsRegistry {
     aggregate.sumMs += milliseconds;
     aggregate.maxMs = Math.max(aggregate.maxMs, milliseconds);
     this.durations.set(name, aggregate);
+
+    const histogram =
+      this.exportedDurations.get(name) ??
+      this.meter.createHistogram(name, { unit: 'ms' });
+    this.exportedDurations.set(name, histogram);
+    histogram.record(milliseconds);
   }
 
   public snapshot(): Record<string, unknown> {

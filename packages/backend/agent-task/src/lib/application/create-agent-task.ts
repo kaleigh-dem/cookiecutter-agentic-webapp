@@ -15,6 +15,7 @@ export interface CreateAgentTaskCommand {
   readonly correlationId?: string;
   readonly requestId?: string;
   readonly traceId?: string;
+  readonly traceParent?: string;
   readonly userId?: string;
 }
 
@@ -55,6 +56,7 @@ export class CreateAgentTask {
         prompt: task.prompt,
         requestId: command.requestId ?? randomUUID(),
         traceId: command.traceId ?? randomUUID().replaceAll('-', ''),
+        ...(command.traceParent ? { traceParent: command.traceParent } : {}),
         jobId: this.dependencies.createJobId?.() ?? randomUUID(),
         correlationId: task.correlationId,
         occurredAt: task.createdAt.toISOString(),

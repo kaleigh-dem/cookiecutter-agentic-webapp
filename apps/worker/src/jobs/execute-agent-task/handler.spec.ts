@@ -13,6 +13,7 @@ describe('handleExecuteAgentTaskJob', () => {
       prompt: 'Prompt',
       requestId: 'request-1',
       traceId: 'trace-1',
+      traceParent: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       jobId: '22222222-2222-4222-8222-222222222222',
       correlationId: 'correlation-1',
       occurredAt: '2026-07-31T17:00:00.000Z',
