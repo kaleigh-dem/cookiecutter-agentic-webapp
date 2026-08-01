@@ -188,6 +188,7 @@ async function main(): Promise<void> {
     );
     assert.match(first['package.json'] ?? '', /"name": "@smoke\/smoke-app"/);
     assert.doesNotMatch(first['package.json'] ?? '', /template:release:/);
+    assert.doesNotMatch(first['package.json'] ?? '', /template:workspace:e2e/);
     assert.match(
       first['tools/workspace-plugin/package.json'] ?? '',
       /"name": "@smoke\/workspace-plugin"/,
@@ -226,9 +227,12 @@ async function main(): Promise<void> {
       first['README.md'] ?? '',
       /kaleigh-dem\/cookiecutter-agentic-webapp/,
     );
+    assert.equal(first['.github/workflows/generated-workspace.yml'], undefined);
     assert.equal(first['.github/workflows/template-release.yml'], undefined);
     assert.equal(first['CHANGELOG.md'], undefined);
     assert.equal(first['docs/template-releases.md'], undefined);
+    assert.equal(first['docs/template-validation.md'], undefined);
+    assert.equal(first['tools/template/generated-workspace-e2e.mjs'], undefined);
     assert.equal(first['tools/template/release.mjs'], undefined);
     assert.equal(first['tools/template/smoke-release-artifact.mjs'], undefined);
 
