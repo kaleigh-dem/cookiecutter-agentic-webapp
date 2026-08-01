@@ -35,7 +35,10 @@ const forbiddenPatterns = [
 const allowedUpstreamPaths = new Set([
   'README.md',
   'workspace.template.json',
+  'docs/template-initialization.md',
   'tools/workspace-plugin/src/generators/init/generator.ts',
+  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
+  'tools/workspace-plugin/src/generators/init-output.integration.ts',
 ]);
 
 function isIgnored(relativePath) {
