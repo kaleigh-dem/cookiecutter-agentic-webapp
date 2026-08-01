@@ -1,0 +1,52 @@
+name: Delivery
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/delivery.yml'
+      - 'apps/**'
+      - 'infra/deploy/**'
+      - 'infra/docker/**'
+      - 'infra/environments/**'
+      - 'packages/**'
+      - 'performance/**'
+      - 'tools/delivery/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm delivery:check
+      - name: Build and start preview
+        run: pnpm preview:up
+      - name: Enforce preview performance budgets
+        env:
+          API_BASE_URL: http://127.0.0.1:4000
+          WEB_BASE_URL: http://127.0.0.1:3000
+        run: pnpm performance:load
+      - name: Show service logs after failure
+        if: failure()
+        run: docker compose --env-file infra/environments/preview.local.env -f infra/deploy/compose.preview.yaml logs --no-color
+      - name: Tear down preview
+        if: always()
+        run: pnpm preview:down
