@@ -126,11 +126,7 @@ describe('init generator', () => {
     const second = createWorkspaceManifest(
       normalizeInitOptions({
         ...validOptions,
-        codeowners: [
-          '@acme/platform',
-          '@acme/security',
-          '@acme/platform',
-        ],
+        codeowners: ['@acme/platform', '@acme/security', '@acme/platform'],
         applications: ['api', 'worker', 'web'],
       }),
     );
@@ -166,11 +162,7 @@ describe('init generator', () => {
       { ...validOptions, packageScope: 'acme' },
       'packageScope',
     ],
-    [
-      'duplicate ports',
-      { ...validOptions, apiPort: 3100 },
-      'must be unique',
-    ],
+    ['duplicate ports', { ...validOptions, apiPort: 3100 }, 'must be unique'],
     [
       'authentication without api',
       {
@@ -203,8 +195,8 @@ describe('init generator', () => {
       'require both web and api',
     ],
   ])('rejects %s', (_name, options, message) => {
-    expect(() =>
-      normalizeInitOptions(options as InitGeneratorSchema),
-    ).toThrow(message);
+    expect(() => normalizeInitOptions(options as InitGeneratorSchema)).toThrow(
+      message,
+    );
   });
 });
