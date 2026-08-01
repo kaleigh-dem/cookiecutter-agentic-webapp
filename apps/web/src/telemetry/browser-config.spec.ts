@@ -48,12 +48,8 @@ describe('browser telemetry configuration', () => {
       'https://api.example.test',
     );
 
-    expect(matcher.test('https://api.example.test/api/agent-tasks')).toBe(
-      true,
-    );
+    expect(matcher.test('https://api.example.test/api/agent-tasks')).toBe(true);
     expect(matcher.test('https://api.example.test')).toBe(true);
-    expect(matcher.test('https://api.example.test.evil.test/api')).toBe(
-      false,
-    );
+    expect(matcher.test('https://api.example.test.evil.test/api')).toBe(false);
   });
 });
