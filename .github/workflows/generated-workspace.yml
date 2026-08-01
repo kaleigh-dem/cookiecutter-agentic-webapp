@@ -1,0 +1,104 @@
+name: Generated workspace
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/generated-workspace.yml'
+      - '.github/workflows/template-release.yml'
+      - 'apps/**'
+      - 'infra/**'
+      - 'packages/**'
+      - 'performance/**'
+      - 'tools/delivery/**'
+      - 'tools/security/**'
+      - 'tools/template/**'
+      - 'tools/workspace-plugin/**'
+      - '.dockerignore'
+      - '.gitignore'
+      - '.node-version'
+      - 'eslint.config.mjs'
+      - 'nx.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig*.json'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/generated-workspace.yml'
+      - '.github/workflows/template-release.yml'
+      - 'apps/**'
+      - 'infra/**'
+      - 'packages/**'
+      - 'performance/**'
+      - 'tools/delivery/**'
+      - 'tools/security/**'
+      - 'tools/template/**'
+      - 'tools/workspace-plugin/**'
+      - '.dockerignore'
+      - '.gitignore'
+      - '.node-version'
+      - 'eslint.config.mjs'
+      - 'nx.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generated-workspace-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  end-to-end:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RELEASE_DIRECTORY: ${{ runner.temp }}/template-release
+      GENERATED_WORKSPACE: ${{ runner.temp }}/generated-workspace
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Pack release candidate
+        id: artifact
+        run: |
+          version=$(node -p "require('./package.json').version")
+          pnpm template:release:verify -- --version "$version"
+          pnpm template:release:pack -- \
+            --version "$version" \
+            --output "$RELEASE_DIRECTORY"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "path=$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Validate generated workspace lifecycle
+        run: |
+          pnpm template:workspace:e2e -- \
+            --artifact "${{ steps.artifact.outputs.path }}" \
+            --expected-version "${{ steps.artifact.outputs.version }}" \
+            --workspace "$GENERATED_WORKSPACE"
+
+      - name: Upload generated-workspace diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-workspace-diagnostics
+          path: ${{ env.GENERATED_WORKSPACE }}/test-output
+          if-no-files-found: ignore
+          retention-days: 7
