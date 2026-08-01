@@ -6,23 +6,16 @@ import {
 } from './authentication';
 
 describe('browser authentication adapter', () => {
-  it('creates bearer headers from the development token', async () => {
+  it('creates bearer headers from the fixed local development token', async () => {
     const headers = createAuthenticationHeaders(
       createDevelopmentAuthenticationAdapter({
         NODE_ENV: 'development',
-        NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN: 'test-token',
       }),
     );
 
-    expect(await headers()).toEqual({ authorization: 'Bearer test-token' });
-  });
-
-  it('uses the deterministic local token when development is unconfigured', async () => {
-    const adapter = createDevelopmentAuthenticationAdapter({
-      NODE_ENV: 'development',
+    expect(await headers()).toEqual({
+      authorization: 'Bearer local-development-token',
     });
-
-    expect(await adapter.getAccessToken()).toBe('local-development-token');
   });
 
   it('requires a provider-backed adapter in every production build', async () => {
