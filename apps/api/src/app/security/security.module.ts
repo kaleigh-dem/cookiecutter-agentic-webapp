@@ -74,8 +74,9 @@ export const RequirePermissions = (...permissions: string[]) =>
 
 export const CurrentPrincipal = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AuthenticatedPrincipal => {
-    const principal = context.switchToHttp().getRequest<AuthenticatedRequest>()
-      .principal;
+    const principal = context
+      .switchToHttp()
+      .getRequest<AuthenticatedRequest>().principal;
     if (!principal) {
       throw new UnauthorizedException({
         code: 'authentication_required',
@@ -126,10 +127,7 @@ export function verifyDevelopmentAccessToken(
     environment.AUTH_DEVELOPMENT_TOKEN ?? 'local-development-token';
   const actual = Buffer.from(accessToken);
   const expected = Buffer.from(expectedToken);
-  if (
-    actual.length !== expected.length ||
-    !timingSafeEqual(actual, expected)
-  ) {
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
     throw new UnauthorizedException({
       code: 'invalid_access_token',
       message: 'The access token is invalid.',
@@ -151,7 +149,9 @@ export function verifyDevelopmentAccessToken(
 @Injectable()
 export class EnvironmentAccessTokenVerifier implements AccessTokenVerifier {
   public verify(accessToken: string): Promise<AuthenticatedPrincipal> {
-    return Promise.resolve(verifyDevelopmentAccessToken(accessToken, process.env));
+    return Promise.resolve(
+      verifyDevelopmentAccessToken(accessToken, process.env),
+    );
   }
 }
 
@@ -199,8 +199,9 @@ export class AuthorizationGuard implements CanActivate {
       ) ?? [];
     if (requiredPermissions.length === 0) return true;
 
-    const principal = context.switchToHttp().getRequest<AuthenticatedRequest>()
-      .principal;
+    const principal = context
+      .switchToHttp()
+      .getRequest<AuthenticatedRequest>().principal;
     if (!principal || !hasRequiredPermissions(principal, requiredPermissions)) {
       throw new ForbiddenException({
         code: 'insufficient_permissions',
@@ -258,10 +259,10 @@ export class RateLimitGuard implements CanActivate {
   public constructor(private readonly reflector: Reflector) {}
 
   public canActivate(context: ExecutionContext): boolean {
-    const skip = this.reflector.getAllAndOverride<boolean>(SKIP_RATE_LIMIT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skip = this.reflector.getAllAndOverride<boolean>(
+      SKIP_RATE_LIMIT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (skip) return true;
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
