@@ -22,9 +22,7 @@ describe('browser authentication adapter', () => {
       NODE_ENV: 'development',
     });
 
-    await expect(adapter.getAccessToken()).resolves.toBe(
-      'local-development-token',
-    );
+    expect(await adapter.getAccessToken()).toBe('local-development-token');
   });
 
   it('requires a provider-backed adapter in production', async () => {
@@ -33,8 +31,8 @@ describe('browser authentication adapter', () => {
       NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN: 'must-not-be-used',
     });
 
-    await expect(Promise.resolve().then(() => adapter.getAccessToken())).rejects.toThrow(
-      'provider-backed browser authentication adapter',
-    );
+    await expect(
+      Promise.resolve().then(() => adapter.getAccessToken()),
+    ).rejects.toThrow('provider-backed browser authentication adapter');
   });
 });
