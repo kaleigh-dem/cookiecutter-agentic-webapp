@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "defaults": {
+    "requests": 30,
+    "concurrency": 5,
+    "timeoutMs": 5000
+  },
+  "scenarios": [
+    {
+      "name": "api-liveness",
+      "baseUrlEnvironment": "API_BASE_URL",
+      "path": "/api/health/live",
+      "maximumP95Ms": 250,
+      "maximumErrorRate": 0.01
+    },
+    {
+      "name": "web-home",
+      "baseUrlEnvironment": "WEB_BASE_URL",
+      "path": "/",
+      "maximumP95Ms": 750,
+      "maximumErrorRate": 0.01
+    }
+  ]
+}
