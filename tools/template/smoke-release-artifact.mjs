@@ -8,6 +8,7 @@ function parseArguments(argv) {
   const options = {};
   for (let index = 0; index < argv.length; index += 1) {
     const entry = argv[index];
+    if (entry === '--') continue;
     if (!entry.startsWith('--')) {
       throw new Error(`Unexpected argument: ${entry}`);
     }
