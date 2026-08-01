@@ -1,16 +1,6 @@
 {
   "components": {
     "parameters": {
-      "ActorId": {
-        "description": "Development actor context. Phase 8 replaces this adapter with authenticated identity.",
-        "in": "header",
-        "name": "x-actor-id",
-        "required": true,
-        "schema": {
-          "minLength": 1,
-          "type": "string"
-        }
-      },
       "CorrelationId": {
         "description": "Optional caller correlation identifier propagated into persistence and jobs.",
         "in": "header",
@@ -42,7 +32,12 @@
             "type": "string"
           },
           "status": {
-            "enum": ["queued", "running", "completed", "failed"],
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed"
+            ],
             "type": "string"
           },
           "title": {
@@ -74,7 +69,10 @@
             "type": "string"
           }
         },
-        "required": ["title", "prompt"],
+        "required": [
+          "title",
+          "prompt"
+        ],
         "type": "object"
       },
       "ErrorResponse": {
@@ -88,7 +86,10 @@
             "type": "string"
           }
         },
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "type": "object"
       },
       "HealthResponse": {
@@ -105,15 +106,26 @@
             "type": "string"
           }
         },
-        "required": ["service", "status"],
+        "required": [
+          "service",
+          "status"
+        ],
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "Provider-issued access token validated by the API authentication adapter.",
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
   "info": {
     "description": "The canonical HTTP contract for the API application.",
     "title": "Agentic Webapp API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.0",
@@ -122,9 +134,6 @@
       "post": {
         "operationId": "createAgentTask",
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ActorId"
-          },
           {
             "$ref": "#/components/parameters/CorrelationId"
           }
@@ -161,8 +170,15 @@
             "description": "The request was invalid."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create an agent task",
-        "tags": ["agent-tasks"]
+        "tags": [
+          "agent-tasks"
+        ]
       }
     },
     "/api/agent-tasks/{taskId}": {
@@ -177,9 +193,6 @@
               "format": "uuid",
               "type": "string"
             }
-          },
-          {
-            "$ref": "#/components/parameters/ActorId"
           },
           {
             "$ref": "#/components/parameters/CorrelationId"
@@ -217,8 +230,15 @@
             "description": "The task does not exist."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Read an owned agent task",
-        "tags": ["agent-tasks"]
+        "tags": [
+          "agent-tasks"
+        ]
       }
     },
     "/api/health": {
@@ -238,7 +258,9 @@
           }
         },
         "summary": "Read API health",
-        "tags": ["health"]
+        "tags": [
+          "health"
+        ]
       }
     }
   },
@@ -254,7 +276,7 @@
       "name": "health"
     },
     {
-      "description": "Actor-scoped tasks queued for agent execution.",
+      "description": "Authenticated actor-scoped tasks queued for agent execution.",
       "name": "agent-tasks"
     }
   ]
