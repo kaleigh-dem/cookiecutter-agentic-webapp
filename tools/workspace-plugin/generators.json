@@ -1,6 +1,11 @@
 {
   "$schema": "../../node_modules/nx/schemas/nx-schema.json",
   "generators": {
+    "init": {
+      "factory": "./src/generators/init/generator",
+      "schema": "./src/generators/init/schema.json",
+      "description": "Initialize a parameterized application workspace"
+    },
     "domain": {
       "factory": "./src/generators/domain/generator",
       "schema": "./src/generators/domain/schema.json",
