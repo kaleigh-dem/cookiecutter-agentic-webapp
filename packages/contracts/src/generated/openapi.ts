@@ -99,9 +99,6 @@ export type components = {
   requestBodies: never;
   headers: never;
   pathItems: never;
-  securitySchemes: {
-    BearerAuth: never;
-  };
 };
 export type SchemaAgentTaskResponse =
   components['schemas']['AgentTaskResponse'];
