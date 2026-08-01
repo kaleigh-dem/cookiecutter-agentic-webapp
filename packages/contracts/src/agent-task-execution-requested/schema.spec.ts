@@ -21,7 +21,7 @@ describe('agent task execution requested events', () => {
     expect(agentTaskExecutionRequestedSchema.parse(payload)).toEqual(payload);
   });
 
-  it('requires operational identifiers on v2 payloads', () => {
+  it('requires operational identifiers and accepts W3C context on v2', () => {
     const payload = {
       version: 2 as const,
       taskId: '11111111-1111-4111-8111-111111111111',
@@ -30,6 +30,8 @@ describe('agent task execution requested events', () => {
       prompt: 'Summarize the document.',
       requestId: 'request-1',
       traceId: 'trace-1',
+      traceParent:
+        '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       jobId: '22222222-2222-4222-8222-222222222222',
       correlationId: 'correlation-1',
       occurredAt: '2026-07-31T17:00:00.000Z',
