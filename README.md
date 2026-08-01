@@ -17,6 +17,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - pnpm workspaces
 - enforced scope, runtime, and project-type boundaries
 - Nx project graph, caching, affected commands, and local generators
+- versioned Nx preset artifacts published through tagged GitHub Releases
 - Nx MCP configuration and agent instructions
 - PostgreSQL and Redis development services
 - production OCI images, preview orchestration, release plans, and performance budgets
@@ -42,7 +43,13 @@ pnpm install --frozen-lockfile
 pnpm template:identity:check
 ```
 
-Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
+Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
+
+## Template releases
+
+Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball. CI packages and installs the same artifact, invokes its public `preset` entry point, and verifies the generated manifest before the release workflow can publish it.
+
+See `docs/template-releases.md` for versioning rules, release preparation, publishing, and artifact installation.
 
 ## Runtime requirements
 
@@ -87,26 +94,3 @@ node tools/delivery/release-plan.mjs \
 ```
 
 See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/disaster-recovery.md` before operating an environment.
-
-## Generate approved structure
-
-Use the local plugin instead of creating repeated structures manually:
-
-```bash
-pnpm generate:domain billing
-pnpm generate:feature account-settings
-pnpm generate:job refresh-search-index --queue=search
-pnpm generate:contract project-created
-```
-
-Generator details and output contracts are documented in `tools/workspace-plugin/README.md`.
-
-## Explore the workspace
-
-```bash
-pnpm graph
-pnpm nx show projects
-pnpm nx show project web
-```
-
-Read `AGENTS.md`, the closest nested `AGENTS.md`, and `docs/TODO.md` before changing a subsystem. Update the TODO ledger whenever a PR changes roadmap status or scope.
