@@ -67,7 +67,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Add a repository-wide placeholder detector to CI.
   - Permit intentional references to the upstream template only in attribution and upgrade metadata.
 
-- [ ] **P10-05 Establish template versioning and release automation.**
+- [x] **P10-05 Establish template versioning and release automation.**
   - Define semantic-versioning rules for template changes.
   - Generate changelogs and tagged releases.
   - Record the originating template version in each generated repository.
