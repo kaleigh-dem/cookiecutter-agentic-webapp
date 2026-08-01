@@ -5,7 +5,7 @@ async function bootstrap() {
   const telemetry = await startNodeTelemetry({ serviceName: 'api' });
   const [{ NestFactory }, { AppModule }] = await Promise.all([
     import('@nestjs/core'),
-    import('./app/app.module'),
+    import('./app/app.module.js'),
   ]);
   const app = await NestFactory.create(AppModule);
   app.enableCors({
