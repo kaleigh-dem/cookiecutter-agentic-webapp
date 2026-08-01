@@ -30,14 +30,6 @@ export default [
     },
   },
   {
-    files: ['apps/web/src/instrumentation.node.ts'],
-    rules: {
-      // Next.js loads this file only in its Node runtime. Browser code remains
-      // subject to the runtime:browser -> runtime:node boundary below.
-      '@nx/enforce-module-boundaries': 'off',
-    },
-  },
-  {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {
       '@nx/enforce-module-boundaries': [
@@ -125,6 +117,14 @@ export default [
           ],
         },
       ],
+    },
+  },
+  {
+    files: ['apps/web/src/instrumentation.node.ts'],
+    rules: {
+      // Next.js loads this file only in its Node runtime. Browser code remains
+      // subject to the runtime:browser -> runtime:node boundary above.
+      '@nx/enforce-module-boundaries': 'off',
     },
   },
 ];
