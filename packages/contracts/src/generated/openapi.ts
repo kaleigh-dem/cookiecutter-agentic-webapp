@@ -93,6 +93,11 @@ export type components = {
   };
   responses: never;
   parameters: {
+    /**
+     * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+     * @deprecated
+     */
+    ActorId: string;
     /** @description Optional caller correlation identifier propagated into persistence and jobs. */
     CorrelationId: string;
   };
@@ -106,6 +111,7 @@ export type SchemaCreateAgentTaskRequest =
   components['schemas']['CreateAgentTaskRequest'];
 export type SchemaErrorResponse = components['schemas']['ErrorResponse'];
 export type SchemaHealthResponse = components['schemas']['HealthResponse'];
+export type ParameterActorId = components['parameters']['ActorId'];
 export type ParameterCorrelationId = components['parameters']['CorrelationId'];
 export type $defs = Record<string, never>;
 export interface operations {
@@ -113,6 +119,11 @@ export interface operations {
     parameters: {
       query?: never;
       header?: {
+        /**
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+         * @deprecated
+         */
+        'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };
@@ -149,6 +160,11 @@ export interface operations {
     parameters: {
       query?: never;
       header?: {
+        /**
+         * @description Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.
+         * @deprecated
+         */
+        'x-actor-id'?: components['parameters']['ActorId'];
         /** @description Optional caller correlation identifier propagated into persistence and jobs. */
         'x-correlation-id'?: components['parameters']['CorrelationId'];
       };
