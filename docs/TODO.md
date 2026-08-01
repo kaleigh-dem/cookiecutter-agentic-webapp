@@ -1,6 +1,6 @@
 # Delivery TODO
 
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 This file is the maintained execution ledger for the template. Roadmap summaries may link here, but status and exit criteria live here.
 
@@ -101,13 +101,15 @@ Exit criteria: the reference feature can be followed across services without exp
 
 ## Phase 8 — Authentication and security
 
-- [ ] **P8-01** Record the identity-provider and session/token architecture decision.
-- [ ] **P8-02** Add authentication adapters for web and API.
-- [ ] **P8-03** Add authorization policy boundaries and test helpers.
-- [ ] **P8-04** Add secure HTTP defaults, rate limiting, validation, and error normalization.
-- [ ] **P8-05** Add dependency, license, secret, and static-analysis checks.
-- [ ] **P8-06** Add `SECURITY.md`, vulnerability reporting, and threat-model guidance.
-- [ ] **P8-07** Add audit-event conventions for security-sensitive actions.
+- [-] **P8-01** Record the identity-provider and session/token architecture decision.
+- [-] **P8-02** Add authentication adapters for web and API.
+- [-] **P8-03** Add authorization policy boundaries and test helpers.
+- [-] **P8-04** Add secure HTTP defaults, rate limiting, validation, and error normalization.
+- [-] **P8-05** Add dependency, license, secret, and static-analysis checks.
+- [-] **P8-06** Add `SECURITY.md`, vulnerability reporting, and threat-model guidance.
+- [-] **P8-07** Add audit-event conventions for security-sensitive actions.
+
+The Phase 8 branch implements all seven workstreams. Items remain in progress until contract generation, formatting, typechecking, tests, builds, browser coverage, and the new security workflows pass in CI.
 
 Exit criteria: protected reference-feature behavior has automated authorization tests and CI security gates.
 
