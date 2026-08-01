@@ -51,6 +51,9 @@
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
+            "$ref": "#/components/parameters/ActorId"
+          },
+          {
             "$ref": "#/components/parameters/CorrelationId"
           }
         ],
@@ -103,6 +106,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/ActorId"
           },
           {
             "$ref": "#/components/parameters/CorrelationId"
@@ -159,6 +165,17 @@
       }
     },
     "parameters": {
+      "ActorId": {
+        "name": "x-actor-id",
+        "in": "header",
+        "required": false,
+        "deprecated": true,
+        "description": "Deprecated compatibility header. The API ignores it; authenticated identity comes from the bearer token.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
       "CorrelationId": {
         "name": "x-correlation-id",
         "in": "header",
