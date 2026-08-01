@@ -31,6 +31,12 @@ npx create-nx-workspace@23.1.0 my-workspace \
 
 Or clone this repository directly while the template migration is under review.
 
+## Runtime requirements
+
+Use Node.js 24 LTS and pnpm 10.13.1. The repository includes `.node-version` for compatible version managers, and `package.json` enforces the supported Node.js major release.
+
+See `docs/runtime-support.md` for the support policy, compatibility lane, and validation coverage.
+
 ## Local development
 
 ```bash
