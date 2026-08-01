@@ -72,9 +72,7 @@ describe('deployment environment validation', () => {
         ...validProduction,
         NEXT_PUBLIC_API_BASE_URL: 'https://%65xample.com',
       }),
-    ).toContain(
-      'NEXT_PUBLIC_API_BASE_URL contains an example placeholder.',
-    );
+    ).toContain('NEXT_PUBLIC_API_BASE_URL contains an example placeholder.');
   });
 
   it('does not treat lookalike URL hosts as placeholders', () => {
