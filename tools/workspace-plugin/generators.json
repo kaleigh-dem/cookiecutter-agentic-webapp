@@ -1,6 +1,11 @@
 {
   "$schema": "../../node_modules/nx/schemas/nx-schema.json",
   "generators": {
+    "preset": {
+      "factory": "./src/generators/init/generator",
+      "schema": "./src/generators/init/schema.json",
+      "description": "Create a parameterized application workspace from the released preset"
+    },
     "init": {
       "factory": "./src/generators/init/generator",
       "schema": "./src/generators/init/schema.json",
