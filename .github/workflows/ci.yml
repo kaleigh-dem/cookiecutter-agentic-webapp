@@ -47,6 +47,17 @@ jobs:
       - run: pnpm typecheck
       - name: Build workspace
         run: pnpm build
+      - name: Verify template release artifact
+        run: |
+          version=$(node -p "require('./package.json').version")
+          release_directory="$RUNNER_TEMP/template-release"
+          pnpm template:release:verify -- --version "$version"
+          pnpm template:release:pack -- \
+            --version "$version" \
+            --output "$release_directory"
+          pnpm template:release:smoke -- \
+            --artifact "$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" \
+            --expected-version "$version"
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm nx affected -t e2e --parallel=1
       - name: Verify generated output and project graph
