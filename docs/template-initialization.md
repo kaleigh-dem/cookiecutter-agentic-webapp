@@ -1,6 +1,6 @@
 # Template initialization
 
-The `init` Nx generator captures the choices that distinguish one generated application repository from another. Run it after creating or cloning a workspace. Repeating the command with the same options produces byte-for-byte identical repository content.
+The released `preset` Nx generator captures the choices that distinguish one generated application repository from another. The root `initialize:workspace` command invokes this public entry point. Repeating the command with the same options produces byte-for-byte identical repository content.
 
 ```bash
 pnpm initialize:workspace customer-portal \
@@ -29,14 +29,16 @@ pnpm template:identity:check
 
 ## Generated initialization contract
 
-The generator writes `workspace.template.json` as the canonical, versioned record of initialization choices. Identity-neutral workspaces use schema version 2. The manifest contains:
+The preset writes `workspace.template.json` as the canonical, versioned record of initialization choices. Identity-neutral workspaces use schema version 2. The manifest contains:
 
 - application slug, display name, and npm package scope
 - repository owner and normalized CODEOWNERS
 - selected `web`, `api`, and `worker` applications
 - web, API, and database ports plus the database name
 - authentication, worker transport, telemetry, deployment, and optional AI profiles
-- the upstream template repository used for attribution and future upgrade metadata
+- the upstream template repository and exact originating template version used for attribution and future upgrade metadata
+
+The public preset also removes template-maintainer-only release workflows, changelog files, release scripts, and release commands. The generated workspace's local plugin remains available for structural generators but is marked private so it cannot be published accidentally.
 
 ## Repository-wide identity replacement
 
@@ -67,4 +69,4 @@ Initialization fails before writing files when options are invalid or incompatib
 
 Lists are trimmed, deduplicated, and written in stable order. The manifest contains no timestamps or machine-specific paths.
 
-`pnpm template:identity:check` scans the entire initialized repository and fails when it finds the upstream package scope, service slug, snake/camel/Pascal identity forms, or the original personal CODEOWNER outside the approved upstream metadata allowlist. CI runs initialization twice in a copied workspace, compares all text files, executes this detector, and validates Nx synchronization without changing the source checkout.
+`pnpm template:identity:check` scans the entire initialized repository and fails when it finds the upstream package scope, service slug, snake/camel/Pascal identity forms, or the original personal CODEOWNER outside the approved upstream metadata allowlist. CI runs initialization twice in a copied workspace, compares all text files, verifies the recorded template version and release-tool cleanup, executes this detector, and validates Nx synchronization without changing the source checkout.
