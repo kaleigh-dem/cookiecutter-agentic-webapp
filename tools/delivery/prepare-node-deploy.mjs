@@ -1,4 +1,11 @@
-import { access, cp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  cp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -52,6 +59,34 @@ async function replaceDirectory(source, destination) {
   await cp(source, destination, { recursive: true });
 }
 
+async function findFiles(directory, fileName) {
+  const matches = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      matches.push(...(await findFiles(entryPath, fileName)));
+    } else if (entry.isFile() && entry.name === fileName) {
+      matches.push(entryPath);
+    }
+  }
+  return matches;
+}
+
+async function findCompiledRoot(buildDirectory, entryFile) {
+  const candidates = await findFiles(buildDirectory, entryFile);
+  if (candidates.length === 0) {
+    throw new Error(`${entryFile} was not emitted under ${buildDirectory}.`);
+  }
+
+  candidates.sort((left, right) => {
+    const depthDifference =
+      path.relative(buildDirectory, left).split(path.sep).length -
+      path.relative(buildDirectory, right).split(path.sep).length;
+    return depthDifference || left.localeCompare(right);
+  });
+  return path.dirname(candidates[0]);
+}
+
 async function readManifest(packageDirectory) {
   return JSON.parse(
     await readFile(path.join(packageDirectory, 'package.json'), 'utf8'),
@@ -66,13 +101,14 @@ async function writeManifest(packageDirectory, manifest) {
 }
 
 async function stageCompiledPackage(packageDirectory, buildDirectory) {
-  await replaceDirectory(buildDirectory, path.join(packageDirectory, 'dist'));
+  const compiledRoot = await findCompiledRoot(buildDirectory, 'index.js');
+  await replaceDirectory(compiledRoot, path.join(packageDirectory, 'dist'));
   const manifest = {
     ...rewritePackageValue(await readManifest(packageDirectory)),
     files: ['dist'],
   };
   await writeManifest(packageDirectory, manifest);
-  return { buildDirectory, manifest };
+  return { compiledRoot, manifest };
 }
 
 function deployedPackageDirectory(deployDirectory, packageName) {
@@ -81,19 +117,19 @@ function deployedPackageDirectory(deployDirectory, packageName) {
 
 async function installCompiledArtifacts(
   deployDirectory,
-  service,
+  serviceCompiledRoot,
   stagedPackages,
 ) {
   const appDestination = path.join(deployDirectory, 'dist');
-  await replaceDirectory(service.buildDirectory, appDestination);
+  await replaceDirectory(serviceCompiledRoot, appDestination);
   await access(path.join(appDestination, 'main.js'));
 
-  for (const { buildDirectory, manifest } of stagedPackages) {
+  for (const { compiledRoot, manifest } of stagedPackages) {
     const packageDirectory = deployedPackageDirectory(
       deployDirectory,
       manifest.name,
     );
-    await replaceDirectory(buildDirectory, path.join(packageDirectory, 'dist'));
+    await replaceDirectory(compiledRoot, path.join(packageDirectory, 'dist'));
     await writeManifest(packageDirectory, manifest);
     await access(path.join(packageDirectory, 'dist', 'index.js'));
   }
@@ -109,8 +145,12 @@ async function main() {
     );
   }
 
-  await replaceDirectory(
+  const serviceCompiledRoot = await findCompiledRoot(
     service.buildDirectory,
+    'main.js',
+  );
+  await replaceDirectory(
+    serviceCompiledRoot,
     path.join(service.appDirectory, 'dist'),
   );
   const appManifest = {
@@ -146,7 +186,11 @@ async function main() {
     );
   }
 
-  await installCompiledArtifacts(deployDirectory, service, stagedPackages);
+  await installCompiledArtifacts(
+    deployDirectory,
+    serviceCompiledRoot,
+    stagedPackages,
+  );
 }
 
 void main().catch((error) => {
