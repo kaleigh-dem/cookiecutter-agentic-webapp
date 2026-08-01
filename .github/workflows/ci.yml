@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 25
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -37,6 +37,13 @@ jobs:
       - run: pnpm nx sync:check
       - run: pnpm format:check
       - run: pnpm delivery:check
+      - name: Verify release tooling
+        run: |
+          node tools/delivery/release-plan.mjs \
+            --environment preview \
+            --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
+            --version 0.0.0-ci \
+            --output "$RUNNER_TEMP/release-plan.json"
       - run: pnpm typecheck
       - name: Build workspace
         run: pnpm build
@@ -47,3 +54,26 @@ jobs:
       - name: Verify validation leaves the checkout clean
         run: git diff --exit-code
       - run: pnpm nx affected -t lint test
+
+  node-current-compatibility:
+    name: Node 26 compatibility
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm contracts:check
+      - run: pnpm nx sync:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
