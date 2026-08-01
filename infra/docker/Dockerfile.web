@@ -1,4 +1,4 @@
-ARG NODE_VERSION=25
+ARG NODE_VERSION=24
 
 FROM node:${NODE_VERSION}-bookworm-slim AS build
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
