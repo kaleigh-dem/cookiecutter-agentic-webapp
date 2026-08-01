@@ -1,9 +1,5 @@
 export type WorkspaceApplication = 'api' | 'web' | 'worker';
-export type AuthenticationProfile =
-  | 'development'
-  | 'none'
-  | 'oidc'
-  | 'session';
+export type AuthenticationProfile = 'development' | 'none' | 'oidc' | 'session';
 export type WorkerTransport = 'none' | 'postgres' | 'redis';
 export type DeploymentProfile = 'containers' | 'kubernetes' | 'local';
 
