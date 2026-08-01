@@ -6,9 +6,6 @@ export default defineConfig({
   webServer: {
     command:
       'pnpm exec next dev ../../../../apps/web --hostname 127.0.0.1 --port 3000',
-    env: {
-      NEXT_PUBLIC_AUTH_DEVELOPMENT_TOKEN: 'phase8-e2e-token',
-    },
     url: 'http://127.0.0.1:3000/agent-tasks',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
