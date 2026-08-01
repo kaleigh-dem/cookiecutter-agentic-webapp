@@ -5,7 +5,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "engines": {
-    "node": ">=25 <26",
+    "node": ">=24 <25",
     "pnpm": ">=10 <11"
   },
   "scripts": {
