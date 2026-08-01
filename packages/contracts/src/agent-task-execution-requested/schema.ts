@@ -23,6 +23,7 @@ export const agentTaskExecutionRequestedV2Schema = z.object({
   userId: z.string().min(1),
   requestId: z.string().min(1),
   traceId: z.string().min(1),
+  traceParent: z.string().min(1).optional(),
   jobId: z.string().uuid(),
 });
 
