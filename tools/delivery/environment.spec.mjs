@@ -59,4 +59,35 @@ describe('deployment environment validation', () => {
       ),
     ).toEqual([]);
   });
+
+  it('matches placeholder URL hosts structurally', () => {
+    expect(
+      validateDeploymentEnvironment({
+        ...validProduction,
+        WEB_ORIGIN: 'https://example.com',
+      }),
+    ).toContain('WEB_ORIGIN contains an example placeholder.');
+    expect(
+      validateDeploymentEnvironment({
+        ...validProduction,
+        NEXT_PUBLIC_API_BASE_URL: 'https://%65xample.com',
+      }),
+    ).toContain(
+      'NEXT_PUBLIC_API_BASE_URL contains an example placeholder.',
+    );
+  });
+
+  it('does not treat lookalike URL hosts as placeholders', () => {
+    for (const webOrigin of [
+      'https://notexample.com',
+      'https://example.com.attacker.test',
+    ]) {
+      expect(
+        validateDeploymentEnvironment({
+          ...validProduction,
+          WEB_ORIGIN: webOrigin,
+        }),
+      ).toEqual([]);
+    }
+  });
 });
