@@ -212,12 +212,41 @@ async function verifyTeardown(workspace) {
     'utf-8',
   );
   const projectName = compose.match(/^name:\s*([^\s#]+)\s*$/m)?.[1];
-  assert.ok(projectName, 'The preview Compose file must declare a project name.');
+  assert.ok(
+    projectName,
+    'The preview Compose file must declare a project name.',
+  );
 
   const resources = [
-    ['containers', ['ps', '-aq', '--filter', `label=com.docker.compose.project=${projectName}`]],
-    ['networks', ['network', 'ls', '-q', '--filter', `label=com.docker.compose.project=${projectName}`]],
-    ['volumes', ['volume', 'ls', '-q', '--filter', `label=com.docker.compose.project=${projectName}`]],
+    [
+      'containers',
+      [
+        'ps',
+        '-aq',
+        '--filter',
+        `label=com.docker.compose.project=${projectName}`,
+      ],
+    ],
+    [
+      'networks',
+      [
+        'network',
+        'ls',
+        '-q',
+        '--filter',
+        `label=com.docker.compose.project=${projectName}`,
+      ],
+    ],
+    [
+      'volumes',
+      [
+        'volume',
+        'ls',
+        '-q',
+        '--filter',
+        `label=com.docker.compose.project=${projectName}`,
+      ],
+    ],
   ];
   for (const [label, args] of resources) {
     const remaining = capture('docker', args, workspace).trim();
@@ -298,8 +327,16 @@ async function main() {
     await assertGeneratedContract(workspace, expectedVersion);
 
     execute('git', ['init', '-b', 'main'], workspace);
-    execute('git', ['config', 'user.email', 'generated-ci@example.invalid'], workspace);
-    execute('git', ['config', 'user.name', 'Generated Workspace CI'], workspace);
+    execute(
+      'git',
+      ['config', 'user.email', 'generated-ci@example.invalid'],
+      workspace,
+    );
+    execute(
+      'git',
+      ['config', 'user.name', 'Generated Workspace CI'],
+      workspace,
+    );
     execute('git', ['add', '--all'], workspace);
     execute('git', ['commit', '-m', 'Generated workspace baseline'], workspace);
 
@@ -382,7 +419,9 @@ async function main() {
   }
 
   if (primaryError) {
-    console.error(`Generated workspace retained at ${workspace} for diagnostics.`);
+    console.error(
+      `Generated workspace retained at ${workspace} for diagnostics.`,
+    );
     throw primaryError;
   }
 
