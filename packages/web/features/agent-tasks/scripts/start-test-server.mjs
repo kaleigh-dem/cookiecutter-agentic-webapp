@@ -19,16 +19,7 @@ function restoreNextEnvironment() {
 
 const server = spawn(
   'pnpm',
-  [
-    'exec',
-    'next',
-    'dev',
-    webRoot,
-    '--hostname',
-    '127.0.0.1',
-    '--port',
-    '3000',
-  ],
+  ['exec', 'next', 'dev', webRoot, '--hostname', '127.0.0.1', '--port', '3000'],
   {
     env: process.env,
     stdio: 'inherit',
