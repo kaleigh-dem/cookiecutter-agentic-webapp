@@ -27,6 +27,14 @@ const ignoredIdentitySegments = new Set([
   'node_modules',
   'test-output',
 ]);
+const preservedUpstreamPaths = new Set([
+  'README.md',
+  'workspace.template.json',
+  'docs/template-initialization.md',
+  'tools/workspace-plugin/src/generators/init/generator.ts',
+  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
+  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+]);
 
 const templateIdentity = {
   className: 'AgenticWebapp',
@@ -321,16 +329,20 @@ function rewriteDatabaseDefaults(
 function rewriteIdentityContent(
   content: string,
   options: NormalizedInitOptions,
+  preserveUpstreamRepository: boolean,
 ): string {
   const generatedClassName = className(options.applicationSlug);
   const generatedPropertyName = propertyName(options.applicationSlug);
   const generatedSnakeName = options.applicationSlug.replaceAll('-', '_');
   const generatedUpperSnakeName = generatedSnakeName.toUpperCase();
+  const generatedRepository = `${options.repositoryOwner}/${options.applicationSlug}`;
 
-  let rewritten = content.replaceAll(
-    templateIdentity.repository,
-    upstreamRepositorySentinel,
-  );
+  let rewritten = preserveUpstreamRepository
+    ? content.replaceAll(
+        templateIdentity.repository,
+        upstreamRepositorySentinel,
+      )
+    : content.replaceAll(templateIdentity.repository, generatedRepository);
 
   const replacements: ReadonlyArray<readonly [string, string]> = [
     [templateIdentity.packageScope, options.packageScope],
@@ -364,7 +376,11 @@ export function rewriteWorkspaceIdentity(
     }
 
     const original = content.toString('utf-8');
-    const rewritten = rewriteIdentityContent(original, options);
+    const rewritten = rewriteIdentityContent(
+      original,
+      options,
+      preservedUpstreamPaths.has(path),
+    );
     if (rewritten !== original) {
       tree.write(path, rewritten);
     }
