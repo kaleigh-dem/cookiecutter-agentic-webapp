@@ -256,9 +256,7 @@ interface RateLimitBucket {
   resetAt: number;
 }
 
-export function createRateLimitKey(
-  request: RateLimitRequestIdentity,
-): string {
+export function createRateLimitKey(request: RateLimitRequestIdentity): string {
   const subject = request.principal?.subject.trim();
   if (subject) return `subject:${subject}`;
 
