@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "Agentic Webapp API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "The canonical HTTP contract for the API application."
   },
   "servers": [
@@ -19,7 +19,7 @@
     },
     {
       "name": "agent-tasks",
-      "description": "Actor-scoped tasks queued for agent execution."
+      "description": "Authenticated actor-scoped tasks queued for agent execution."
     }
   ],
   "paths": {
@@ -48,10 +48,8 @@
         "operationId": "createAgentTask",
         "summary": "Create an agent task",
         "tags": ["agent-tasks"],
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
-          {
-            "$ref": "#/components/parameters/ActorId"
-          },
           {
             "$ref": "#/components/parameters/CorrelationId"
           }
@@ -95,6 +93,7 @@
         "operationId": "getAgentTask",
         "summary": "Read an owned agent task",
         "tags": ["agent-tasks"],
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
             "name": "taskId",
@@ -104,9 +103,6 @@
               "type": "string",
               "format": "uuid"
             }
-          },
-          {
-            "$ref": "#/components/parameters/ActorId"
           },
           {
             "$ref": "#/components/parameters/CorrelationId"
@@ -163,16 +159,6 @@
       }
     },
     "parameters": {
-      "ActorId": {
-        "name": "x-actor-id",
-        "in": "header",
-        "required": true,
-        "description": "Development actor context. Phase 8 replaces this adapter with authenticated identity.",
-        "schema": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
       "CorrelationId": {
         "name": "x-correlation-id",
         "in": "header",
@@ -182,6 +168,14 @@
           "type": "string",
           "minLength": 1
         }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Provider-issued access token validated by the API authentication adapter."
       }
     }
   }
