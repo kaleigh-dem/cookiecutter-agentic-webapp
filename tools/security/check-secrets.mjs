@@ -7,7 +7,10 @@ const excludedFiles = new Set([
   'tools/security/check-secrets.mjs',
 ]);
 const patterns = [
-  { name: 'private key', expression: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
+  {
+    name: 'private key',
+    expression: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+  },
   { name: 'AWS access key', expression: /\bAKIA[0-9A-Z]{16}\b/ },
   { name: 'GitHub token', expression: /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/ },
   { name: 'Slack token', expression: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
