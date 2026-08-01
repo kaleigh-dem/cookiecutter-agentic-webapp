@@ -20,6 +20,14 @@ function normalizeOrigin(value: string): string {
   return new URL(value).origin;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function createApiTracePropagationMatcher(apiOrigin: string): RegExp {
+  return new RegExp(`^${escapeRegExp(apiOrigin)}(?:/|$)`);
+}
+
 export function resolveBrowserTelemetryConfig(
   environment: BrowserTelemetryEnvironment,
 ): BrowserTelemetryConfig {
