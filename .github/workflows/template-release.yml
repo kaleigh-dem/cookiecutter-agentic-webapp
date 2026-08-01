@@ -18,8 +18,6 @@ jobs:
     timeout-minutes: 60
     env:
       VERSION: ${{ inputs.version }}
-      RELEASE_DIRECTORY: ${{ runner.temp }}/template-release
-      GENERATED_WORKSPACE: ${{ runner.temp }}/generated-workspace
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,19 +48,19 @@ jobs:
         run: |
           pnpm template:release:pack -- \
             --version "$VERSION" \
-            --output "$RELEASE_DIRECTORY"
+            --output "$RUNNER_TEMP/template-release"
 
       - name: Smoke local release artifact
         run: |
           pnpm template:release:smoke -- \
-            --artifact "$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --artifact "$RUNNER_TEMP/template-release/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
             --expected-version "$VERSION"
 
       - name: Generate release notes
         run: |
           pnpm template:release:notes -- \
             --version "$VERSION" \
-            --output "$RELEASE_DIRECTORY/release-notes.md"
+            --output "$RUNNER_TEMP/template-release/release-notes.md"
 
       - name: Create draft release
         id: create_release
@@ -71,41 +69,41 @@ jobs:
         run: |
           tag="template-v${VERSION}"
           gh release create "$tag" \
-            "$RELEASE_DIRECTORY/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            "$RUNNER_TEMP/template-release/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
             --target "$GITHUB_SHA" \
             --draft \
             --title "Template ${VERSION}" \
-            --notes-file "$RELEASE_DIRECTORY/release-notes.md"
+            --notes-file "$RUNNER_TEMP/template-release/release-notes.md"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Download draft release artifact
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p "$RELEASE_DIRECTORY/published"
+          mkdir -p "$RUNNER_TEMP/template-release/published"
           gh release download "${{ steps.create_release.outputs.tag }}" \
             --pattern '*.tgz' \
-            --dir "$RELEASE_DIRECTORY/published"
+            --dir "$RUNNER_TEMP/template-release/published"
 
       - name: Smoke published release artifact
         run: |
           pnpm template:release:smoke -- \
-            --artifact "$RELEASE_DIRECTORY/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --artifact "$RUNNER_TEMP/template-release/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
             --expected-version "$VERSION"
 
       - name: Validate published artifact in a generated workspace
         run: |
           pnpm template:workspace:e2e -- \
-            --artifact "$RELEASE_DIRECTORY/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
+            --artifact "$RUNNER_TEMP/template-release/published/agentic-webapp-workspace-plugin-${VERSION}.tgz" \
             --expected-version "$VERSION" \
-            --workspace "$GENERATED_WORKSPACE"
+            --workspace "$RUNNER_TEMP/generated-workspace"
 
       - name: Upload generated-workspace diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: generated-workspace-release-diagnostics
-          path: ${{ env.GENERATED_WORKSPACE }}/test-output
+          path: ${{ runner.temp }}/generated-workspace/test-output
           if-no-files-found: ignore
           retention-days: 7
 
