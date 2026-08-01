@@ -55,7 +55,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Add a non-blocking compatibility job for the current even-numbered Node release when useful.
   - Verify local builds, production images, Playwright, Testcontainers, and release tooling on the LTS version.
 
-- [ ] **P10-03 Introduce a parameterized Nx preset or initialization generator.**
+- [x] **P10-03 Introduce a parameterized Nx preset or initialization generator.**
   - Accept application slug, display name, package scope, repository owner, CODEOWNERS, ports, database name, and selected applications.
   - Add options for authentication, worker transport, telemetry, deployment profile, and optional AI capabilities.
   - Validate names and incompatible option combinations before writing files.
