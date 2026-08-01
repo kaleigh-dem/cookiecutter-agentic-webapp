@@ -72,9 +72,9 @@ export interface SecurityAuditEvent {
 
 export interface RateLimitRequestIdentity {
   readonly principal?: Pick<AuthenticatedPrincipal, 'subject'>;
-  readonly socket: Pick<IncomingMessage['socket'], 'remoteAddress'>;
-  readonly method?: string;
-  readonly url?: string;
+  readonly socket: {
+    readonly remoteAddress: string | undefined;
+  };
 }
 
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
