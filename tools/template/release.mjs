@@ -1,12 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import {
-  cp,
-  mkdir,
-  readFile,
-  readdir,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -17,7 +10,8 @@ const pluginPackagePath = path.join(pluginRoot, 'package.json');
 const versionSourcePath = path.join(pluginRoot, 'src/template-version.ts');
 const changelogPath = path.join(workspaceRoot, 'CHANGELOG.md');
 const tagPrefix = 'template-v';
-const versionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+const versionPattern =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 
 function parseArguments(argv) {
   const [command = 'verify', ...rest] = argv;
@@ -190,7 +184,9 @@ async function prepareRelease(version) {
   const date = new Date().toISOString().slice(0, 10);
   const changelog = await readFile(changelogPath, 'utf-8');
   if (changelog.includes(`## [${version}]`)) {
-    throw new Error(`CHANGELOG.md already contains a ${version} release section.`);
+    throw new Error(
+      `CHANGELOG.md already contains a ${version} release section.`,
+    );
   }
 
   await writeJson(rootPackagePath, { ...state.rootPackage, version });
@@ -273,13 +269,8 @@ async function packagePlugin(version, outputDirectory) {
   const { pluginPackage } = await assertVersionConsistency(version);
   run('pnpm', ['nx', 'run', 'workspace-plugin:build']);
 
-  const stageRoot = path.join(
-    workspaceRoot,
-    'dist/template-release/package',
-  );
-  const outputRoot = path.resolve(
-    outputDirectory ?? 'dist/template-release',
-  );
+  const stageRoot = path.join(workspaceRoot, 'dist/template-release/package');
+  const outputRoot = path.resolve(outputDirectory ?? 'dist/template-release');
   await rm(stageRoot, { recursive: true, force: true });
   await mkdir(stageRoot, { recursive: true });
   await mkdir(outputRoot, { recursive: true });
@@ -294,7 +285,10 @@ async function packagePlugin(version, outputDirectory) {
     path.join(stageRoot, 'generators.json'),
     await transformedGenerators(),
   );
-  await cp(path.join(pluginRoot, 'README.md'), path.join(stageRoot, 'README.md'));
+  await cp(
+    path.join(pluginRoot, 'README.md'),
+    path.join(stageRoot, 'README.md'),
+  );
 
   const packaged = {
     ...pluginPackage,
@@ -339,10 +333,7 @@ try {
   } else if (command === 'pack') {
     await packagePlugin(requireVersion(options.version), options.output);
   } else if (command === 'notes') {
-    await extractReleaseNotes(
-      requireVersion(options.version),
-      options.output,
-    );
+    await extractReleaseNotes(requireVersion(options.version), options.output);
   } else {
     throw new Error(`Unknown command: ${command}`);
   }
