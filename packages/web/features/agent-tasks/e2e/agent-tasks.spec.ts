@@ -7,7 +7,9 @@ test('creates an authenticated correlated task through the generated client', as
   await page.route('http://localhost:4000/api/agent-tasks', async (route) => {
     const request = route.request();
     expect(request.method()).toBe('POST');
-    expect(request.headers().authorization).toBe('Bearer phase8-e2e-token');
+    expect(request.headers().authorization).toBe(
+      'Bearer local-development-token',
+    );
     expect(request.headers()['x-actor-id']).toBeUndefined();
     const body = request.postDataJSON() as { title: string; prompt: string };
     expect(body).toEqual({
