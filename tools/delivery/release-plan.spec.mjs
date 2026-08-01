@@ -23,8 +23,6 @@ describe('release planning', () => {
     expect(identifiers.indexOf('apply-migrations')).toBeLessThan(
       identifiers.indexOf('deploy-services'),
     );
-    expect(plan.images.api).toBe(
-      'ghcr.io/example/agentic-webapp/api:1.2.3',
-    );
+    expect(plan.images.api).toBe('ghcr.io/example/agentic-webapp/api:1.2.3');
   });
 });
