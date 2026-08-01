@@ -18,6 +18,28 @@ const authenticationProfiles = [
 ] as const;
 const workerTransports = ['none', 'postgres', 'redis'] as const;
 const deploymentProfiles = ['containers', 'kubernetes', 'local'] as const;
+const ignoredIdentitySegments = new Set([
+  '.git',
+  '.next',
+  '.nx',
+  'coverage',
+  'dist',
+  'node_modules',
+  'test-output',
+]);
+
+const templateIdentity = {
+  className: 'AgenticWebapp',
+  displayName: 'Agentic Webapp',
+  packageScope: '@agentic-webapp',
+  propertyName: 'agenticWebapp',
+  repository: 'kaleigh-dem/cookiecutter-agentic-webapp',
+  slug: 'agentic-webapp',
+  snakeName: 'agentic_webapp',
+  upperSnakeName: 'AGENTIC_WEBAPP',
+} as const;
+
+const upstreamRepositorySentinel = '__UPSTREAM_TEMPLATE_REPOSITORY__';
 
 export interface NormalizedInitOptions {
   readonly applicationSlug: string;
@@ -40,6 +62,11 @@ export interface NormalizedInitOptions {
 interface RootPackageJson {
   readonly [key: string]: unknown;
   readonly scripts?: Record<string, string>;
+}
+
+interface RootTsconfig {
+  readonly [key: string]: unknown;
+  readonly references?: Array<{ readonly path: string }>;
 }
 
 function parseList(
@@ -74,6 +101,18 @@ function defaultDisplayName(applicationSlug: string): string {
     .split('-')
     .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
     .join(' ');
+}
+
+function className(applicationSlug: string): string {
+  return applicationSlug
+    .split('-')
+    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
+    .join('');
+}
+
+function propertyName(applicationSlug: string): string {
+  const normalizedClassName = className(applicationSlug);
+  return `${normalizedClassName[0]?.toLowerCase() ?? ''}${normalizedClassName.slice(1)}`;
 }
 
 export function normalizeInitOptions(
@@ -209,7 +248,10 @@ export function normalizeInitOptions(
 
 export function createWorkspaceManifest(options: NormalizedInitOptions) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    upstream: {
+      repository: templateIdentity.repository,
+    },
     application: {
       slug: options.applicationSlug,
       displayName: options.displayName,
@@ -236,6 +278,138 @@ export function createWorkspaceManifest(options: NormalizedInitOptions) {
       ai: options.ai,
     },
   } as const;
+}
+
+function isIgnoredIdentityPath(path: string): boolean {
+  return path
+    .split('/')
+    .some((segment) => ignoredIdentitySegments.has(segment));
+}
+
+function listTreeFiles(tree: Tree, root = ''): string[] {
+  const files: string[] = [];
+  for (const child of tree.children(root)) {
+    const path = root ? `${root}/${child}` : child;
+    if (isIgnoredIdentityPath(path)) {
+      continue;
+    }
+
+    if (tree.read(path) !== null) {
+      files.push(path);
+    } else {
+      files.push(...listTreeFiles(tree, path));
+    }
+  }
+  return files;
+}
+
+function isBinary(content: Buffer): boolean {
+  return content.subarray(0, Math.min(content.length, 8192)).includes(0);
+}
+
+function rewriteDatabaseDefaults(
+  content: string,
+  options: NormalizedInitOptions,
+): string {
+  return content
+    .replace(
+      /(POSTGRES_DB:\s*)app\b/g,
+      `$1${options.databaseName}`,
+    )
+    .replace(/(POSTGRES_DB=)app\b/g, `$1${options.databaseName}`)
+    .replace(/(\bpg_isready\b[^\n]*\s-d\s+)app\b/g, `$1${options.databaseName}`)
+    .replace(
+      /(postgresql:\/\/[^\s'"`]+\/)app\b/g,
+      `$1${options.databaseName}`,
+    );
+}
+
+function rewriteIdentityContent(
+  content: string,
+  options: NormalizedInitOptions,
+): string {
+  const generatedClassName = className(options.applicationSlug);
+  const generatedPropertyName = propertyName(options.applicationSlug);
+  const generatedSnakeName = options.applicationSlug.replaceAll('-', '_');
+  const generatedUpperSnakeName = generatedSnakeName.toUpperCase();
+
+  let rewritten = content.replaceAll(
+    templateIdentity.repository,
+    upstreamRepositorySentinel,
+  );
+
+  const replacements: ReadonlyArray<readonly [string, string]> = [
+    [templateIdentity.packageScope, options.packageScope],
+    [templateIdentity.displayName, options.displayName],
+    [templateIdentity.className, generatedClassName],
+    [templateIdentity.propertyName, generatedPropertyName],
+    [templateIdentity.upperSnakeName, generatedUpperSnakeName],
+    [templateIdentity.snakeName, generatedSnakeName],
+    [templateIdentity.slug, options.applicationSlug],
+  ];
+
+  for (const [templateValue, generatedValue] of replacements) {
+    rewritten = rewritten.replaceAll(templateValue, generatedValue);
+  }
+
+  rewritten = rewritten.replaceAll(
+    upstreamRepositorySentinel,
+    templateIdentity.repository,
+  );
+  return rewriteDatabaseDefaults(rewritten, options);
+}
+
+export function rewriteWorkspaceIdentity(
+  tree: Tree,
+  options: NormalizedInitOptions,
+): void {
+  for (const path of listTreeFiles(tree)) {
+    const content = tree.read(path);
+    if (!content || isBinary(content)) {
+      continue;
+    }
+
+    const original = content.toString('utf-8');
+    const rewritten = rewriteIdentityContent(original, options);
+    if (rewritten !== original) {
+      tree.write(path, rewritten);
+    }
+  }
+}
+
+function removeTreePath(tree: Tree, path: string): void {
+  const content = tree.read(path);
+  if (content !== null) {
+    tree.delete(path);
+    return;
+  }
+
+  for (const child of tree.children(path)) {
+    removeTreePath(tree, `${path}/${child}`);
+  }
+}
+
+function removeUnselectedApplications(
+  tree: Tree,
+  options: NormalizedInitOptions,
+): void {
+  for (const application of applicationOrder) {
+    if (!options.applications.includes(application)) {
+      removeTreePath(tree, `apps/${application}`);
+    }
+  }
+
+  if (!tree.exists('tsconfig.json')) {
+    return;
+  }
+
+  const tsconfig = readJson<RootTsconfig>(tree, 'tsconfig.json');
+  const selected = new Set(options.applications.map((app) => `./apps/${app}`));
+  const references = (tsconfig.references ?? []).filter(
+    (reference) =>
+      !reference.path.startsWith('./apps/') || selected.has(reference.path),
+  );
+  writeJson(tree, 'tsconfig.json', { ...tsconfig, references });
 }
 
 function updateEnvironmentValue(
@@ -331,6 +505,8 @@ export default async function initGenerator(
 ): Promise<void> {
   const options = normalizeInitOptions(schema);
 
+  rewriteWorkspaceIdentity(tree, options);
+  removeUnselectedApplications(tree, options);
   writeJson(tree, 'workspace.template.json', createWorkspaceManifest(options));
   updateRootPackageJson(tree, options);
   writeCodeowners(tree, options);
