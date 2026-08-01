@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-01T14:45:33Z",
+  "source": {
+    "workflow": "CI",
+    "runNumber": 235,
+    "job": "affected"
+  },
+  "samples": [
+    {
+      "totalSeconds": 144,
+      "typecheckSeconds": 11.4,
+      "buildSeconds": 8.6,
+      "e2eSeconds": 6.1,
+      "generatorSmokeSeconds": 27.5,
+      "lintAndTestSeconds": 20.8
+    }
+  ],
+  "peakConcurrentPullRequests": 1,
+  "decisionThresholds": {
+    "medianTotalSeconds": 600,
+    "p95TotalSeconds": 900,
+    "peakConcurrentPullRequests": 3
+  }
+}
