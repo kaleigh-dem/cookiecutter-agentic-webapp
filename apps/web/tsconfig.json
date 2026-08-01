@@ -33,9 +33,6 @@
     },
     {
       "path": "../../packages/contracts"
-    },
-    {
-      "path": "../../packages/observability"
     }
   ]
 }
