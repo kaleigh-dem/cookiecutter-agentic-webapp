@@ -232,7 +232,10 @@ async function main(): Promise<void> {
     assert.equal(first['CHANGELOG.md'], undefined);
     assert.equal(first['docs/template-releases.md'], undefined);
     assert.equal(first['docs/template-validation.md'], undefined);
-    assert.equal(first['tools/template/generated-workspace-e2e.mjs'], undefined);
+    assert.equal(
+      first['tools/template/generated-workspace-e2e.mjs'],
+      undefined,
+    );
     assert.equal(first['tools/template/release.mjs'], undefined);
     assert.equal(first['tools/template/smoke-release-artifact.mjs'], undefined);
 
