@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  evaluateScenario,
-  percentile,
-  validateBudgets,
-} from './load-test.mjs';
+import { evaluateScenario, percentile, validateBudgets } from './load-test.mjs';
 
 describe('performance budgets', () => {
   it('calculates nearest-rank percentiles', () => {
