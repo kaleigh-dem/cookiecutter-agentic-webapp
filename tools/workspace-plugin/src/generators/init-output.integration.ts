@@ -102,7 +102,8 @@ async function captureWorkspace(
 
     const content = await readFile(path.join(workspaceRoot, relativePath));
     if (!isBinary(content)) {
-      captured[relativePath.split(path.sep).join('/')] = content.toString('utf-8');
+      captured[relativePath.split(path.sep).join('/')] =
+        content.toString('utf-8');
     }
   }
 
