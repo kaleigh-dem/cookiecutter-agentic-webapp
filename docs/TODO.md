@@ -49,7 +49,7 @@ Goal: make workspace creation, customization, validation, release, and downstrea
 
 Tasks are listed in implementation order. Existing task IDs remain stable for review and issue references, so P10-02 intentionally follows its P10-03 through P10-05 prerequisites.
 
-- [ ] **P10-01 Replace Node 25 with an active LTS baseline.**
+- [x] **P10-01 Replace Node 25 with an active LTS baseline.**
   - Pin Node 24 in `package.json`, GitHub Actions, Docker build arguments, and developer tooling.
   - Add `.node-version` or `.tool-versions` and document the runtime support policy.
   - Add a non-blocking compatibility job for the current even-numbered Node release when useful.
