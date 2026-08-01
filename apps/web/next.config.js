@@ -3,6 +3,8 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   transpilePackages: ['@agentic-webapp/contracts', '@agentic-webapp/ui'],
   turbopack: {
     root: path.join(__dirname, '../..'),
