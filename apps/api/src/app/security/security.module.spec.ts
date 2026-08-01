@@ -19,7 +19,9 @@ describe('security boundary', () => {
   });
 
   it('rejects oversized authorization headers without regular-expression work', () => {
-    expect(extractBearerToken(`Bearer ${' '.repeat(8_192)}token`)).toBeUndefined();
+    expect(
+      extractBearerToken(`Bearer ${' '.repeat(8_192)}token`),
+    ).toBeUndefined();
   });
 
   it('requires every declared permission', () => {
