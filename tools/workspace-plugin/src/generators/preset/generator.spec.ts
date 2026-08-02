@@ -105,9 +105,9 @@ describe('preset generator', () => {
     expect(tree.exists('docs/template-upgrades.md')).toBe(true);
     expect(tree.exists('tools/template/upgrade.mjs')).toBe(true);
     expect(tree.exists('tools/template/ownership.json')).toBe(true);
-    expect(
-      tree.exists('tools/template/migrations/0.1.0-to-0.2.0.mjs'),
-    ).toBe(true);
+    expect(tree.exists('tools/template/migrations/0.1.0-to-0.2.0.mjs')).toBe(
+      true,
+    );
 
     expect(
       readJson<{
