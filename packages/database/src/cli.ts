@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { loadEnvFile } from 'node:process';
 
+import { PostgresOutboxDelivery } from './adapters/job-outbox-delivery';
+import { createDatabase } from './client';
 import { createMigrationFile, runMigrations } from './migrations';
 import { resetDatabase } from './reset';
 import { seedDevelopmentData } from './seed';
@@ -28,6 +30,50 @@ function requireDatabaseUrl(): string {
   }
 
   return value;
+}
+
+function optionValue(args: string[], name: string): string | undefined {
+  const prefix = `--${name}=`;
+  const inline = args.find((argument) => argument.startsWith(prefix));
+  if (inline) return inline.slice(prefix.length);
+  const index = args.indexOf(`--${name}`);
+  if (index === -1) return undefined;
+  const value = args[index + 1];
+  if (!value || value.startsWith('--')) {
+    throw new Error(`--${name} requires a value.`);
+  }
+  return value;
+}
+
+function requireOption(args: string[], name: string): string {
+  const value = optionValue(args, name)?.trim();
+  if (!value) throw new Error(`--${name} is required.`);
+  return value;
+}
+
+function optionalLimit(args: string[]): number | undefined {
+  const value = optionValue(args, 'limit');
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new Error('--limit must be an integer.');
+  }
+  return parsed;
+}
+
+async function withOutboxDelivery<T>(
+  operation: (delivery: PostgresOutboxDelivery) => Promise<T>,
+): Promise<T> {
+  const connection = createDatabase({
+    connectionString: requireDatabaseUrl(),
+    applicationName: 'database-outbox-operator',
+    maxConnections: 1,
+  });
+  try {
+    return await operation(new PostgresOutboxDelivery(connection.pool));
+  } finally {
+    await connection.close();
+  }
 }
 
 async function main(): Promise<void> {
@@ -74,9 +120,53 @@ async function main(): Promise<void> {
     case 'reset':
       await resetDatabase(requireDatabaseUrl());
       return;
+    case 'outbox:list-failed': {
+      const limit = optionalLimit(args);
+      const kind = optionValue(args, 'kind');
+      const errorCode = optionValue(args, 'error-code');
+      const messages = await withOutboxDelivery((delivery) =>
+        delivery.listFailed({
+          ...(limit === undefined ? {} : { limit }),
+          ...(kind ? { kind } : {}),
+          ...(errorCode ? { errorCode } : {}),
+        }),
+      );
+      console.log(
+        JSON.stringify(
+          messages.map((message) => ({
+            ...message,
+            createdAt: message.createdAt.toISOString(),
+            failedAt: message.failedAt.toISOString(),
+            lastErrorAt: message.lastErrorAt?.toISOString() ?? null,
+            lastReplayedAt: message.lastReplayedAt?.toISOString() ?? null,
+          })),
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+    case 'outbox:replay': {
+      const [id] = args;
+      if (!id || id.startsWith('--')) {
+        throw new Error('outbox:replay requires a failed outbox UUID.');
+      }
+      const replayedBy = requireOption(args, 'by');
+      const reason = requireOption(args, 'reason');
+      const replayed = await withOutboxDelivery((delivery) =>
+        delivery.replayFailed({ id, replayedBy, reason }),
+      );
+      if (!replayed) {
+        throw new Error(`Failed outbox message ${id} was not found.`);
+      }
+      console.log(
+        JSON.stringify({ id, replayed: true, replayedBy, reason }, null, 2),
+      );
+      return;
+    }
     default:
       throw new Error(
-        'Usage: database <create|up|down|status|seed|reset> [migration name]',
+        'Usage: database <create|up|down|status|seed|reset|outbox:list-failed|outbox:replay> [arguments]',
       );
   }
 }

@@ -52,6 +52,10 @@ export async function handleExecuteAgentTaskJob(
     );
   }
   const attemptCount = envelope.attemptCount ?? 1;
+  const maxAttempts = envelope.maxAttempts ?? 1;
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new Error('Agent Task execution maxAttempts must be positive.');
+  }
   const correlationContext =
     validated.version === 2
       ? createCorrelationContext({
@@ -87,6 +91,7 @@ export async function handleExecuteAgentTaskJob(
         return execute(validated, {
           jobId,
           attemptCount,
+          maxAttempts,
           ...(envelope.signal ? { signal: envelope.signal } : {}),
         });
       }),

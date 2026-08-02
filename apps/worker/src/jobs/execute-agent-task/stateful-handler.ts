@@ -3,6 +3,7 @@ import type {
   AgentTaskExecutionStore,
 } from '@agentic-webapp/database';
 
+import { classifyJobFailure, PermanentJobError } from '../failure';
 import type {
   ExecuteAgentTaskJobEnvelope,
   ExecuteAgentTaskJobPayload,
@@ -25,9 +26,9 @@ export type StatefulExecuteAgentTaskHandler = (
   envelope?: ExecuteAgentTaskJobEnvelope,
 ) => Promise<ExecuteAgentTaskJobResult>;
 
-export class AgentTaskExecutionStateError extends Error {
+export class AgentTaskExecutionStateError extends PermanentJobError {
   public constructor(message: string) {
-    super(message);
+    super('execution_state_conflict', message);
     this.name = 'AgentTaskExecutionStateError';
   }
 }
@@ -52,22 +53,6 @@ function terminalResult(
     correlationId: payload.correlationId,
     completedAt: finishedAt.toISOString(),
   };
-}
-
-const executionErrorCodes: Readonly<Record<string, string>> = {
-  RangeError: 'range_error',
-  SyntaxError: 'syntax_error',
-  TimeoutError: 'timeout_error',
-  TypeError: 'type_error',
-};
-
-function executionErrorCode(error: unknown): string {
-  if (!(error instanceof Error)) return 'execution_failed';
-  return executionErrorCodes[error.name] ?? 'execution_failed';
-}
-
-function executionErrorMessage(): string {
-  return 'Agent Task execution failed.';
 }
 
 function stateError(
@@ -109,14 +94,19 @@ export function createStatefulExecuteAgentTaskHandler(
     try {
       result = await execute(payload, context);
     } catch (error) {
-      if (!context.signal?.aborted) {
+      const failure = classifyJobFailure(error);
+      const exhausted = context.attemptCount >= context.maxAttempts;
+      if (
+        !context.signal?.aborted &&
+        (failure.disposition === 'permanent' || exhausted)
+      ) {
         await store.fail({
           taskId: payload.taskId,
           jobId: context.jobId,
           deliveryAttempt: context.attemptCount,
           finishedAt: now(),
-          errorCode: executionErrorCode(error),
-          errorMessage: executionErrorMessage(),
+          errorCode: failure.errorCode,
+          errorMessage: failure.errorMessage,
         });
       }
       throw error;

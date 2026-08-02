@@ -3,11 +3,18 @@ import type {
   PostgresOutboxDelivery,
 } from '@agentic-webapp/database';
 
+import { classifyJobFailure } from '../jobs/failure';
 import {
   dispatchOutboxMessage,
   type DispatchOutboxMessageOptions,
   type ExecuteAgentTaskHandler,
 } from './dispatch';
+import {
+  calculateRetryDelayMs,
+  defaultRetryPolicy,
+  type RetryPolicy,
+  validateRetryPolicy,
+} from './retry-policy';
 
 export interface WorkerLogger {
   info(event: string, fields?: Record<string, unknown>): void;
@@ -21,6 +28,9 @@ export interface PollWorkerOptions {
   readonly leaseDurationMs: number;
   readonly logger: WorkerLogger;
   readonly handleExecuteAgentTask?: ExecuteAgentTaskHandler;
+  readonly retryPolicy?: RetryPolicy;
+  readonly now?: () => Date;
+  readonly random?: () => number;
   readonly dispatch?: (
     message: ClaimedOutboxMessage,
     options: DispatchOutboxMessageOptions,
@@ -118,9 +128,12 @@ function startLeaseRenewal(
         eventKind: message.kind,
         outboxId: message.id,
       });
-    } catch (error) {
+    } catch {
       if (!stopped) {
-        options.logger.error('worker.message.lease-renewal-failed', error);
+        options.logger.error(
+          'worker.message.lease-renewal-failed',
+          new Error('The outbox lease renewal failed.'),
+        );
       }
     } finally {
       renewalInFlight = false;
@@ -140,9 +153,78 @@ function startLeaseRenewal(
   };
 }
 
+async function settleDispatchFailure(
+  message: ClaimedOutboxMessage,
+  renewal: LeaseRenewal | undefined,
+  error: unknown,
+  options: PollWorkerOptions,
+  retryPolicy: RetryPolicy,
+): Promise<void> {
+  if (renewal?.signal.aborted) return;
+
+  const failure = classifyJobFailure(error);
+  const exhausted = message.attemptCount >= retryPolicy.maxAttempts;
+
+  if (failure.disposition === 'retryable' && !exhausted) {
+    const retryDelayMs = calculateRetryDelayMs(
+      message.attemptCount,
+      retryPolicy,
+      options.random,
+    );
+    const nextAttemptAt = new Date(
+      (options.now?.() ?? new Date()).getTime() + retryDelayMs,
+    );
+    const updated = await options.delivery.reschedule({
+      ...claimReference(message),
+      nextAttemptAt,
+      errorCode: failure.errorCode,
+      errorMessage: failure.errorMessage,
+    });
+    if (!updated) {
+      options.logger.error(
+        'worker.message.claim-lost',
+        new Error('The outbox claim expired before retry could be scheduled.'),
+      );
+      return;
+    }
+    options.logger.info('worker.message.retry-scheduled', {
+      attemptCount: message.attemptCount,
+      errorCode: failure.errorCode,
+      eventKind: message.kind,
+      nextAttemptAt: nextAttemptAt.toISOString(),
+      outboxId: message.id,
+      retryDelayMs,
+    });
+    return;
+  }
+
+  const updated = await options.delivery.fail({
+    ...claimReference(message),
+    errorCode: failure.errorCode,
+    errorMessage: failure.errorMessage,
+  });
+  if (!updated) {
+    options.logger.error(
+      'worker.message.claim-lost',
+      new Error('The outbox claim expired before dead-lettering completed.'),
+    );
+    return;
+  }
+  options.logger.info('worker.message.dead-lettered', {
+    attemptCount: message.attemptCount,
+    errorCode: failure.errorCode,
+    eventKind: message.kind,
+    outboxId: message.id,
+    reason: exhausted ? 'attempts-exhausted' : 'permanent-failure',
+  });
+}
+
 export async function pollWorkerOnce(
   options: PollWorkerOptions,
 ): Promise<number> {
+  const retryPolicy = validateRetryPolicy(
+    options.retryPolicy ?? defaultRetryPolicy,
+  );
   const messages = await options.delivery.claim({
     workerId: options.workerId,
     batchSize: options.batchSize,
@@ -162,6 +244,7 @@ export async function pollWorkerOnce(
       try {
         const disposition = await dispatch(message, {
           delivery: options.delivery,
+          maxAttempts: retryPolicy.maxAttempts,
           ...(options.handleExecuteAgentTask
             ? { handleExecuteAgentTask: options.handleExecuteAgentTask }
             : {}),
@@ -174,8 +257,19 @@ export async function pollWorkerOnce(
           outboxId: message.id,
         });
       } catch (error) {
-        if (!renewal?.signal.aborted) {
-          options.logger.error('worker.message.failed', error);
+        try {
+          await settleDispatchFailure(
+            message,
+            renewal,
+            error,
+            options,
+            retryPolicy,
+          );
+        } catch {
+          options.logger.error(
+            'worker.message.disposition-failed',
+            new Error('Unable to persist the outbox failure disposition.'),
+          );
         }
       } finally {
         renewal?.stop();
@@ -214,8 +308,11 @@ export async function runWorkerLoop(
   while (!options.signal.aborted) {
     try {
       await pollWorkerOnce(options);
-    } catch (error) {
-      options.logger.error('worker.poll.failed', error);
+    } catch {
+      options.logger.error(
+        'worker.poll.failed',
+        new Error('The worker polling operation failed.'),
+      );
     }
 
     if (!options.signal.aborted) {

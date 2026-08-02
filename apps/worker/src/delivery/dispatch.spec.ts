@@ -60,12 +60,14 @@ describe('dispatchOutboxMessage', () => {
       dispatchOutboxMessage(claimed, {
         delivery,
         handleExecuteAgentTask: handle as ExecuteAgentTaskHandler,
+        maxAttempts: 5,
       }),
     ).resolves.toBe('acknowledged');
 
     expect(handle).toHaveBeenCalledWith(claimed.payload, undefined, {
       jobId: claimed.id,
       attemptCount: claimed.attemptCount,
+      maxAttempts: 5,
     });
     expect(acknowledge).toHaveBeenCalledWith({
       id: claimed.id,
@@ -88,6 +90,7 @@ describe('dispatchOutboxMessage', () => {
         new Promise((resolve) => {
           expect(envelope).toMatchObject({
             attemptCount: 2,
+            maxAttempts: 1,
             signal: controller.signal,
           });
           completeHandler = () => resolve({ accepted: true });

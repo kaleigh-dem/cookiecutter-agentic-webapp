@@ -74,6 +74,13 @@ export const jobOutbox = appSchema.table('job_outbox', {
     mode: 'date',
     withTimezone: true,
   }),
+  replayCount: integer('replay_count').notNull().default(0),
+  lastReplayedAt: timestamp('last_replayed_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
+  lastReplayedBy: text('last_replayed_by'),
+  lastReplayReason: text('last_replay_reason'),
   createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
     .notNull()
     .defaultNow(),

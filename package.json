@@ -54,6 +54,8 @@
     "db:status": "nx run database:status",
     "db:seed": "nx run database:seed",
     "db:reset": "nx run database:reset",
+    "outbox:list-failed": "nx run database:outbox-list-failed",
+    "outbox:replay": "nx run database:outbox-replay",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "telemetry:up": "docker compose --profile telemetry up -d otel-collector",

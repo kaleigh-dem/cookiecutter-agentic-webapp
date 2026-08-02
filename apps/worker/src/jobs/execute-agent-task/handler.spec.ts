@@ -27,6 +27,7 @@ describe('handleExecuteAgentTaskJob', () => {
         expect(context).toEqual({
           jobId: payload.jobId,
           attemptCount: 3,
+          maxAttempts: 5,
           signal: controller.signal,
         });
         expect(getCorrelationContext()).toEqual({
@@ -42,7 +43,7 @@ describe('handleExecuteAgentTaskJob', () => {
           completedAt: '2026-07-31T17:01:00.000Z',
         };
       },
-      { attemptCount: 3, signal: controller.signal },
+      { attemptCount: 3, maxAttempts: 5, signal: controller.signal },
     );
 
     expect(result).toEqual({
@@ -69,6 +70,7 @@ describe('handleExecuteAgentTaskJob', () => {
         expect(context).toMatchObject({
           jobId: '33333333-3333-4333-8333-333333333333',
           attemptCount: 2,
+          maxAttempts: 4,
         });
         expect(getCorrelationContext()).toEqual(
           expect.objectContaining({
@@ -88,6 +90,7 @@ describe('handleExecuteAgentTaskJob', () => {
       {
         jobId: '33333333-3333-4333-8333-333333333333',
         attemptCount: 2,
+        maxAttempts: 4,
       },
     );
   });
