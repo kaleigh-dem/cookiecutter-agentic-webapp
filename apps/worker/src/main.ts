@@ -115,9 +115,10 @@ async function startWorker(): Promise<void> {
       applicationName: `worker:${workerId}`,
       maxConnections: BATCH_SIZE + 2,
     });
-    const delivery = new PostgresOutboxDelivery(database.pool);
+    const activeDatabase = database;
+    const delivery = new PostgresOutboxDelivery(activeDatabase.pool);
     const executionStore = new DrizzleAgentTaskExecutionStore(
-      database.database,
+      activeDatabase.database,
     );
     const handleExecuteAgentTask =
       createStatefulExecuteAgentTaskHandler(executionStore);
@@ -129,7 +130,7 @@ async function startWorker(): Promise<void> {
         {
           name: 'database',
           check: async () => {
-            await database?.pool.query('select 1');
+            await activeDatabase.pool.query('select 1');
           },
         },
       ],
