@@ -296,6 +296,9 @@ async function packagePlugin(version, outputDirectory) {
   const packaged = {
     ...pluginPackage,
     private: false,
+    bin: {
+      'agentic-webapp-upgrade': './bin/agentic-webapp-upgrade.mjs',
+    },
     files: ['bin', 'dist', 'generators.json', 'README.md'],
   };
   await writeJson(path.join(stageRoot, 'package.json'), packaged);
