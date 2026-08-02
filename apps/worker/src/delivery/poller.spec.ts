@@ -96,7 +96,7 @@ describe('pollWorkerOnce', () => {
         workerId: 'worker-1',
       });
 
-      await vi.advanceTimersByTimeAsync(15_000);
+      await vi.advanceTimersByTimeAsync(10_000);
 
       expect(renew).toHaveBeenCalledTimes(2);
       expect(renew).toHaveBeenCalledWith({
@@ -117,6 +117,48 @@ describe('pollWorkerOnce', () => {
 
       await vi.advanceTimersByTimeAsync(30_000);
       expect(renew).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('retries a failed renewal before the current lease expires', async () => {
+    vi.useFakeTimers();
+    try {
+      const claimed = message('11111111-1111-4111-8111-111111111111');
+      const claim = vi.fn(async () => [claimed]);
+      const renew = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('temporary database failure'))
+        .mockResolvedValueOnce(new Date('2026-08-02T12:01:30.000Z'));
+      let complete: (() => void) | undefined;
+      const dispatch = vi.fn(
+        () =>
+          new Promise<'acknowledged'>((resolve) => {
+            complete = () => resolve('acknowledged');
+          }),
+      );
+      const { error, logger: workerLogger } = logger();
+
+      const polling = pollWorkerOnce({
+        batchSize: 1,
+        delivery: { claim, renew } as unknown as PostgresOutboxDelivery,
+        dispatch,
+        leaseDurationMs: 30_000,
+        logger: workerLogger,
+        workerId: 'worker-1',
+      });
+
+      await vi.advanceTimersByTimeAsync(20_000);
+
+      expect(renew).toHaveBeenCalledTimes(2);
+      expect(error).toHaveBeenCalledWith(
+        'worker.message.lease-renewal-failed',
+        expect.objectContaining({ message: 'temporary database failure' }),
+      );
+
+      complete?.();
+      await expect(polling).resolves.toBe(1);
     } finally {
       vi.useRealTimers();
     }
