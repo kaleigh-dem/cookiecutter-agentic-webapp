@@ -89,14 +89,12 @@ function messageCorrelationContext(
 ): CorrelationContext {
   const actorId = stringField(message.payload, 'actorId');
   const userId = stringField(message.payload, 'userId') ?? actorId;
+  const requestId = stringField(message.payload, 'requestId');
+  const traceId = stringField(message.payload, 'traceId');
 
   return createCorrelationContext({
-    ...(stringField(message.payload, 'requestId')
-      ? { requestId: stringField(message.payload, 'requestId') }
-      : {}),
-    ...(stringField(message.payload, 'traceId')
-      ? { traceId: stringField(message.payload, 'traceId') }
-      : {}),
+    ...(requestId ? { requestId } : {}),
+    ...(traceId ? { traceId } : {}),
     ...(userId ? { userId } : {}),
     ...(actorId ? { actorId } : {}),
     eventId: message.id,
