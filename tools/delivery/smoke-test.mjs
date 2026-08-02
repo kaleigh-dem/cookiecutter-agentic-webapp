@@ -89,12 +89,7 @@ function profileArgument(arguments_) {
   return value;
 }
 
-async function promiseWithTimeout(
-  promise,
-  timeoutMs,
-  timeoutError,
-  onTimeout,
-) {
+async function promiseWithTimeout(promise, timeoutMs, timeoutError, onTimeout) {
   if (timeoutMs <= 0) throw timeoutError;
 
   let timeout;
