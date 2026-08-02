@@ -6,6 +6,7 @@ import type {
 import {
   dispatchOutboxMessage,
   type DispatchOutboxMessageOptions,
+  type ExecuteAgentTaskHandler,
 } from './dispatch';
 
 export interface WorkerLogger {
@@ -19,6 +20,7 @@ export interface PollWorkerOptions {
   readonly batchSize: number;
   readonly leaseDurationMs: number;
   readonly logger: WorkerLogger;
+  readonly handleExecuteAgentTask?: ExecuteAgentTaskHandler;
   readonly dispatch?: (
     message: ClaimedOutboxMessage,
     options: DispatchOutboxMessageOptions,
@@ -160,6 +162,9 @@ export async function pollWorkerOnce(
       try {
         const disposition = await dispatch(message, {
           delivery: options.delivery,
+          ...(options.handleExecuteAgentTask
+            ? { handleExecuteAgentTask: options.handleExecuteAgentTask }
+            : {}),
           ...(renewal ? { signal: renewal.signal } : {}),
         });
         options.logger.info('worker.message.completed', {

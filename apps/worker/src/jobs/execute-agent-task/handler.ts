@@ -12,7 +12,7 @@ import {
   type ExecuteAgentTaskJobResult,
 } from './contract';
 
-type ExecuteAgentTask = (
+export type ExecuteAgentTask = (
   payload: ExecuteAgentTaskJobPayload,
   context: ExecuteAgentTaskJobContext,
 ) => Promise<ExecuteAgentTaskJobResult>;
@@ -24,7 +24,7 @@ function throwIfAborted(signal?: AbortSignal): void {
     : new Error('Agent Task execution was aborted.');
 }
 
-const completeAgentTask: ExecuteAgentTask = async (payload, context) => {
+export const completeAgentTask: ExecuteAgentTask = async (payload, context) => {
   throwIfAborted(context.signal);
   return {
     taskId: payload.taskId,
@@ -40,6 +40,10 @@ export async function handleExecuteAgentTaskJob(
 ): Promise<ExecuteAgentTaskJobResult> {
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
   const jobId = validated.version === 2 ? validated.jobId : envelope.jobId;
+  if (!jobId) {
+    throw new Error('Agent Task execution requires a persisted job identifier.');
+  }
+  const attemptCount = envelope.attemptCount ?? 1;
   const correlationContext =
     validated.version === 2
       ? createCorrelationContext({
@@ -52,7 +56,7 @@ export async function handleExecuteAgentTaskJob(
       : createCorrelationContext({
           userId: validated.actorId,
           correlationId: validated.correlationId,
-          ...(envelope.jobId ? { jobId: envelope.jobId } : {}),
+          jobId,
         });
 
   return runWithRemoteTrace(
@@ -65,13 +69,16 @@ export async function handleExecuteAgentTaskJob(
         'agent_task.id': validated.taskId,
         'messaging.operation.name': 'process',
         'messaging.message.type': `agent-task.execute.v${validated.version}`,
-        ...(jobId ? { 'messaging.message.id': jobId } : {}),
+        'messaging.message.id': jobId,
+        'messaging.message.receive_count': attemptCount,
       },
     },
     () =>
       runWithCorrelationContext(correlationContext, () => {
         throwIfAborted(envelope.signal);
         return execute(validated, {
+          jobId,
+          attemptCount,
           ...(envelope.signal ? { signal: envelope.signal } : {}),
         });
       }),

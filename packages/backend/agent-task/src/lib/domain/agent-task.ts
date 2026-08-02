@@ -1,7 +1,7 @@
 export const agentTaskStatuses = [
   'queued',
   'running',
-  'completed',
+  'succeeded',
   'failed',
 ] as const;
 export type AgentTaskStatus = (typeof agentTaskStatuses)[number];

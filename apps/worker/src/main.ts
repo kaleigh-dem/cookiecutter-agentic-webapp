@@ -3,6 +3,7 @@ import { hostname } from 'node:os';
 import {
   createDatabase,
   type DatabaseConnection,
+  DrizzleAgentTaskExecutionStore,
   PostgresOutboxDelivery,
 } from '@agentic-webapp/database';
 import {
@@ -13,6 +14,7 @@ import {
 import { startNodeTelemetry } from '@agentic-webapp/observability/telemetry';
 
 import { runWorkerLoop } from './delivery/poller';
+import { createStatefulExecuteAgentTaskHandler } from './jobs/execute-agent-task/stateful-handler';
 
 const BATCH_SIZE = 10;
 const HEARTBEAT_INTERVAL_MS = 30_000;
@@ -55,6 +57,11 @@ async function startWorker(): Promise<void> {
       maxConnections: BATCH_SIZE + 1,
     });
     const delivery = new PostgresOutboxDelivery(database.pool);
+    const executionStore = new DrizzleAgentTaskExecutionStore(
+      database.database,
+    );
+    const handleExecuteAgentTask =
+      createStatefulExecuteAgentTaskHandler(executionStore);
 
     heartbeat = setInterval(() => {
       runWithCorrelationContext(
@@ -74,6 +81,7 @@ async function startWorker(): Promise<void> {
     await runWorkerLoop({
       batchSize: BATCH_SIZE,
       delivery,
+      handleExecuteAgentTask,
       leaseDurationMs: LEASE_DURATION_MS,
       logger,
       pollIntervalMs: POLL_INTERVAL_MS,

@@ -11,10 +11,13 @@ export const executeAgentTaskQueue = 'agent-tasks' as const;
 
 export interface ExecuteAgentTaskJobEnvelope {
   readonly jobId?: string;
+  readonly attemptCount?: number;
   readonly signal?: AbortSignal;
 }
 
 export interface ExecuteAgentTaskJobContext {
+  readonly jobId: string;
+  readonly attemptCount: number;
   readonly signal?: AbortSignal;
 }
 

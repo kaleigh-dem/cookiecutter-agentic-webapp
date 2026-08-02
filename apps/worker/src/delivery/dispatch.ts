@@ -151,6 +151,7 @@ export async function dispatchOutboxMessage(
   await waitForHandler(
     handle(payload, undefined, {
       jobId: message.id,
+      attemptCount: message.attemptCount,
       ...(options.signal ? { signal: options.signal } : {}),
     }),
     options.signal,

@@ -30,7 +30,7 @@ function message(
       occurredAt: '2026-08-02T12:00:00.000Z',
     },
     correlationId: 'correlation-1',
-    attemptCount: 1,
+    attemptCount: 2,
     nextAttemptAt: new Date('2026-08-02T12:00:00.000Z'),
     workerId: 'worker-1',
     claimToken: '44444444-4444-4444-8444-444444444444',
@@ -65,6 +65,7 @@ describe('dispatchOutboxMessage', () => {
 
     expect(handle).toHaveBeenCalledWith(claimed.payload, undefined, {
       jobId: claimed.id,
+      attemptCount: claimed.attemptCount,
     });
     expect(acknowledge).toHaveBeenCalledWith({
       id: claimed.id,
@@ -85,7 +86,10 @@ describe('dispatchOutboxMessage', () => {
         envelope?: ExecuteAgentTaskJobEnvelope,
       ) =>
         new Promise((resolve) => {
-          expect(envelope?.signal).toBe(controller.signal);
+          expect(envelope).toMatchObject({
+            attemptCount: 2,
+            signal: controller.signal,
+          });
           completeHandler = () => resolve({ accepted: true });
         }),
     );
