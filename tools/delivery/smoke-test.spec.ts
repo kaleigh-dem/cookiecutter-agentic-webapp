@@ -11,7 +11,9 @@ function jsonResponse(value: unknown, status: number): Response {
 
 describe('preview smoke test', () => {
   it('checks the worker operations endpoint selected by the environment', async () => {
-    const fetchImplementation = vi.fn(async () => new Response('{}', { status: 200 }));
+    const fetchImplementation = vi.fn(
+      async () => new Response('{}', { status: 200 }),
+    );
 
     await expect(
       runCheck(
