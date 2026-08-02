@@ -77,6 +77,7 @@ describe('observability primitives', () => {
           averageMs: 20,
         },
       },
+      gauges: {},
     });
   });
 
@@ -97,6 +98,7 @@ describe('observability primitives', () => {
           averageMs: 49.5,
         },
       },
+      gauges: {},
     });
   });
 
