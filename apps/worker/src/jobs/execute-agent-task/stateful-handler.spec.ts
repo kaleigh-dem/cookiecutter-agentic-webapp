@@ -130,7 +130,9 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
         execute,
       });
 
-      await expect(handler(payload, undefined, envelope)).resolves.toMatchObject({
+      await expect(
+        handler(payload, undefined, envelope),
+      ).resolves.toMatchObject({
         taskId: payload.taskId,
         completedAt: terminalAt.toISOString(),
       });

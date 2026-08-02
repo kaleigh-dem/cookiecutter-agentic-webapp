@@ -58,7 +58,9 @@ function executionErrorCode(error: unknown): string {
 
 function executionErrorMessage(error: unknown): string {
   const message =
-    error instanceof Error ? error.message : 'Unknown Agent Task execution error.';
+    error instanceof Error
+      ? error.message
+      : 'Unknown Agent Task execution error.';
   return message.slice(0, 1000);
 }
 

@@ -41,7 +41,9 @@ export async function handleExecuteAgentTaskJob(
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
   const jobId = validated.version === 2 ? validated.jobId : envelope.jobId;
   if (!jobId) {
-    throw new Error('Agent Task execution requires a persisted job identifier.');
+    throw new Error(
+      'Agent Task execution requires a persisted job identifier.',
+    );
   }
   const attemptCount = envelope.attemptCount ?? 1;
   const correlationContext =

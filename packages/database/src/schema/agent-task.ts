@@ -10,11 +10,7 @@ import {
 
 import { appSchema } from './platform';
 
-export type AgentTaskRowStatus =
-  | 'queued'
-  | 'running'
-  | 'succeeded'
-  | 'failed';
+export type AgentTaskRowStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 export type JobOutboxState = 'pending' | 'processing' | 'processed' | 'failed';
 
 export const agentTasks = appSchema.table('agent_tasks', {

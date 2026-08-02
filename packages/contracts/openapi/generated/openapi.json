@@ -43,7 +43,7 @@
             "type": "string"
           },
           "status": {
-            "enum": ["queued", "running", "completed", "failed"],
+            "enum": ["queued", "running", "succeeded", "failed"],
             "type": "string"
           },
           "title": {

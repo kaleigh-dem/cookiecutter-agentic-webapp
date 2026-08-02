@@ -8,8 +8,9 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 2. The API reads the temporary `x-actor-id` request-context adapter. Phase 8 replaces this adapter with authenticated identity without changing the application use cases.
 3. `CreateAgentTask` validates and normalizes the command, creates the domain entity, and produces the generated `AgentTaskExecutionRequested` contract.
 4. `DrizzleAgentTaskRepository` writes the task and outbox event in one transaction.
-5. The worker handler validates the same versioned contract and preserves the correlation identifier.
-6. Actor-scoped reads are authorized by the application use case before the API returns data.
+5. The deployed worker claims the outbox row, validates the same versioned contract, and preserves the request, actor, trace, job, and correlation identifiers.
+6. The stateful handler uses the outbox row ID as the idempotency key and the receive count as a fence while conditionally transitioning the task from `queued` to `running` and then `succeeded` or `failed`. Terminal duplicate delivery is acknowledged without re-execution, while stale attempts cannot regress newer or terminal state.
+7. Actor-scoped reads are authorized by the application use case before the API returns data.
 
 ## Where changes belong
 
@@ -26,7 +27,8 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 
 - Domain unit tests cover normalization, validation, persistence calls, and authorization.
 - Contract tests cover the event schema and generated HTTP drift/compatibility.
-- PostgreSQL Testcontainers tests cover migrations, the repository, and the transactional outbox.
+- PostgreSQL Testcontainers tests cover migrations, the repository, the transactional outbox, fenced execution attempts, terminal transitions, and persisted support metadata.
+- Worker unit tests cover terminal duplicate delivery, stale-attempt rejection, successful transitions, failure recording, and claim-loss cancellation.
 - API unit tests cover header-to-command mapping.
 - Playwright covers browser states and the generated client request shape.
 - The generated-output smoke test ensures the source generators remain usable after this example evolves.

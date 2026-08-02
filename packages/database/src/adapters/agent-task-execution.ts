@@ -87,12 +87,12 @@ export interface AgentTaskExecutionStore {
   succeed(
     input: FinishAgentTaskExecutionInput,
   ): Promise<FinishAgentTaskExecutionResult>;
-  fail(input: FailAgentTaskExecutionInput): Promise<FinishAgentTaskExecutionResult>;
+  fail(
+    input: FailAgentTaskExecutionInput,
+  ): Promise<FinishAgentTaskExecutionResult>;
 }
 
-export class DrizzleAgentTaskExecutionStore
-  implements AgentTaskExecutionStore
-{
+export class DrizzleAgentTaskExecutionStore implements AgentTaskExecutionStore {
   public constructor(private readonly database: Database) {}
 
   private async find(taskId: string): Promise<AgentTaskExecutionRecord | null> {
@@ -133,10 +133,7 @@ export class DrizzleAgentTaskExecutionStore
               eq(agentTasks.executionJobId, input.jobId),
               or(
                 isNull(agentTasks.executionDeliveryAttempt),
-                lt(
-                  agentTasks.executionDeliveryAttempt,
-                  input.deliveryAttempt,
-                ),
+                lt(agentTasks.executionDeliveryAttempt, input.deliveryAttempt),
               ),
             ),
           ),

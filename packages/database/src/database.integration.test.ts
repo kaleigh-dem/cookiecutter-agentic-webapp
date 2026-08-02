@@ -89,7 +89,9 @@ describe('database foundation', () => {
         );
 
         expect(stdout).toContain('20260731140100000_add_seed_manifest');
-        expect(stdout).toContain('20260802160000000_add_agent_task_execution_state');
+        expect(stdout).toContain(
+          '20260802160000000_add_agent_task_execution_state',
+        );
         expect(stdout).toContain('"pending": []');
       },
     );
