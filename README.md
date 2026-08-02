@@ -19,7 +19,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - Nx project graph, caching, affected commands, and local generators
 - versioned Nx preset artifacts, downstream migrations, and upgrade ownership policy
 - Nx MCP configuration and agent instructions
-- PostgreSQL and Redis development services
+- PostgreSQL development service and optional OpenTelemetry collector
 - production OCI images, preview orchestration, release plans, and performance budgets
 - GitHub Actions using standalone, affected, and generated-workspace validation
 - generated-repository onboarding and governance checklists
@@ -44,7 +44,7 @@ pnpm template:identity:check
 
 Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version and upgrade ownership-policy version.
 
-Start with `docs/getting-started.md` for required tooling, supported application and infrastructure profiles, first-run commands, local and preview validation, and production replacement points. See `docs/template-initialization.md` for every generator option and validation rule.
+Start with `docs/getting-started.md` for required tooling, supported application and infrastructure profiles, first-run commands, and production replacement points. See `docs/template-initialization.md` for every generator option and validation rule.
 
 ## Template releases
 
