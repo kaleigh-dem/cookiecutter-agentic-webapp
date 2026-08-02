@@ -7,7 +7,7 @@ The API supports a replaceable access-token verifier through the `AccessTokenVer
 - `AUTH_ACCESS_TOKEN_VERIFIER=development|oidc` selects the implementation explicitly
 - the development verifier rejects every token when `NODE_ENV=production`
 
-The browser credential acquisition and refresh flow is intentionally separate. The API verifier accepts bearer access tokens issued by the configured identity provider; P12-02 owns the production browser adapter.
+The browser credential acquisition and refresh flow is intentionally separate. The API verifier accepts bearer access tokens issued by the configured identity provider; P12-02 owns the production browser adapter. Do not send browser ID tokens to the API as access tokens.
 
 ## Required production configuration
 
