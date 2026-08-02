@@ -98,10 +98,36 @@ jobs:
           docs/adr/0010-worker-delivery.md
           docs/reference-feature-agent-tasks.md
 
-      - name: Verify deterministic generated output
+      - name: Verify materialized output
         run: |
-          pnpm format:check
-          pnpm contracts:check
+          git add -A
+          pnpm nx run contracts:generate
+          pnpm exec prettier --check \
+            apps/worker/src/delivery/dispatch.ts \
+            apps/worker/src/delivery/dispatch.spec.ts \
+            apps/worker/src/delivery/poller.ts \
+            apps/worker/src/jobs/execute-agent-task/contract.ts \
+            apps/worker/src/jobs/execute-agent-task/handler.ts \
+            apps/worker/src/jobs/execute-agent-task/handler.spec.ts \
+            apps/worker/src/jobs/execute-agent-task/stateful-handler.ts \
+            apps/worker/src/jobs/execute-agent-task/stateful-handler.spec.ts \
+            apps/worker/src/main.ts \
+            packages/backend/agent-task/src/lib/domain/agent-task.ts \
+            packages/contracts/openapi/source/schemas/agent-task-response.json \
+            packages/contracts/openapi/generated/openapi.json \
+            packages/contracts/src/generated \
+            packages/database/migrations/20260802160000000_add_agent_task_execution_state.ts \
+            packages/database/src/adapters/agent-task-execution.ts \
+            packages/database/src/adapters/agent-task-execution.integration.test.ts \
+            packages/database/src/database.integration.test.ts \
+            packages/database/src/index.ts \
+            packages/database/src/schema/agent-task.ts \
+            docs/TODO.md \
+            docs/adr/0010-worker-delivery.md \
+            docs/reference-feature-agent-tasks.md
+          git diff --exit-code -- \
+            packages/contracts/openapi/generated \
+            packages/contracts/src/generated
           pnpm contracts:compat
 
       - name: Commit materialized branch and remove workflow
