@@ -36,7 +36,9 @@ describe('DrizzleAgentTaskExecutionStore', () => {
       .withUsername('postgres')
       .withPassword('postgres')
       .start();
-    stop = async () => container.stop();
+    stop = async () => {
+      await container.stop();
+    };
     await runMigrations({ connectionString: container.getConnectionUri() });
     connection = createDatabase({
       connectionString: container.getConnectionUri(),
