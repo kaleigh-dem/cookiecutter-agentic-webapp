@@ -70,6 +70,33 @@ describe('dispatchOutboxMessage', () => {
     expect(fail).not.toHaveBeenCalled();
   });
 
+  it('abandons the handler and never acknowledges after claim loss', async () => {
+    const { acknowledge, delivery, fail } = disposition();
+    const controller = new AbortController();
+    let completeHandler: (() => void) | undefined;
+    const handle = vi.fn(
+      (_payload, _execute, envelope) =>
+        new Promise((resolve) => {
+          expect(envelope?.signal).toBe(controller.signal);
+          completeHandler = () => resolve({ accepted: true });
+        }),
+    );
+    const dispatching = dispatchOutboxMessage(message(), {
+      delivery,
+      handleExecuteAgentTask: handle as ExecuteAgentTaskHandler,
+      signal: controller.signal,
+    });
+
+    controller.abort(new Error('lease safety deadline exceeded'));
+
+    await expect(dispatching).rejects.toThrow('lease safety deadline exceeded');
+    expect(acknowledge).not.toHaveBeenCalled();
+    expect(fail).not.toHaveBeenCalled();
+
+    completeHandler?.();
+    await Promise.resolve();
+  });
+
   it('quarantines unknown event types', async () => {
     const { acknowledge, delivery, fail } = disposition();
     const claimed = message({ kind: 'unknown.event.v1' });

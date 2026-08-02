@@ -18,11 +18,13 @@ describe('handleExecuteAgentTaskJob', () => {
       correlationId: 'correlation-1',
       occurredAt: '2026-07-31T17:00:00.000Z',
     };
+    const controller = new AbortController();
 
     const result = await handleExecuteAgentTaskJob(
       payload,
-      async (validated) => {
+      async (validated, context) => {
         expect(validated).toEqual(payload);
+        expect(context.signal).toBe(controller.signal);
         expect(getCorrelationContext()).toEqual({
           requestId: 'request-1',
           traceId: 'trace-1',
@@ -36,6 +38,7 @@ describe('handleExecuteAgentTaskJob', () => {
           completedAt: '2026-07-31T17:01:00.000Z',
         };
       },
+      { signal: controller.signal },
     );
 
     expect(result).toEqual({

@@ -25,6 +25,11 @@ export interface PollWorkerOptions {
   ) => Promise<'acknowledged' | 'quarantined'>;
 }
 
+interface LeaseRenewal {
+  readonly signal: AbortSignal;
+  stop(): void;
+}
+
 function claimReference(message: ClaimedOutboxMessage) {
   return {
     id: message.id,
@@ -36,13 +41,54 @@ function claimReference(message: ClaimedOutboxMessage) {
 function startLeaseRenewal(
   message: ClaimedOutboxMessage,
   options: PollWorkerOptions,
-): () => void {
+): LeaseRenewal {
   const renewalIntervalMs = Math.max(
     1,
     Math.floor(options.leaseDurationMs / 3),
   );
+  const claimLossMarginMs = Math.max(1, Math.floor(renewalIntervalMs / 2));
+  const controller = new AbortController();
   let stopped = false;
   let renewalInFlight = false;
+  let renewalTimer: ReturnType<typeof setInterval> | undefined;
+  let claimLossTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const clearClaimLossTimer = () => {
+    if (claimLossTimer) clearTimeout(claimLossTimer);
+    claimLossTimer = undefined;
+  };
+
+  const stopTimers = () => {
+    if (renewalTimer) clearInterval(renewalTimer);
+    renewalTimer = undefined;
+    clearClaimLossTimer();
+  };
+
+  const loseClaim = (reason: Error) => {
+    if (stopped) return;
+    stopped = true;
+    stopTimers();
+    controller.abort(reason);
+    options.logger.error('worker.message.claim-lost', reason);
+  };
+
+  const scheduleClaimLoss = (claimExpiresAt: Date) => {
+    if (stopped) return;
+    clearClaimLossTimer();
+    const delayMs = Math.max(
+      0,
+      claimExpiresAt.getTime() - Date.now() - claimLossMarginMs,
+    );
+    claimLossTimer = setTimeout(
+      () =>
+        loseClaim(
+          new Error(
+            `Outbox message ${message.id} did not renew before its lease safety deadline.`,
+          ),
+        ),
+      delayMs,
+    );
+  };
 
   const renew = async () => {
     if (stopped || renewalInFlight) return;
@@ -54,32 +100,41 @@ function startLeaseRenewal(
         leaseDurationMs: options.leaseDurationMs,
       });
 
-      if (claimExpiresAt) {
-        options.logger.info('worker.message.lease-renewed', {
-          claimExpiresAt: claimExpiresAt.toISOString(),
-          eventKind: message.kind,
-          outboxId: message.id,
-        });
-      } else {
-        options.logger.error(
-          'worker.message.lease-renewal-failed',
+      if (stopped) return;
+      if (!claimExpiresAt) {
+        loseClaim(
           new Error(
             `Unable to renew outbox message ${message.id}; the claim is no longer current.`,
           ),
         );
+        return;
       }
+
+      scheduleClaimLoss(claimExpiresAt);
+      options.logger.info('worker.message.lease-renewed', {
+        claimExpiresAt: claimExpiresAt.toISOString(),
+        eventKind: message.kind,
+        outboxId: message.id,
+      });
     } catch (error) {
-      options.logger.error('worker.message.lease-renewal-failed', error);
+      if (!stopped) {
+        options.logger.error('worker.message.lease-renewal-failed', error);
+      }
     } finally {
       renewalInFlight = false;
     }
   };
 
-  const timer = setInterval(() => void renew(), renewalIntervalMs);
+  scheduleClaimLoss(message.claimExpiresAt);
+  renewalTimer = setInterval(() => void renew(), renewalIntervalMs);
 
-  return () => {
-    stopped = true;
-    clearInterval(timer);
+  return {
+    signal: controller.signal,
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      stopTimers();
+    },
   };
 }
 
@@ -92,7 +147,7 @@ export async function pollWorkerOnce(
     leaseDurationMs: options.leaseDurationMs,
   });
   const dispatch = options.dispatch ?? dispatchOutboxMessage;
-  const stopRenewals = new Map(
+  const renewals = new Map(
     messages.map((message) => [
       message.id,
       startLeaseRenewal(message, options),
@@ -101,9 +156,11 @@ export async function pollWorkerOnce(
 
   try {
     for (const message of messages) {
+      const renewal = renewals.get(message.id);
       try {
         const disposition = await dispatch(message, {
           delivery: options.delivery,
+          ...(renewal ? { signal: renewal.signal } : {}),
         });
         options.logger.info('worker.message.completed', {
           attemptCount: message.attemptCount,
@@ -112,14 +169,16 @@ export async function pollWorkerOnce(
           outboxId: message.id,
         });
       } catch (error) {
-        options.logger.error('worker.message.failed', error);
+        if (!renewal?.signal.aborted) {
+          options.logger.error('worker.message.failed', error);
+        }
       } finally {
-        stopRenewals.get(message.id)?.();
-        stopRenewals.delete(message.id);
+        renewal?.stop();
+        renewals.delete(message.id);
       }
     }
   } finally {
-    for (const stop of stopRenewals.values()) stop();
+    for (const renewal of renewals.values()) renewal.stop();
   }
 
   return messages.length;

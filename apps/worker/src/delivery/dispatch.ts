@@ -6,6 +6,7 @@ import type {
 import {
   agentTaskExecutionRequestedV1Schema,
   agentTaskExecutionRequestedV2Schema,
+  type ExecuteAgentTaskJobEnvelope,
   type ExecuteAgentTaskJobPayload,
 } from '../jobs/execute-agent-task/contract';
 import { handleExecuteAgentTaskJob } from '../jobs/execute-agent-task/handler';
@@ -18,12 +19,13 @@ export type OutboxDisposition = Pick<
 export type ExecuteAgentTaskHandler = (
   payload: ExecuteAgentTaskJobPayload,
   execute?: undefined,
-  envelope?: { readonly jobId?: string },
+  envelope?: ExecuteAgentTaskJobEnvelope,
 ) => Promise<unknown>;
 
 export interface DispatchOutboxMessageOptions {
   readonly delivery: OutboxDisposition;
   readonly handleExecuteAgentTask?: ExecuteAgentTaskHandler;
+  readonly signal?: AbortSignal;
 }
 
 interface SupportedEvent {
@@ -48,6 +50,40 @@ function claimReference(message: ClaimedOutboxMessage) {
     workerId: message.workerId,
     claimToken: message.claimToken,
   };
+}
+
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error('The outbox claim is no longer valid.');
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw abortReason(signal);
+}
+
+function waitForHandler<T>(
+  operation: Promise<T>,
+  signal?: AbortSignal,
+): Promise<T> {
+  if (!signal) return operation;
+  if (signal.aborted) return Promise.reject(abortReason(signal));
+
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortReason(signal));
+    signal.addEventListener('abort', onAbort, { once: true });
+
+    operation.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
+      },
+    );
+  });
 }
 
 async function quarantine(
@@ -75,6 +111,8 @@ export async function dispatchOutboxMessage(
   message: ClaimedOutboxMessage,
   options: DispatchOutboxMessageOptions,
 ): Promise<'acknowledged' | 'quarantined'> {
+  throwIfAborted(options.signal);
+
   const event = supportedEvents[message.kind];
   if (!event) {
     const isKnownFamily = /^agent-task\.execute\.v\d+$/u.test(message.kind);
@@ -110,7 +148,14 @@ export async function dispatchOutboxMessage(
   }
 
   const handle = options.handleExecuteAgentTask ?? handleExecuteAgentTaskJob;
-  await handle(payload, undefined, { jobId: message.id });
+  await waitForHandler(
+    handle(payload, undefined, {
+      jobId: message.id,
+      ...(options.signal ? { signal: options.signal } : {}),
+    }),
+    options.signal,
+  );
+  throwIfAborted(options.signal);
 
   const acknowledged = await options.delivery.acknowledge(
     claimReference(message),
