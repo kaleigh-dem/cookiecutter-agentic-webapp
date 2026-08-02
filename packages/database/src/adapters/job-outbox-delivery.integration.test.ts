@@ -100,10 +100,9 @@ describe('PostgresOutboxDelivery', () => {
     await insertMessage(primary);
     const delivery = new PostgresOutboxDelivery(primary.pool);
 
-    await expect(delivery.getQueueMetrics()).resolves.toEqual({
-      queueDepth: 2,
-      oldestMessageAgeMs: expect.toBeGreaterThan(50_000),
-    });
+    const initialMetrics = await delivery.getQueueMetrics();
+    expect(initialMetrics.queueDepth).toBe(2);
+    expect(initialMetrics.oldestMessageAgeMs).toBeGreaterThan(50_000);
 
     const [oldMessage] = await delivery.claim({
       workerId: 'worker-a',
