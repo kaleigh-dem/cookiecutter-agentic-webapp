@@ -59,7 +59,7 @@ Profile values are durable repository metadata, not a promise that every provide
 
 - `development` authentication and `local` deployment are development-only choices.
 - `oidc` and `session` identify the intended authentication boundary; the generated owner must configure and validate the production identity provider and browser/session flow.
-- `postgres` and `redis` identify the worker transport direction; production delivery still requires owned leasing or queue semantics, retries, idempotency, dead-letter behavior, and shutdown handling.
+- `postgres` selects the baseline transport direction documented in `docs/adr/0010-worker-delivery.md`: a transport boundary with PostgreSQL outbox polling, lease-based claims, at-least-once delivery, idempotent handlers, retries, and quarantine. `redis` records a future adapter direction only; it does not add Redis to Compose, configure `REDIS_URL`, or make that transport runnable. An adopter selecting it must supply an adapter with equivalent semantics, infrastructure, tests, and operational ownership.
 - `kubernetes` records the deployment target but does not generate organization-specific cluster, ingress, secret, policy, or autoscaling configuration.
 - `ai=true` records optional product intent without adding a model-provider dependency to the default workspace.
 
