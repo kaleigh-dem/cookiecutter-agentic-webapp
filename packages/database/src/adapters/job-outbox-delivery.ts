@@ -10,6 +10,8 @@ const MAX_WORKER_ID_LENGTH = 200;
 const MAX_ERROR_CODE_LENGTH = 100;
 const MAX_ERROR_MESSAGE_LENGTH = 2000;
 const MAX_EVENT_KIND_LENGTH = 200;
+const MAX_REPLAYED_BY_LENGTH = 200;
+const MAX_REPLAY_REASON_LENGTH = 500;
 
 export interface OutboxClaimReference {
   readonly id: string;
@@ -56,12 +58,16 @@ export interface ListFailedOutboxOptions {
 
 export interface ReplayFailedOutboxOptions {
   readonly id: string;
+  readonly replayedBy: string;
+  readonly reason: string;
   readonly replayAt?: Date;
 }
 
 export interface FailedOutboxMessage {
   readonly id: string;
   readonly kind: string;
+  readonly taskId: string | null;
+  readonly payloadVersion: number | null;
   readonly correlationId: string;
   readonly attemptCount: number;
   readonly lastErrorCode: string | null;
@@ -70,6 +76,8 @@ export interface FailedOutboxMessage {
   readonly failedAt: Date;
   readonly replayCount: number;
   readonly lastReplayedAt: Date | null;
+  readonly lastReplayedBy: string | null;
+  readonly lastReplayReason: string | null;
   readonly createdAt: Date;
 }
 
@@ -89,6 +97,8 @@ interface ClaimedOutboxRow {
 interface FailedOutboxRow {
   readonly id: string;
   readonly kind: string;
+  readonly taskId: string | null;
+  readonly payloadVersion: number | null;
   readonly correlationId: string;
   readonly attemptCount: number;
   readonly lastErrorCode: string | null;
@@ -97,6 +107,8 @@ interface FailedOutboxRow {
   readonly failedAt: Date;
   readonly replayCount: number;
   readonly lastReplayedAt: Date | null;
+  readonly lastReplayedBy: string | null;
+  readonly lastReplayReason: string | null;
   readonly createdAt: Date;
 }
 
@@ -422,6 +434,12 @@ export class PostgresOutboxDelivery {
         select
           id,
           kind,
+          payload ->> 'taskId' as "taskId",
+          case
+            when jsonb_typeof(payload -> 'version') = 'number'
+              then (payload ->> 'version')::integer
+            else null
+          end as "payloadVersion",
           correlation_id as "correlationId",
           attempt_count as "attemptCount",
           last_error_code as "lastErrorCode",
@@ -430,6 +448,8 @@ export class PostgresOutboxDelivery {
           failed_at as "failedAt",
           replay_count as "replayCount",
           last_replayed_at as "lastReplayedAt",
+          last_replayed_by as "lastReplayedBy",
+          last_replay_reason as "lastReplayReason",
           created_at as "createdAt"
         from app.job_outbox
         where
@@ -449,24 +469,60 @@ export class PostgresOutboxDelivery {
   ): Promise<boolean> {
     const id = requireUuid(options.id, 'id');
     const replayAt = requireDate(options.replayAt ?? new Date(), 'replayAt');
+    const replayedBy = requireErrorText(
+      options.replayedBy,
+      'replayedBy',
+      MAX_REPLAYED_BY_LENGTH,
+    );
+    const reason = requireErrorText(
+      options.reason,
+      'reason',
+      MAX_REPLAY_REASON_LENGTH,
+    );
     const result = await this.pool.query<{ readonly id: string }>(
       `
-        update app.job_outbox
-        set
-          state = 'pending',
-          attempt_count = 0,
-          next_attempt_at = $2,
-          claimed_by = null,
-          claim_token = null,
-          claim_expires_at = null,
-          processed_at = null,
-          failed_at = null,
-          replay_count = replay_count + 1,
-          last_replayed_at = $2
-        where id = $1::uuid and state = 'failed'
-        returning id
+        with replayed as (
+          update app.job_outbox
+          set
+            state = 'pending',
+            attempt_count = 0,
+            next_attempt_at = $2,
+            claimed_by = null,
+            claim_token = null,
+            claim_expires_at = null,
+            processed_at = null,
+            failed_at = null,
+            replay_count = replay_count + 1,
+            last_replayed_at = $2,
+            last_replayed_by = $3,
+            last_replay_reason = $4
+          where id = $1::uuid and state = 'failed'
+          returning id, payload
+        ),
+        reset_task as (
+          update app.agent_tasks as task
+          set
+            status = 'queued',
+            execution_job_id = null,
+            execution_delivery_attempt = null,
+            execution_started_at = null,
+            execution_succeeded_at = null,
+            execution_failed_at = null,
+            last_execution_error_code = null,
+            last_execution_error_message = null
+          from replayed
+          where
+            task.id::text = replayed.payload ->> 'taskId'
+            and task.status = 'failed'
+            and task.execution_job_id = replayed.id
+          returning task.id
+        )
+        select replayed.id
+        from replayed
+        left join reset_task on true
+        limit 1
       `,
-      [id, replayAt],
+      [id, replayAt, replayedBy, reason],
     );
     return result.rows.length === 1;
   }
