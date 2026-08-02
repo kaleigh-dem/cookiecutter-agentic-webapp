@@ -11,6 +11,7 @@ const templateMaintainerPaths = [
   'CHANGELOG.md',
   'docs/template-releases.md',
   'docs/template-validation.md',
+  'tools/template/fixtures',
   'tools/template/generated-workspace-e2e.mjs',
   'tools/template/release.mjs',
   'tools/template/smoke-release-artifact.mjs',
@@ -50,9 +51,13 @@ function recordTemplateVersion(tree: Tree): void {
   const manifest = readJson<WorkspaceManifest>(tree, 'workspace.template.json');
   writeJson(tree, 'workspace.template.json', {
     ...manifest,
+    schemaVersion: 3,
     upstream: {
       ...(manifest.upstream ?? {}),
       version: templateVersion,
+    },
+    upgrade: {
+      ownershipPolicyVersion: 1,
     },
   });
 }
