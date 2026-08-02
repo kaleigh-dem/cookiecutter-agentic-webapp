@@ -14,7 +14,6 @@ services:
       NODE_ENV: production
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${APP_VERSION}
-      REDIS_URL: ${REDIS_URL}
       WEB_ORIGIN: ${WEB_ORIGIN}
     expose:
       - '4000'
@@ -43,7 +42,6 @@ services:
       NODE_ENV: production
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${APP_VERSION}
-      REDIS_URL: ${REDIS_URL}
     labels:
       app.agentic-webapp/version: ${APP_VERSION}
 
