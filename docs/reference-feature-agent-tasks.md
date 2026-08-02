@@ -1,16 +1,24 @@
 # Agent Tasks reference feature
 
-Agent Tasks is the canonical vertical example for contributors and coding agents. It demonstrates the expected dependency direction from a Next.js route through a browser feature and generated client, into NestJS presentation adapters, framework-free application/domain code, a Drizzle repository, PostgreSQL, and a versioned worker event.
+Agent Tasks is the canonical vertical example for contributors and coding agents. It demonstrates the expected dependency direction from a Next.js route through a browser feature and generated client, into NestJS presentation adapters, framework-free application/domain code, a Drizzle repository, PostgreSQL, a transactional outbox, and a deployed worker.
 
 ## Workflow
 
-1. The browser creates a correlation identifier and calls the generated `createAgentTask` client method.
-2. The API reads the temporary `x-actor-id` request-context adapter. Phase 8 replaces this adapter with authenticated identity without changing the application use cases.
+1. The browser creates a correlation identifier and calls the generated `createAgentTask` client method with a bearer access token. Local development and the repository-local preview use the deterministic development identity; generated production applications must replace it with a production verifier in Phase 12.
+2. The API authentication and authorization guards resolve the principal and require `agent-tasks:write` or `agent-tasks:read` as appropriate.
 3. `CreateAgentTask` validates and normalizes the command, creates the domain entity, and produces the generated `AgentTaskExecutionRequested` contract.
 4. `DrizzleAgentTaskRepository` writes the task and outbox event in one transaction.
-5. The deployed worker claims the outbox row, validates the same versioned contract, and preserves the request, actor, trace, job, and correlation identifiers.
-6. The stateful handler uses the outbox row ID as the idempotency key and the receive count as a fence while conditionally transitioning the task from `queued` to `running` and then `succeeded` or `failed`. Terminal duplicate delivery is acknowledged without re-execution, while stale attempts cannot regress newer or terminal state.
-7. Actor-scoped reads are authorized by the application use case before the API returns data.
+5. The deployed worker claims the outbox row, validates the same versioned contract, and preserves the request, actor, user, trace, event, job, and correlation identifiers.
+6. The stateful handler uses the outbox row ID as the idempotency key and the receive count as a fence while conditionally transitioning the task from `queued` to `running` and then `succeeded` or `failed`.
+7. Terminal duplicate delivery is acknowledged without re-execution, stale ownership cannot acknowledge newer work, retryable failures are rescheduled with bounded backoff, and exhausted or permanent failures become inspectable dead letters.
+8. Actor-scoped reads are authorized by the application use case before the API returns data.
+9. The preview smoke gate creates an Agent Task through the deployed API and polls the read endpoint until the live worker transitions it to `succeeded`.
+
+## Preview identity
+
+`infra/environments/preview.local.env` explicitly enables the deterministic development token for the repository-local preview stack. The shared preview Compose definition defaults the API to production mode unless that local override is supplied, and production environment validation rejects development-token configuration.
+
+The local preview identity is only a test adapter. It does not represent the Phase 12 production identity design.
 
 ## Where changes belong
 
@@ -22,13 +30,16 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 - Browser states: `packages/web/features/agent-tasks`
 - Route composition only: `apps/web/src/app/agent-tasks`
 - Worker transport-independent behavior: `apps/worker/src/jobs/execute-agent-task`
+- Preview workflow and service-level budgets: `tools/delivery`, `infra/deploy`, and `performance`
 
 ## Validation map
 
 - Domain unit tests cover normalization, validation, persistence calls, and authorization.
 - Contract tests cover the event schema and generated HTTP drift/compatibility.
-- PostgreSQL Testcontainers tests cover migrations, the repository, the transactional outbox, fenced execution attempts, terminal transitions, and persisted support metadata.
-- Worker unit tests cover terminal duplicate delivery, stale-attempt rejection, successful transitions, failure recording, and claim-loss cancellation.
-- API unit tests cover header-to-command mapping.
-- Playwright covers browser states and the generated client request shape.
+- PostgreSQL Testcontainers tests cover migrations, the repository, the transactional outbox, two concurrent delivery owners, expired-lease crash recovery, retry scheduling, terminal failure, dead-letter inspection, and audited replay.
+- Worker unit tests cover terminal duplicate delivery, stale-attempt rejection, successful transitions, retry exhaustion, permanent failure recording, and claim-loss cancellation.
+- API unit tests cover principal-to-command mapping and permission boundaries.
+- Playwright covers browser states and the generated client request shape without depending on a running backend.
+- The live preview smoke creates and reads a real Agent Task across API, database, outbox, and worker boundaries and requires terminal success.
+- Preview smoke and performance budgets exercise worker liveness, dependency-aware readiness, and metrics endpoints.
 - The generated-output smoke test ensures the source generators remain usable after this example evolves.
