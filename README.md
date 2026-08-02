@@ -11,7 +11,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 ## Included now
 
 - Next.js App Router web application
-- NestJS API
+- NestJS API with replaceable development and OIDC access-token verification
 - Node.js worker
 - shared UI, contracts, and server environment packages
 - pnpm workspaces
@@ -82,6 +82,10 @@ pnpm dev
 ```
 
 The complete first-run and shutdown sequence is documented in `docs/getting-started.md`.
+
+## Authentication
+
+Local development uses the deterministic development verifier selected in `.env.example`. Production defaults to the OIDC discovery/JWKS verifier and requires an exact issuer, one or more audiences, an algorithm allowlist, and claim mapping. See `docs/oidc-authentication.md` for configuration, rotation, cache, validation, and outage behavior. The production browser credential acquisition and refresh adapter remains a separate integration boundary.
 
 ## Validation
 
