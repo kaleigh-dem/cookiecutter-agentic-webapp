@@ -1,13 +1,16 @@
 {
   "name": "@agentic-webapp/workspace-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
-  "description": "Nx preset and generators for the agentic web application template",
+  "description": "Nx preset, generators, and upgrade tooling for the agentic web application template",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kaleigh-dem/cookiecutter-agentic-webapp.git",
     "directory": "tools/workspace-plugin"
+  },
+  "bin": {
+    "agentic-webapp-upgrade": "./dist/template-upgrade/upgrade.mjs"
   },
   "generators": "./generators.json",
   "nx": {
