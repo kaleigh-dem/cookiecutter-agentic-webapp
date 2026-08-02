@@ -101,7 +101,7 @@ Cache lifetimes are restricted to 1 second through 1 hour. Provider requests are
 
 When a token cannot be verified with the cached key set, the verifier performs one forced JWKS refresh and retries verification. This supports ordinary signing-key rotation without allowing an unbounded fetch loop. A token that still cannot be verified is rejected.
 
-Discovery or JWKS transport failures, malformed metadata, issuer mismatch, non-HTTPS endpoints, and empty key sets return `503 identity_provider_unavailable`. Invalid token structure, signature, claims, algorithm, or claim mapping return `401 invalid_access_token`.
+Discovery or JWKS transport failures, malformed metadata, issuer mismatch, non-HTTPS endpoints, and empty key sets return `503 identity_provider_unavailable`. A malformed or non-HTTPS discovered `jwks_uri` is treated as provider metadata failure rather than an internal server error. Invalid token structure, signature, claims, algorithm, or claim mapping return `401 invalid_access_token`.
 
 ## Environment examples
 
