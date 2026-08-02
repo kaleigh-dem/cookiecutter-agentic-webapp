@@ -22,6 +22,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - PostgreSQL and Redis development services
 - production OCI images, preview orchestration, release plans, and performance budgets
 - GitHub Actions using standalone, affected, and generated-workspace validation
+- generated-repository onboarding and governance checklists
 
 ## Create a workspace
 
@@ -29,8 +30,6 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 npx create-nx-workspace@23.1.0 my-workspace \
   --template kaleigh-dem/cookiecutter-agentic-webapp
 ```
-
-Or clone this repository directly while the template migration is under review.
 
 After installing dependencies, replace the template identity and record the generated repository's profiles:
 
@@ -43,7 +42,9 @@ pnpm install --frozen-lockfile
 pnpm template:identity:check
 ```
 
-Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version and upgrade ownership-policy version. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
+Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version and upgrade ownership-policy version.
+
+Start with `docs/getting-started.md` for required tooling, supported application and infrastructure profiles, first-run commands, local and preview validation, and production replacement points. See `docs/template-initialization.md` for every generator option and validation rule.
 
 ## Template releases
 
@@ -72,11 +73,15 @@ See `docs/runtime-support.md` for the support policy, compatibility lane, and va
 
 ```bash
 corepack enable
-pnpm install
+pnpm install --frozen-lockfile
 cp .env.example .env
 pnpm infra:up
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
+
+The complete first-run and shutdown sequence is documented in `docs/getting-started.md`.
 
 ## Validation
 
@@ -105,6 +110,10 @@ node tools/delivery/release-plan.mjs \
 ```
 
 See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/disaster-recovery.md` before operating an environment.
+
+## Production readiness
+
+A generated repository is not production-ready solely because its local and preview paths pass. Complete `docs/generated-project-checklist.md` to configure repository access, CODEOWNERS, required checks, branch protection, environments, secrets, release permissions, operational ownership, and deployment evidence. The production replacement points are listed in `docs/getting-started.md`.
 
 ## Generate approved structure
 
