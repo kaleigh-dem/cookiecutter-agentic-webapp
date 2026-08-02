@@ -81,11 +81,7 @@ The resulting principal is:
 ```json
 {
   "subject": "user-123",
-  "permissions": [
-    "agent-tasks:read",
-    "agent-tasks:write",
-    "operations:read"
-  ]
+  "permissions": ["agent-tasks:read", "agent-tasks:write", "operations:read"]
 }
 ```
 

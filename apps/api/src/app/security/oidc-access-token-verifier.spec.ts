@@ -136,11 +136,7 @@ describe('OIDC access-token verification', () => {
 
     await expect(verifier.verify(token)).resolves.toEqual({
       subject: 'oidc-user',
-      permissions: [
-        'agent-tasks:read',
-        'operations:read',
-        'agent-tasks:write',
-      ],
+      permissions: ['agent-tasks:read', 'operations:read', 'agent-tasks:write'],
     });
     await expect(verifier.verify(token)).resolves.toEqual(
       expect.objectContaining({ subject: 'oidc-user' }),
@@ -172,7 +168,8 @@ describe('OIDC access-token verification', () => {
       if (url === JWKS_URI) {
         keyRequest += 1;
         return jsonResponse({
-          keys: keyRequest === 1 ? [oldPair.publicJwk] : [currentPair.publicJwk],
+          keys:
+            keyRequest === 1 ? [oldPair.publicJwk] : [currentPair.publicJwk],
         });
       }
       return new Response('{}', { status: 404 });

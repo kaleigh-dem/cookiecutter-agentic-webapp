@@ -139,7 +139,8 @@ function requiredEnvironmentValue(
   name: string,
 ): string {
   const normalized = value?.trim();
-  if (!normalized) throw new Error(`${name} is required for OIDC verification.`);
+  if (!normalized)
+    throw new Error(`${name} is required for OIDC verification.`);
   return normalized;
 }
 
@@ -299,7 +300,9 @@ export class EnvironmentOidcClaimsMapper implements OidcClaimsMapper {
 function decodeJsonSegment(segment: string): Readonly<Record<string, unknown>> {
   if (!/^[A-Za-z0-9_-]+$/.test(segment)) throw invalidAccessToken();
   try {
-    const parsed: unknown = JSON.parse(Buffer.from(segment, 'base64url').toString());
+    const parsed: unknown = JSON.parse(
+      Buffer.from(segment, 'base64url').toString(),
+    );
     if (!isRecord(parsed)) throw invalidAccessToken();
     return parsed;
   } catch (error) {
@@ -351,7 +354,10 @@ function parseJwt(accessToken: string): ParsedJwt {
   };
 }
 
-function numericDate(claims: Readonly<Record<string, unknown>>, name: string): number {
+function numericDate(
+  claims: Readonly<Record<string, unknown>>,
+  name: string,
+): number {
   const value = claims[name];
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw invalidAccessToken();
@@ -421,7 +427,8 @@ function compatibleKeys(
       (keyWithMetadata.use === undefined || keyWithMetadata.use === 'sig') &&
       (keyWithMetadata.key_ops === undefined ||
         keyWithMetadata.key_ops.includes('verify')) &&
-      (keyWithMetadata.alg === undefined || keyWithMetadata.alg === header.alg) &&
+      (keyWithMetadata.alg === undefined ||
+        keyWithMetadata.alg === header.alg) &&
       (header.kid === undefined || keyWithMetadata.kid === header.kid)
     );
   });
@@ -430,10 +437,7 @@ function compatibleKeys(
   return candidates;
 }
 
-function verifyWithKey(
-  parsed: ParsedJwt,
-  key: KeyObject,
-): boolean {
+function verifyWithKey(parsed: ParsedJwt, key: KeyObject): boolean {
   const parameters = ALGORITHM_PARAMETERS[parsed.header.alg];
   const data = Buffer.from(
     `${parsed.encodedHeader}.${parsed.encodedPayload}`,
@@ -454,10 +458,7 @@ function verifyWithKey(
   );
 }
 
-function verifyWithKeySet(
-  parsed: ParsedJwt,
-  keySet: JsonWebKeySet,
-): boolean {
+function verifyWithKeySet(parsed: ParsedJwt, keySet: JsonWebKeySet): boolean {
   for (const jwk of compatibleKeys(keySet.keys, parsed.header)) {
     try {
       const key = createPublicKey({ key: jwk, format: 'jwk' });
@@ -503,7 +504,9 @@ export class OidcAccessTokenVerifier {
     private readonly now: () => number = Date.now,
   ) {}
 
-  public async verify(accessToken: string): Promise<OidcAuthenticatedPrincipal> {
+  public async verify(
+    accessToken: string,
+  ): Promise<OidcAuthenticatedPrincipal> {
     const parsed = parseJwt(accessToken);
     if (!this.config.allowedAlgorithms.has(parsed.header.alg)) {
       throw invalidAccessToken();
@@ -521,14 +524,13 @@ export class OidcAccessTokenVerifier {
   }
 
   private async getDiscoveryDocument(): Promise<OidcDiscoveryDocument> {
-    if (
-      this.discoveryCache &&
-      this.discoveryCache.expiresAt > this.now()
-    ) {
+    if (this.discoveryCache && this.discoveryCache.expiresAt > this.now()) {
       return this.discoveryCache.value;
     }
 
-    const payload = await this.fetchJson(createOidcDiscoveryUrl(this.config.issuer));
+    const payload = await this.fetchJson(
+      createOidcDiscoveryUrl(this.config.issuer),
+    );
     if (!isRecord(payload)) throw identityProviderUnavailable();
     const issuer = payload.issuer;
     const jwksUri = payload.jwks_uri;
@@ -591,15 +593,10 @@ export class OidcAccessTokenVerifier {
         },
       );
       if (!response.ok) throw identityProviderUnavailable();
-      return await withinDeadline(
-        response.json(),
-        deadline,
-        this.now,
-        () => {
-          controller.abort();
-          return identityProviderUnavailable();
-        },
-      );
+      return await withinDeadline(response.json(), deadline, this.now, () => {
+        controller.abort();
+        return identityProviderUnavailable();
+      });
     } catch (error) {
       if (error instanceof ServiceUnavailableException) throw error;
       throw identityProviderUnavailable();
