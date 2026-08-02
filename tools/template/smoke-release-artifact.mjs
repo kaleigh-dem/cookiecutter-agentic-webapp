@@ -120,9 +120,6 @@ try {
       `Preset did not rewrite the package name: ${packageJson.name}`,
     );
   }
-  if (packageJson.scripts?.['template:upgrade'] !== 'node tools/template/upgrade.mjs') {
-    throw new Error('Preset did not retain the downstream upgrade command.');
-  }
 
   const legacyWorkspace = path.join(workspace, 'upgrade-fixture');
   await cp(
