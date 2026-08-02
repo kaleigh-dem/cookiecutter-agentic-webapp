@@ -67,7 +67,7 @@ jobs:
           PY
 
       - name: Generate HTTP contracts
-        run: pnpm contracts:check
+        run: pnpm nx run contracts:generate
 
       - name: Format changed files
         run: >-
