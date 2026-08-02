@@ -99,7 +99,6 @@ export function validateDeploymentEnvironment(
     'NODE_ENV',
     'API_PORT',
     'DATABASE_URL',
-    'REDIS_URL',
     'WEB_ORIGIN',
     'NEXT_PUBLIC_API_BASE_URL',
     'API_RATE_LIMIT_MAX',
@@ -155,12 +154,6 @@ export function validateDeploymentEnvironment(
     !validateUrl(values.DATABASE_URL, new Set(['postgres:', 'postgresql:']))
   ) {
     issues.push('DATABASE_URL must use the postgres protocol.');
-  }
-  if (
-    values.REDIS_URL &&
-    !validateUrl(values.REDIS_URL, new Set(['redis:', 'rediss:']))
-  ) {
-    issues.push('REDIS_URL must use the redis or rediss protocol.');
   }
 
   for (const key of ['WEB_ORIGIN', 'NEXT_PUBLIC_API_BASE_URL']) {

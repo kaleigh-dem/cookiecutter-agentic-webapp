@@ -36,7 +36,7 @@ Use this checklist after initialization and before the repository is opened to a
 
 - [ ] `.env` and other local secret files remain ignored and untracked.
 - [ ] Development authentication tokens and subjects are not present in production configuration.
-- [ ] Database and Redis credentials are unique per environment and use TLS where supported.
+- [ ] Database and any implemented external-service credentials are unique per environment and use TLS where supported.
 - [ ] OIDC issuer, audience, client, key-rotation, session, or token-renewal settings are owned and tested for the selected authentication profile.
 - [ ] Public browser variables are reviewed as non-secret values and point to the correct HTTPS endpoints.
 - [ ] CORS origins, trusted proxies, callback URLs, and cookie domains match the deployed topology.

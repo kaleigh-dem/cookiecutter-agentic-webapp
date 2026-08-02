@@ -30,7 +30,7 @@ pnpm preview:down
 
 1. Validate `infra/environments/preview.local.env`.
 2. Build the API, worker, and web images.
-3. Start PostgreSQL and Redis and wait for health.
+3. Start PostgreSQL and wait for health.
 4. Apply pending migrations through the host-facing database URL.
 5. Start the application services and wait for health.
 6. Verify web, API liveness/readiness, and the protected metrics boundary.
@@ -39,7 +39,7 @@ The Delivery workflow runs this sequence for relevant pull requests and then enf
 
 ## Hosted previews
 
-A hosted preview should use a unique hostname, isolated database/schema, isolated Redis namespace, and short-lived identity configuration for each pull request. Build the same immutable images used by release automation; do not rebuild after approval. Run `tools/delivery/smoke-test.mjs` and `tools/delivery/load-test.mjs` against the hosted URLs before exposing the preview to reviewers.
+A hosted preview should use a unique hostname, an isolated database or schema, and short-lived identity configuration for each pull request. Build the same immutable images used by release automation; do not rebuild after approval. Run `tools/delivery/smoke-test.mjs` and `tools/delivery/load-test.mjs` against the hosted URLs before exposing the preview to reviewers.
 
 Destroy previews when the pull request closes. Deletion must remove compute, credentials, temporary data, DNS records, and telemetry routing. Retain only the logs and measurements required by the team's audit policy.
 

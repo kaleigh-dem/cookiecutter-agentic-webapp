@@ -15,11 +15,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
-
   otel-collector:
     image: otel/opentelemetry-collector:0.157.0
     profiles: [telemetry]

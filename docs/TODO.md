@@ -100,7 +100,7 @@ Exit criteria: a tagged release can generate a differently named repository, pas
 
 Goal: make the worker and transactional outbox a functioning end-to-end example rather than isolated infrastructure and handler examples.
 
-- [ ] **P11-01 Record the worker delivery design.**
+- [x] **P11-01 Record the worker delivery design.**
   - Decide whether the baseline uses PostgreSQL outbox polling, Redis-backed queues, or a transport adapter with one default implementation.
   - Document ordering, delivery guarantees, concurrency, retry, and failure semantics in an ADR.
   - Remove Redis from the default stack if it has no concrete responsibility.

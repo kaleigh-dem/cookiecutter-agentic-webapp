@@ -17,16 +17,18 @@ Maintain:
 - periodic restore tests into an isolated environment;
 - versioned application images and release plans;
 - configuration and secret recovery procedures;
-- Redis/queue recovery expectations, including which data is reconstructable;
+- recovery expectations for any implemented external queue adapter, including which data is durable or reconstructable;
 - contacts and access paths for the incident commander and infrastructure owner.
+
+The baseline PostgreSQL outbox transport has no separate queue service to restore. Its durable delivery state is recovered with PostgreSQL. Deployments that add Redis or another external queue must document that adapter's backup, reconstruction, replay, and consistency procedures separately.
 
 ## Recovery sequence
 
 1. Declare the incident, assign an incident commander, and stop writes when they can worsen loss.
 2. Identify the last known-good application version, database backup, migration state, and configuration version.
 3. Create an isolated recovery environment. Never test a restore over the damaged production database.
-4. Restore PostgreSQL and verify migration history, row counts, critical invariants, and application ownership data.
-5. Recreate Redis and queues from durable sources where possible. Treat ephemeral cache data as disposable.
+4. Restore PostgreSQL and verify migration history, row counts, critical invariants, application ownership data, and outbox delivery state.
+5. If the deployment implements an external queue adapter, restore or recreate it from its documented durable sources and reconcile it with PostgreSQL before processing resumes. Treat ephemeral cache data as disposable.
 6. Validate deployment configuration with `tools/delivery/validate-environment.mjs`.
 7. Deploy the compatible immutable application images.
 8. Run smoke tests, authorization checks, and the baseline performance scenarios.
@@ -35,7 +37,7 @@ Maintain:
 
 ## Restore testing
 
-Run a restore exercise at least quarterly and after changing the database provider, backup policy, encryption keys, migration framework, or major schema. Record actual restore duration and data age; use those measurements to update RPO/RTO commitments.
+Run a restore exercise at least quarterly and after changing the database provider, backup policy, encryption keys, migration framework, major schema, or implemented delivery adapter. Record actual restore duration and data age; use those measurements to update RPO/RTO commitments.
 
 ## Post-incident
 

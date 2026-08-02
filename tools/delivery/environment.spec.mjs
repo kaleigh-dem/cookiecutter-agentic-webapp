@@ -11,7 +11,6 @@ const validProduction = {
   NODE_ENV: 'production',
   API_PORT: '4000',
   DATABASE_URL: 'postgresql://app:secret@database.internal:5432/app',
-  REDIS_URL: 'rediss://:secret@redis.internal:6380',
   WEB_ORIGIN: 'https://app.internal',
   NEXT_PUBLIC_API_BASE_URL: 'https://api.internal',
   API_RATE_LIMIT_MAX: '120',

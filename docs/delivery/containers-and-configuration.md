@@ -34,10 +34,10 @@ Copy the appropriate example to an untracked `.env` file, replace every placehol
 node tools/delivery/validate-environment.mjs infra/environments/production.env
 ```
 
-Validation requires semantic application versions, PostgreSQL and Redis URLs, positive numeric limits, production runtime mode outside development, and HTTPS public endpoints. Production configuration rejects the development access token.
+Validation requires semantic application versions, a PostgreSQL URL, positive numeric limits, production runtime mode outside development, and HTTPS public endpoints. Production configuration rejects the development access token.
 
 `--allow-placeholders` exists only to validate the shape of checked-in examples. `--allow-local` exists only for loopback preview validation. Neither option belongs in a real production release.
 
 ## Runtime ownership
 
-Images do not contain production secrets. The deployment platform must inject database credentials, Redis credentials, telemetry endpoints, and provider-specific identity configuration at runtime. TLS termination, image signing/attestation, secret rotation, and network policy remain platform responsibilities.
+Images do not contain production secrets. The deployment platform must inject database credentials, telemetry endpoints, and provider-specific identity configuration at runtime. TLS termination, image signing/attestation, secret rotation, and network policy remain platform responsibilities.
