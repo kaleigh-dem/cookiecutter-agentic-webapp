@@ -1,0 +1,126 @@
+name: Finalize P11-04 stateful handlers
+
+on:
+  push:
+    branches:
+      - agent/p11-04-idempotent-stateful-handlers
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p11-04-finalize
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Update roadmap and execution documentation
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              content = file.read_text()
+              if content.count(old) != 1:
+                  raise SystemExit(f"Expected one match in {path}: {old!r}")
+              file.write_text(content.replace(old, new))
+
+          replace_once(
+              "docs/TODO.md",
+              "- [ ] **P11-04 Make handlers idempotent and stateful.**",
+              "- [x] **P11-04 Make handlers idempotent and stateful.**",
+          )
+          replace_once(
+              "docs/adr/0010-worker-delivery.md",
+              "The deployed worker now polls this adapter, routes `agent-task.execute.v1` and `agent-task.execute.v2` through the generated handler, acknowledges successful execution, and quarantines unknown event types, unsupported versions, and invalid payloads. Unexpected handler failures retain their lease for crash-style recovery until P11-05 adds retry classification and backoff policy.",
+              "The deployed worker now polls this adapter, routes `agent-task.execute.v1` and `agent-task.execute.v2` through the generated handler, acknowledges successful execution, and quarantines unknown event types, unsupported versions, and invalid payloads. Agent Task execution uses the outbox row identifier as its idempotency key and the outbox receive count as a fencing value. Accepted attempts transition `queued` or an older `running` attempt to `running`; only the current fenced attempt may transition to `succeeded` or `failed`. Duplicate terminal delivery is a no-op, a different job identifier cannot overwrite the task, and claim-loss cancellation leaves the task resumable instead of recording a stale failure. Unexpected handler failures record bounded support metadata on the task and retain the outbox lease for crash-style recovery until P11-05 adds retry classification and backoff policy.",
+          )
+          replace_once(
+              "docs/reference-feature-agent-tasks.md",
+              "5. The worker handler validates the same versioned contract and preserves the correlation identifier.\n6. Actor-scoped reads are authorized by the application use case before the API returns data.",
+              "5. The deployed worker claims the outbox row, validates the same versioned contract, and preserves the request, actor, trace, job, and correlation identifiers.\n6. The stateful handler uses the outbox row ID as the idempotency key and the receive count as a fence while conditionally transitioning the task from `queued` to `running` and then `succeeded` or `failed`. Terminal duplicate delivery is acknowledged without re-execution, while stale attempts cannot regress newer or terminal state.\n7. Actor-scoped reads are authorized by the application use case before the API returns data.",
+          )
+          replace_once(
+              "docs/reference-feature-agent-tasks.md",
+              "- PostgreSQL Testcontainers tests cover migrations, the repository, and the transactional outbox.\n- API unit tests cover header-to-command mapping.",
+              "- PostgreSQL Testcontainers tests cover migrations, the repository, the transactional outbox, fenced execution attempts, terminal transitions, and persisted support metadata.\n- Worker unit tests cover terminal duplicate delivery, stale-attempt rejection, successful transitions, failure recording, and claim-loss cancellation.\n- API unit tests cover header-to-command mapping.",
+          )
+          PY
+
+      - name: Generate HTTP contracts
+        run: pnpm contracts:check
+
+      - name: Format changed files
+        run: >-
+          pnpm exec prettier --write
+          apps/worker/src/delivery/dispatch.ts
+          apps/worker/src/delivery/dispatch.spec.ts
+          apps/worker/src/delivery/poller.ts
+          apps/worker/src/jobs/execute-agent-task/contract.ts
+          apps/worker/src/jobs/execute-agent-task/handler.ts
+          apps/worker/src/jobs/execute-agent-task/handler.spec.ts
+          apps/worker/src/jobs/execute-agent-task/stateful-handler.ts
+          apps/worker/src/jobs/execute-agent-task/stateful-handler.spec.ts
+          apps/worker/src/main.ts
+          packages/backend/agent-task/src/lib/domain/agent-task.ts
+          packages/contracts/openapi/source/schemas/agent-task-response.json
+          packages/contracts/openapi/generated/openapi.json
+          packages/contracts/src/generated
+          packages/database/migrations/20260802160000000_add_agent_task_execution_state.ts
+          packages/database/src/adapters/agent-task-execution.ts
+          packages/database/src/adapters/agent-task-execution.integration.test.ts
+          packages/database/src/database.integration.test.ts
+          packages/database/src/index.ts
+          packages/database/src/schema/agent-task.ts
+          docs/TODO.md
+          docs/adr/0010-worker-delivery.md
+          docs/reference-feature-agent-tasks.md
+
+      - name: Check formatting and contracts
+        run: |
+          pnpm format:check
+          pnpm contracts:check
+          pnpm contracts:compat
+
+      - name: Run focused worker and database tests
+        run: >-
+          pnpm exec vitest run
+          apps/worker/src/delivery
+          apps/worker/src/jobs/execute-agent-task
+          packages/database/src/adapters/agent-task-execution.integration.test.ts
+          packages/database/src/adapters/agent-task-repository.integration.test.ts
+          packages/database/src/database.integration.test.ts
+
+      - name: Typecheck workspace
+        run: pnpm typecheck
+
+      - name: Build workspace
+        run: pnpm build
+
+      - name: Commit validated result and remove workflow
+        run: |
+          rm .github/workflows/p11-04-finalize.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "chore(agent-task): finalize stateful execution"
+          git push
