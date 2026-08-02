@@ -175,7 +175,9 @@ function migrationPath(migrations, fromVersion, toVersion) {
 
 async function managedAssetOperations(policy) {
   const migrationsRoot = path.join(toolRoot, 'migrations');
-  const migrationFiles = (await readdir(migrationsRoot, { withFileTypes: true }))
+  const migrationFiles = (
+    await readdir(migrationsRoot, { withFileTypes: true })
+  )
     .filter((entry) => entry.isFile() && entry.name.endsWith('.mjs'))
     .sort((left, right) => left.name.localeCompare(right.name));
   const assets = [
@@ -288,11 +290,7 @@ async function main() {
   }
   parseVersion(toVersion);
 
-  const selectedMigrations = migrationPath(
-    migrations,
-    fromVersion,
-    toVersion,
-  );
+  const selectedMigrations = migrationPath(migrations, fromVersion, toVersion);
   const operations = [
     ...selectedMigrations.flatMap((migration) =>
       migration.operations.map((operation) => ({
