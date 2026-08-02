@@ -1,0 +1,86 @@
+{
+  "policyVersion": 1,
+  "classes": {
+    "templateManaged": [
+      {
+        "pattern": "tools/template/upgrade.mjs",
+        "strategy": "replace",
+        "description": "Upgrade runner supplied by the current template release."
+      },
+      {
+        "pattern": "tools/template/ownership.json",
+        "strategy": "replace",
+        "description": "Machine-readable ownership and conflict policy."
+      },
+      {
+        "pattern": "tools/template/migrations/**",
+        "strategy": "replace",
+        "description": "Ordered codemods supplied by template releases."
+      }
+    ],
+    "generatedOnce": [
+      {
+        "pattern": "workspace.template.json",
+        "strategy": "structured-merge",
+        "description": "Template provenance and selected generation profile."
+      },
+      {
+        "pattern": "package.json",
+        "strategy": "structured-merge",
+        "description": "Root commands and dependencies; migrations may change named keys only."
+      },
+      {
+        "pattern": ".github/CODEOWNERS",
+        "strategy": "preserve",
+        "description": "Generated from repository ownership choices and then owned downstream."
+      },
+      {
+        "pattern": ".env.example",
+        "strategy": "preserve",
+        "description": "Generated defaults that downstream repositories may extend."
+      },
+      {
+        "pattern": "README.md",
+        "strategy": "preserve",
+        "description": "Generated onboarding content that downstream repositories normally customize."
+      },
+      {
+        "pattern": "docs/template-upgrades.md",
+        "strategy": "create-if-missing",
+        "description": "Upgrade guidance added once and never replaced automatically."
+      }
+    ],
+    "applicationOwned": [
+      {
+        "pattern": "apps/**",
+        "strategy": "preserve",
+        "description": "Application implementation and product behavior."
+      },
+      {
+        "pattern": "packages/**",
+        "strategy": "preserve",
+        "description": "Domain, contract, data, UI, and platform libraries."
+      },
+      {
+        "pattern": "infra/**",
+        "strategy": "preserve",
+        "description": "Deployment and environment configuration after generation."
+      },
+      {
+        "pattern": "docs/**",
+        "strategy": "preserve",
+        "description": "Downstream architecture, operations, and product documentation."
+      },
+      {
+        "pattern": ".github/workflows/**",
+        "strategy": "preserve",
+        "description": "Downstream delivery policy and repository automation."
+      }
+    ]
+  },
+  "conflictPolicy": {
+    "templateManaged": "Replace only from a verified template release artifact.",
+    "generatedOnce": "Apply explicit structured edits or create missing files; report conflicts instead of overwriting customized content.",
+    "applicationOwned": "Never overwrite automatically. A migration must emit manual guidance when application code requires a change."
+  }
+}
