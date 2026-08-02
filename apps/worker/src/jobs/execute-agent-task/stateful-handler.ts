@@ -37,7 +37,16 @@ function terminalResult(
   record: AgentTaskExecutionRecord,
 ): ExecuteAgentTaskJobResult {
   const finishedAt =
-    record.succeededAt ?? record.failedAt ?? record.startedAt ?? new Date(0);
+    record.status === 'succeeded'
+      ? record.succeededAt
+      : record.status === 'failed'
+        ? record.failedAt
+        : null;
+  if (!finishedAt) {
+    throw new AgentTaskExecutionStateError(
+      `Terminal Agent Task ${payload.taskId} is missing its completion timestamp.`,
+    );
+  }
   return {
     taskId: payload.taskId,
     correlationId: payload.correlationId,
@@ -45,23 +54,20 @@ function terminalResult(
   };
 }
 
+const executionErrorCodes: Readonly<Record<string, string>> = {
+  RangeError: 'range_error',
+  SyntaxError: 'syntax_error',
+  TimeoutError: 'timeout_error',
+  TypeError: 'type_error',
+};
+
 function executionErrorCode(error: unknown): string {
-  if (!(error instanceof Error) || error.name === 'Error') {
-    return 'execution_failed';
-  }
-  return error.name
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/[^a-zA-Z0-9_]+/g, '_')
-    .toLowerCase()
-    .slice(0, 120);
+  if (!(error instanceof Error)) return 'execution_failed';
+  return executionErrorCodes[error.name] ?? 'execution_failed';
 }
 
-function executionErrorMessage(error: unknown): string {
-  const message =
-    error instanceof Error
-      ? error.message
-      : 'Unknown Agent Task execution error.';
-  return message.slice(0, 1000);
+function executionErrorMessage(): string {
+  return 'Agent Task execution failed.';
 }
 
 function stateError(
@@ -110,7 +116,7 @@ export function createStatefulExecuteAgentTaskHandler(
           deliveryAttempt: context.attemptCount,
           finishedAt: now(),
           errorCode: executionErrorCode(error),
-          errorMessage: executionErrorMessage(error),
+          errorMessage: executionErrorMessage(),
         });
       }
       throw error;

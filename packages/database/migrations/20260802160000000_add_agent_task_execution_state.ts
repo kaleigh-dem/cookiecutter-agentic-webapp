@@ -21,8 +21,20 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.dropConstraint(tasks, 'agent_tasks_status_check');
   pgm.sql(`
     update app.agent_tasks
-    set status = 'succeeded'
-    where status = 'completed'
+    set
+      status = 'succeeded',
+      execution_succeeded_at = coalesce(execution_succeeded_at, created_at)
+    where status = 'completed';
+
+    update app.agent_tasks
+    set execution_failed_at = coalesce(execution_failed_at, created_at)
+    where status = 'failed';
+
+    update app.agent_tasks
+    set execution_started_at = coalesce(execution_started_at, created_at)
+    where status = 'running'
+      and execution_job_id is null
+      and execution_delivery_attempt is null
   `);
   pgm.addConstraint(tasks, 'agent_tasks_status_check', {
     check: "status in ('queued', 'running', 'succeeded', 'failed')",

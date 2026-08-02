@@ -142,10 +142,37 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
     },
   );
 
+  it('returns a migrated terminal timestamp instead of an epoch fallback', async () => {
+    const migratedAt = new Date('2026-07-31T17:00:00.000Z');
+    const execution = store({
+      begin: vi.fn(async () => ({
+        outcome: 'already-succeeded' as const,
+        record: record({
+          status: 'succeeded',
+          startedAt: null,
+          succeededAt: migratedAt,
+        }),
+      })),
+    });
+    const execute = vi.fn();
+    const handler = createStatefulExecuteAgentTaskHandler(execution.store, {
+      execute,
+    });
+
+    await expect(handler(payload, undefined, envelope)).resolves.toEqual({
+      taskId: payload.taskId,
+      correlationId: payload.correlationId,
+      completedAt: migratedAt.toISOString(),
+    });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it('persists safe failure metadata and rethrows execution errors', async () => {
     const execution = store();
+    const sensitiveMessage =
+      'Authorization: Bearer super-secret-token; prompt=private request';
     const execute = vi.fn(async () => {
-      throw new TypeError('downstream request failed');
+      throw new TypeError(sensitiveMessage);
     });
     const handler = createStatefulExecuteAgentTaskHandler(execution.store, {
       execute,
@@ -159,7 +186,7 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
     });
 
     await expect(handler(payload, undefined, envelope)).rejects.toThrow(
-      'downstream request failed',
+      sensitiveMessage,
     );
     expect(execution.fail).toHaveBeenCalledWith({
       taskId: payload.taskId,
@@ -167,8 +194,13 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
       deliveryAttempt: 1,
       finishedAt: new Date('2026-08-02T15:02:00.000Z'),
       errorCode: 'type_error',
-      errorMessage: 'downstream request failed',
+      errorMessage: 'Agent Task execution failed.',
     });
+    const persistedFailure = execution.fail.mock.calls[0]?.[0];
+    expect(JSON.stringify(persistedFailure)).not.toContain(
+      'super-secret-token',
+    );
+    expect(JSON.stringify(persistedFailure)).not.toContain('private request');
     expect(execution.succeed).not.toHaveBeenCalled();
   });
 

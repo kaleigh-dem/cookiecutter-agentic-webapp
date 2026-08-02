@@ -39,10 +39,16 @@ export async function handleExecuteAgentTaskJob(
   envelope: ExecuteAgentTaskJobEnvelope = {},
 ): Promise<ExecuteAgentTaskJobResult> {
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
-  const jobId = validated.version === 2 ? validated.jobId : envelope.jobId;
+  const payloadJobId = validated.version === 2 ? validated.jobId : undefined;
+  const jobId = envelope.jobId ?? payloadJobId;
   if (!jobId) {
     throw new Error(
       'Agent Task execution requires a persisted job identifier.',
+    );
+  }
+  if (payloadJobId && envelope.jobId && payloadJobId !== envelope.jobId) {
+    throw new Error(
+      'Agent Task execution payload jobId does not match the persisted job identifier.',
     );
   }
   const attemptCount = envelope.attemptCount ?? 1;
@@ -52,7 +58,7 @@ export async function handleExecuteAgentTaskJob(
           requestId: validated.requestId,
           traceId: validated.traceId,
           userId: validated.userId,
-          jobId: validated.jobId,
+          jobId,
           correlationId: validated.correlationId,
         })
       : createCorrelationContext({

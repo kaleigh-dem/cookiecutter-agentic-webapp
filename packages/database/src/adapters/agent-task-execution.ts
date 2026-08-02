@@ -108,6 +108,37 @@ export class DrizzleAgentTaskExecutionStore implements AgentTaskExecutionStore {
   public async begin(
     input: BeginAgentTaskExecutionInput,
   ): Promise<BeginAgentTaskExecutionResult> {
+    const [legacyTerminal] = await this.database
+      .update(agentTasks)
+      .set({
+        executionJobId: input.jobId,
+        executionAttemptCount: sql`${agentTasks.executionAttemptCount} + 1`,
+        executionDeliveryAttempt: input.deliveryAttempt,
+      })
+      .where(
+        and(
+          eq(agentTasks.id, input.taskId),
+          or(
+            eq(agentTasks.status, 'succeeded'),
+            eq(agentTasks.status, 'failed'),
+          ),
+          isNull(agentTasks.executionJobId),
+          isNull(agentTasks.executionDeliveryAttempt),
+        ),
+      )
+      .returning();
+
+    if (legacyTerminal) {
+      const record = toRecord(legacyTerminal);
+      return {
+        outcome:
+          record.status === 'succeeded'
+            ? 'already-succeeded'
+            : 'already-failed',
+        record,
+      };
+    }
+
     const [row] = await this.database
       .update(agentTasks)
       .set({
@@ -128,6 +159,11 @@ export class DrizzleAgentTaskExecutionStore implements AgentTaskExecutionStore {
             and(
               eq(agentTasks.status, 'queued'),
               isNull(agentTasks.executionJobId),
+            ),
+            and(
+              eq(agentTasks.status, 'running'),
+              isNull(agentTasks.executionJobId),
+              isNull(agentTasks.executionDeliveryAttempt),
             ),
             and(
               eq(agentTasks.status, 'running'),

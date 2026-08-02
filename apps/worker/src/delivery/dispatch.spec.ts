@@ -148,6 +148,41 @@ describe('dispatchOutboxMessage', () => {
     );
   });
 
+  it('quarantines v2 payloads whose job identity differs from the claimed row', async () => {
+    const { acknowledge, delivery, fail } = disposition();
+    const handle = vi.fn(async () => ({ accepted: true }));
+    const claimed = message({
+      payload: {
+        version: 2,
+        taskId: '22222222-2222-4222-8222-222222222222',
+        actorId: 'actor-1',
+        userId: 'actor-1',
+        prompt: 'Execute the task',
+        requestId: 'request-1',
+        traceId: '33333333333333333333333333333333',
+        jobId: '55555555-5555-4555-8555-555555555555',
+        correlationId: 'correlation-1',
+        occurredAt: '2026-08-02T12:00:00.000Z',
+      },
+    });
+
+    await expect(
+      dispatchOutboxMessage(claimed, {
+        delivery,
+        handleExecuteAgentTask: handle as ExecuteAgentTaskHandler,
+      }),
+    ).resolves.toBe('quarantined');
+
+    expect(fail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: claimed.id,
+        errorCode: 'idempotency_identity_mismatch',
+      }),
+    );
+    expect(handle).not.toHaveBeenCalled();
+    expect(acknowledge).not.toHaveBeenCalled();
+  });
+
   it('leaves the lease active when the handler fails unexpectedly', async () => {
     const { acknowledge, delivery, fail } = disposition();
     const handle = vi.fn(async () => {

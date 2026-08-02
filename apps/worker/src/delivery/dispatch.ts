@@ -147,6 +147,15 @@ export async function dispatchOutboxMessage(
     );
   }
 
+  if (payload.version === 2 && payload.jobId !== message.id) {
+    return quarantine(
+      message,
+      options.delivery,
+      'idempotency_identity_mismatch',
+      'The agent-task.execute.v2 payload jobId does not match its persisted outbox message ID.',
+    );
+  }
+
   const handle = options.handleExecuteAgentTask ?? handleExecuteAgentTaskJob;
   await waitForHandler(
     handle(payload, undefined, {
