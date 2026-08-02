@@ -55,10 +55,11 @@ The generator accepts these profile values:
 - `deploymentProfile`: `containers`, `kubernetes`, or `local`
 - `ai`: `true` or `false`
 
-Profile values are durable repository metadata, not a promise that every provider-specific production integration is complete. In particular:
+Profile values are durable repository metadata. Their runtime behavior is:
 
-- `development` authentication and `local` deployment are development-only choices.
-- `oidc` and `session` identify the intended authentication boundary; the generated owner must configure and validate the production identity provider and browser/session flow.
+- `development` authentication and `local` deployment are development-only choices. The development verifier rejects production use.
+- `oidc` selects the reference API access-token verifier documented in `docs/oidc-authentication.md`. The generated owner must configure the issuer, audience, algorithm allowlist, claim mapping, and provider operations, and must still provide the production browser credential acquisition and refresh flow.
+- `session` identifies a future browser/session boundary and does not yet provide a production session implementation.
 - `postgres` selects the baseline transport direction documented in `docs/adr/0010-worker-delivery.md`: a transport boundary with PostgreSQL outbox polling, lease-based claims, at-least-once delivery, idempotent handlers, retries, and quarantine. `redis` records a future adapter direction only; it does not add Redis to Compose, configure `REDIS_URL`, or make that transport runnable. An adopter selecting it must supply an adapter with equivalent semantics, infrastructure, tests, and operational ownership.
 - `kubernetes` records the deployment target but does not generate organization-specific cluster, ingress, secret, policy, or autoscaling configuration.
 - `ai=true` records optional product intent without adding a model-provider dependency to the default workspace.
