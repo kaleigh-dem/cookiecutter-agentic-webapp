@@ -1,0 +1,1 @@
+This application-owned file must remain byte-for-byte unchanged during template upgrades.
