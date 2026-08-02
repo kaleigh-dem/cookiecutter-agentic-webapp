@@ -1,0 +1,12 @@
+name: Trigger P11-05 draft validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  noop:
+    if: github.head_ref == 'agent/p11-05-retry-dead-letter'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "P11-05 validation trigger"
