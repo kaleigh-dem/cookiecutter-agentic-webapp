@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   runAgentTaskWorkflow,
@@ -12,6 +12,15 @@ function jsonResponse(value: unknown, status: number): Response {
     headers: { 'content-type': 'application/json' },
   });
 }
+
+const workflowEnvironment = {
+  API_BASE_URL: 'http://api.test:4000',
+  AUTH_DEVELOPMENT_TOKEN: 'preview-token',
+};
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('preview smoke test', () => {
   it('keeps generic release smoke independent of worker and development credentials', async () => {
@@ -116,10 +125,7 @@ describe('preview smoke test', () => {
 
     await expect(
       runAgentTaskWorkflow({
-        environment: {
-          API_BASE_URL: 'http://api.test:4000',
-          AUTH_DEVELOPMENT_TOKEN: 'preview-token',
-        },
+        environment: workflowEnvironment,
         fetchImplementation,
         createId: () => 'fixed-id',
         sleep,
@@ -162,10 +168,7 @@ describe('preview smoke test', () => {
 
     await expect(
       runAgentTaskWorkflow({
-        environment: {
-          API_BASE_URL: 'http://api.test:4000',
-          AUTH_DEVELOPMENT_TOKEN: 'preview-token',
-        },
+        environment: workflowEnvironment,
         fetchImplementation,
         createId: () => 'fixed-id',
         sleep: async () => undefined,
@@ -180,5 +183,105 @@ describe('preview smoke test', () => {
         passed: false,
       }),
     );
+  });
+
+  it('bounds a stalled task creation request by the workflow deadline', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T20:00:00.000Z'));
+    const fetchImplementation = vi.fn(
+      () => new Promise<Response>(() => undefined),
+    );
+
+    const resultPromise = runAgentTaskWorkflow({
+      environment: workflowEnvironment,
+      fetchImplementation,
+      createId: () => 'fixed-id',
+      timeoutMs: 1_000,
+    });
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    await expect(resultPromise).resolves.toEqual(
+      expect.objectContaining({
+        error: 'The Agent Task did not succeed within 1000ms.',
+        passed: false,
+      }),
+    );
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+  });
+
+  it('bounds a stalled response-body read by the workflow deadline', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T20:00:00.000Z'));
+    const stalledResponse = {
+      status: 201,
+      body: null,
+      json: vi.fn(() => new Promise<unknown>(() => undefined)),
+    } as unknown as Response;
+    const fetchImplementation = vi.fn(async () => stalledResponse);
+
+    const resultPromise = runAgentTaskWorkflow({
+      environment: workflowEnvironment,
+      fetchImplementation,
+      createId: () => 'fixed-id',
+      timeoutMs: 1_000,
+    });
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    await expect(resultPromise).resolves.toEqual(
+      expect.objectContaining({
+        error: 'The Agent Task did not succeed within 1000ms.',
+        passed: false,
+      }),
+    );
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+    expect(stalledResponse.json).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps repeated polling requests and sleeps within one wall-clock deadline', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T20:00:00.000Z'));
+    const taskId = '33333333-3333-4333-8333-333333333333';
+    let requestNumber = 0;
+    const fetchImplementation = vi.fn(() => {
+      requestNumber += 1;
+      if (requestNumber === 1) {
+        return Promise.resolve(
+          jsonResponse({ id: taskId, status: 'queued' }, 201),
+        );
+      }
+      return new Promise<Response>((resolveResponse) => {
+        setTimeout(
+          () =>
+            resolveResponse(
+              jsonResponse({ id: taskId, status: 'running' }, 200),
+            ),
+          4_900,
+        );
+      });
+    });
+    const startedAt = Date.now();
+
+    const resultPromise = runAgentTaskWorkflow({
+      environment: workflowEnvironment,
+      fetchImplementation,
+      createId: () => 'fixed-id',
+      pollIntervalMs: 250,
+      timeoutMs: 15_000,
+    });
+
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    await expect(resultPromise).resolves.toEqual(
+      expect.objectContaining({
+        taskId,
+        terminalStatus: 'running',
+        error: 'The Agent Task did not succeed within 15000ms.',
+        passed: false,
+      }),
+    );
+    expect(Date.now() - startedAt).toBe(15_000);
+    expect(fetchImplementation).toHaveBeenCalledTimes(4);
   });
 });
