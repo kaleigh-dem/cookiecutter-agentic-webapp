@@ -208,7 +208,9 @@ describe('pollWorkerOnce', () => {
 
       await vi.advanceTimersByTimeAsync(14_999);
       expect(
-        error.mock.calls.some(([event]) => event === 'worker.message.claim-lost'),
+        error.mock.calls.some(
+          ([event]) => event === 'worker.message.claim-lost',
+        ),
       ).toBe(false);
 
       await vi.advanceTimersByTimeAsync(1);
