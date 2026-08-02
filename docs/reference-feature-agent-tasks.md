@@ -14,9 +14,13 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 8. Actor-scoped reads are authorized by the application use case before the API returns data.
 9. The preview smoke gate creates an Agent Task through the deployed API and polls the read endpoint until the live worker transitions it to `succeeded`.
 
-## Preview identity
+## Preview identity and smoke profiles
 
 `infra/environments/preview.local.env` explicitly enables the deterministic development token for the repository-local preview stack. The shared preview Compose definition defaults the API to production mode unless that local override is supplied, and production environment validation rejects development-token configuration.
+
+`tools/delivery/smoke-test.mjs` defaults to the `release` profile. That generic profile checks the web and API surfaces and does not require a worker operations URL or a development credential. Generated preview and production release plans pin this profile explicitly.
+
+The repository-local preview sets `SMOKE_TEST_PROFILE=live-agent-task`. That profile adds worker liveness, readiness, and metrics checks and creates an authenticated Agent Task that must reach terminal `succeeded`. `WORKER_BASE_URL` and `AUTH_DEVELOPMENT_TOKEN` are required only for this local live-workflow profile.
 
 The local preview identity is only a test adapter. It does not represent the Phase 12 production identity design.
 
@@ -42,4 +46,5 @@ The local preview identity is only a test adapter. It does not represent the Pha
 - Playwright covers browser states and the generated client request shape without depending on a running backend.
 - The live preview smoke creates and reads a real Agent Task across API, database, outbox, and worker boundaries and requires terminal success.
 - Preview smoke and performance budgets exercise worker liveness, dependency-aware readiness, and metrics endpoints.
+- Release-plan tests ensure generic preview and production smoke remain independent of development credentials and internal worker URLs.
 - The generated-output smoke test ensures the source generators remain usable after this example evolves.
