@@ -36,7 +36,7 @@ The `app.job_outbox` schema tracks processing state, attempt count, next-attempt
 
 Multiple worker replicas may poll concurrently. At most one unexpired lease may own a row at a time. Every claim receives a new UUID ownership token; acknowledgement, renewal, retry scheduling, and terminal failure updates require the current worker identifier and token while the lease is unexpired. A stale worker therefore cannot mutate a row after another worker recovers it. A worker crash leaves the row claimable after its lease expires.
 
-Each process uses bounded batch size and bounded in-process concurrency; scaling is achieved by changing those limits or adding replicas rather than by allowing unbounded promises. Long-running handlers renew their lease before expiration.
+Each process uses bounded batch size and bounded in-process concurrency; scaling is achieved by changing those limits or adding replicas rather than by allowing unbounded promises. Long-running handlers renew their lease before expiration. The deployed worker attempts renewal on a fixed one-third-lease cadence, prevents overlapping renewal calls for a claim, and retries a completed failure on the next cadence before the current lease expires.
 
 The deployed worker now polls this adapter, routes `agent-task.execute.v1` and `agent-task.execute.v2` through the generated handler, acknowledges successful execution, and quarantines unknown event types, unsupported versions, and invalid payloads. Unexpected handler failures retain their lease for crash-style recovery until P11-05 adds retry classification and backoff policy.
 
