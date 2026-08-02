@@ -18,6 +18,7 @@ const services = {
     buildDirectory: 'dist/apps/worker',
     workspacePackages: [
       ['packages/contracts', 'dist/packages/contracts'],
+      ['packages/database', 'dist/packages/database'],
       ['packages/observability', 'dist/packages/observability'],
     ],
   },
