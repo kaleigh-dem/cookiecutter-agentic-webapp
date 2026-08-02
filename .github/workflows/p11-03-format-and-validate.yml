@@ -1,0 +1,60 @@
+name: Format and validate P11-03 lease containment
+
+on:
+  push:
+    branches:
+      - agent/p11-03-worker-composition
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p11-03-format-and-validate
+  cancel-in-progress: true
+
+jobs:
+  format-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format lease containment changes
+        run: pnpm exec prettier --write apps/worker/src/delivery/poller.spec.ts
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run focused worker tests
+        run: >-
+          pnpm exec vitest run
+          apps/worker/src/delivery
+          apps/worker/src/jobs/execute-agent-task
+
+      - name: Typecheck worker
+        run: pnpm exec nx run worker:typecheck
+
+      - name: Build worker
+        run: pnpm exec nx run worker:build
+
+      - name: Commit formatted result and remove workflow
+        run: |
+          rm .github/workflows/p11-03-format-and-validate.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/worker/src/delivery/poller.spec.ts .github/workflows/p11-03-format-and-validate.yml
+          git commit -m "style(worker): format lease containment test"
+          git push
