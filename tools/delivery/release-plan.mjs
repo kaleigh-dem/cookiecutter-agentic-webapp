@@ -83,7 +83,7 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
       },
       {
         id: 'smoke-test',
-        command: `set -a && . ${environmentFile} && set +a && node tools/delivery/smoke-test.mjs`,
+        command: `set -a && . ${environmentFile} && set +a && node tools/delivery/smoke-test.mjs --profile release`,
       },
       {
         id: 'observe',
