@@ -22,13 +22,13 @@ Worker lifecycle logs emitted while a message is being renewed, processed, retri
 
 The worker exports metrics through OpenTelemetry and exposes the process-local snapshot on its internal operations endpoint.
 
-| Metric | Type | Meaning |
-| --- | --- | --- |
-| `worker_queue_depth` | gauge | Count of PostgreSQL outbox rows in `pending` or `processing` state. |
-| `worker_oldest_message_age_ms` | gauge | Age of the oldest non-terminal outbox row. |
-| `worker_message_processing_duration_ms` | histogram | Time spent dispatching and settling one claimed message. |
-| `worker_retries_total` | counter | Retry schedules successfully persisted by this worker process. |
-| `worker_failures_total` | counter | Permanent, exhausted, or quarantined messages successfully persisted as failed. |
+| Metric                                  | Type      | Meaning                                                                         |
+| --------------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| `worker_queue_depth`                    | gauge     | Count of PostgreSQL outbox rows in `pending` or `processing` state.             |
+| `worker_oldest_message_age_ms`          | gauge     | Age of the oldest non-terminal outbox row.                                      |
+| `worker_message_processing_duration_ms` | histogram | Time spent dispatching and settling one claimed message.                        |
+| `worker_retries_total`                  | counter   | Retry schedules successfully persisted by this worker process.                  |
+| `worker_failures_total`                 | counter   | Permanent, exhausted, or quarantined messages successfully persisted as failed. |
 
 Queue gauges come from PostgreSQL after each polling batch rather than from process-local claim counts. A metric refresh failure is logged safely and does not stop delivery; readiness separately reports whether PostgreSQL is reachable.
 
@@ -57,9 +57,9 @@ The preview container uses a 30-second stop grace period, leaving time for the 2
 
 ## Configuration
 
-| Variable | Default | Constraint |
-| --- | --- | --- |
-| `WORKER_OPERATIONS_PORT` | `4001` | Integer from 1 through 65535. |
+| Variable                  | Default | Constraint                                     |
+| ------------------------- | ------- | ---------------------------------------------- |
+| `WORKER_OPERATIONS_PORT`  | `4001`  | Integer from 1 through 65535.                  |
 | `WORKER_DRAIN_TIMEOUT_MS` | `25000` | Integer from 1000 through 300000 milliseconds. |
 
 `DATABASE_URL` remains required. A worker that cannot create its database connection or bind the operations endpoint fails startup rather than reporting false readiness.

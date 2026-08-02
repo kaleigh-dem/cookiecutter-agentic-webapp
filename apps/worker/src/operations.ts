@@ -91,7 +91,9 @@ export function startWorkerOperationsServer(
       const address = server.address() as AddressInfo | null;
       if (!address) {
         server.close();
-        reject(new Error('The worker operations server did not expose an address.'));
+        reject(
+          new Error('The worker operations server did not expose an address.'),
+        );
         return;
       }
       resolve({

@@ -200,10 +200,7 @@ describe('worker observability and drain behavior', () => {
       markStarted = resolve;
     });
     const dispatch = vi.fn(
-      (
-        _message: ClaimedOutboxMessage,
-        options: DispatchOutboxMessageOptions,
-      ) =>
+      (_message: ClaimedOutboxMessage, options: DispatchOutboxMessageOptions) =>
         new Promise<'acknowledged'>((_resolve, reject) => {
           markStarted?.();
           const signal = options.signal;

@@ -49,12 +49,10 @@ function boundedEnvironmentInteger(
   if (!value) return fallback;
 
   const parsed = Number(value);
-  if (
-    !Number.isSafeInteger(parsed) ||
-    parsed < minimum ||
-    parsed > maximum
-  ) {
-    throw new Error(`${name} must be an integer between ${minimum} and ${maximum}.`);
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw new Error(
+      `${name} must be an integer between ${minimum} and ${maximum}.`,
+    );
   }
   return parsed;
 }

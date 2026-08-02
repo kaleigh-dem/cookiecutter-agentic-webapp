@@ -73,10 +73,7 @@ function claimReference(message: ClaimedOutboxMessage) {
   };
 }
 
-function stringField(
-  value: unknown,
-  field: string,
-): string | undefined {
+function stringField(value: unknown, field: string): string | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const candidate = (value as Record<string, unknown>)[field];
   return typeof candidate === 'string' && candidate.trim()
@@ -330,7 +327,8 @@ export async function pollWorkerOnce(
   try {
     for (const message of messages) {
       const renewal = renewals.get(message.id);
-      const context = contexts.get(message.id) ?? messageCorrelationContext(message);
+      const context =
+        contexts.get(message.id) ?? messageCorrelationContext(message);
 
       await runWithCorrelationContext(context, async () => {
         const startedAt = options.performanceNow?.() ?? performance.now();
