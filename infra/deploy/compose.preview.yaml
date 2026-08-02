@@ -15,16 +15,6 @@ services:
       timeout: 3s
       retries: 30
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 2s
-      timeout: 3s
-      retries: 30
-
   api:
     image: ${API_IMAGE}
     init: true
@@ -38,14 +28,11 @@ services:
       NODE_ENV: ${NODE_ENV}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${OTEL_SERVICE_VERSION}
-      REDIS_URL: ${REDIS_URL}
       WEB_ORIGIN: ${WEB_ORIGIN}
     ports:
       - '4000:4000'
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test:
@@ -69,11 +56,8 @@ services:
       NODE_ENV: ${NODE_ENV}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${OTEL_SERVICE_VERSION}
-      REDIS_URL: ${REDIS_URL}
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
 
   web:
