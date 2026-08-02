@@ -93,6 +93,52 @@ describe('PostgresOutboxDelivery', () => {
     await stopContainer?.();
   });
 
+  it('reports non-terminal queue depth and oldest message age', async () => {
+    const oldMessageId = await insertMessage(primary, {
+      createdAt: new Date(Date.now() - 60_000),
+    });
+    await insertMessage(primary);
+    const delivery = new PostgresOutboxDelivery(primary.pool);
+
+    await expect(delivery.getQueueMetrics()).resolves.toEqual({
+      queueDepth: 2,
+      oldestMessageAgeMs: expect.toBeGreaterThan(50_000),
+    });
+
+    const [oldMessage] = await delivery.claim({
+      workerId: 'worker-a',
+      batchSize: 1,
+      leaseDurationMs: LEASE_DURATION_MS,
+    });
+    expect(oldMessage?.id).toBe(oldMessageId);
+    if (!oldMessage) return;
+    expect(await delivery.acknowledge(oldMessage)).toBe(true);
+
+    const afterAcknowledgement = await delivery.getQueueMetrics();
+    expect(afterAcknowledgement.queueDepth).toBe(1);
+    expect(afterAcknowledgement.oldestMessageAgeMs).toBeGreaterThanOrEqual(0);
+
+    const [remaining] = await delivery.claim({
+      workerId: 'worker-a',
+      batchSize: 1,
+      leaseDurationMs: LEASE_DURATION_MS,
+    });
+    expect(remaining).toBeDefined();
+    if (!remaining) return;
+    expect(
+      await delivery.fail({
+        ...remaining,
+        errorCode: 'invalid_contract',
+        errorMessage: 'The event contract is invalid.',
+      }),
+    ).toBe(true);
+
+    await expect(delivery.getQueueMetrics()).resolves.toEqual({
+      queueDepth: 0,
+      oldestMessageAgeMs: 0,
+    });
+  });
+
   it('claims eligible messages in deterministic priority order', async () => {
     const now = Date.now();
     const first = await insertMessage(primary, {
