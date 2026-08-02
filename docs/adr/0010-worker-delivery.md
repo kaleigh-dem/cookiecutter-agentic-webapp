@@ -38,6 +38,8 @@ Multiple worker replicas may poll concurrently. At most one unexpired lease may 
 
 Each process uses bounded batch size and bounded in-process concurrency; scaling is achieved by changing those limits or adding replicas rather than by allowing unbounded promises. Long-running handlers renew their lease before expiration.
 
+The deployed worker now polls this adapter, routes `agent-task.execute.v1` and `agent-task.execute.v2` through the generated handler, acknowledges successful execution, and quarantines unknown event types, unsupported versions, and invalid payloads. Unexpected handler failures retain their lease for crash-style recovery until P11-05 adds retry classification and backoff policy.
+
 ### Ordering
 
 The baseline provides deterministic claim priority, not global FIFO execution.
@@ -98,4 +100,4 @@ Rejected as a guarantee. A database transaction cannot atomically cover arbitrar
 - Polling adds database load, so batch size, poll interval, indexes, lease duration, and retention require measured defaults and operational metrics.
 - Completion order is not guaranteed; handlers and state models must tolerate duplicates and reordering.
 - Future Redis, cloud queue, or streaming adapters must preserve the documented claim, acknowledgement, retry, quarantine, shutdown, and observability semantics or record a superseding ADR.
-- P11-03 through P11-07 compose, execute, harden, observe, and prove this implemented delivery foundation.
+- P11-04 through P11-07 make execution stateful and idempotent, add retry policy, complete operations, and prove the workflow end to end.

@@ -110,7 +110,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Track attempts, claim expiration, next-attempt time, processing state, and terminal failure information.
   - Prevent duplicate concurrent processing while allowing recovery after worker crashes.
 
-- [ ] **P11-03 Compose the deployed worker around generated jobs.**
+- [x] **P11-03 Compose the deployed worker around generated jobs.**
   - Add the database or queue dependencies required by the selected transport.
   - Load and route versioned event contracts to registered handlers.
   - Replace the heartbeat-only loop with real polling or queue consumption while retaining operational heartbeat metrics where useful.

@@ -74,9 +74,9 @@ describe('dispatchOutboxMessage', () => {
     const { acknowledge, delivery, fail } = disposition();
     const claimed = message({ kind: 'unknown.event.v1' });
 
-    await expect(
-      dispatchOutboxMessage(claimed, { delivery }),
-    ).resolves.toBe('quarantined');
+    await expect(dispatchOutboxMessage(claimed, { delivery })).resolves.toBe(
+      'quarantined',
+    );
 
     expect(fail).toHaveBeenCalledWith(
       expect.objectContaining({
