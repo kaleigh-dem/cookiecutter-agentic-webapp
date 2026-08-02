@@ -63,7 +63,7 @@ describe('preset generator', () => {
       upstream: { repository: string; version: string };
       upgrade: { ownershipPolicyVersion: number };
     }>(tree, 'workspace.template.json');
-    expect(manifest.schemaVersion).toBe(3);
+    expect(manifest.schemaVersion).toBe(2);
     expect(manifest.upstream).toEqual({
       repository: upstreamTemplateRepository,
       version: templateVersion,
