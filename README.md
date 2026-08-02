@@ -17,11 +17,11 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - pnpm workspaces
 - enforced scope, runtime, and project-type boundaries
 - Nx project graph, caching, affected commands, and local generators
-- versioned Nx preset artifacts published through tagged GitHub Releases
+- versioned Nx preset artifacts, downstream migrations, and upgrade ownership policy
 - Nx MCP configuration and agent instructions
 - PostgreSQL and Redis development services
 - production OCI images, preview orchestration, release plans, and performance budgets
-- GitHub Actions using standalone and affected Nx validation
+- GitHub Actions using standalone, affected, and generated-workspace validation
 
 ## Create a workspace
 
@@ -43,13 +43,24 @@ pnpm install --frozen-lockfile
 pnpm template:identity:check
 ```
 
-Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
+Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version and upgrade ownership-policy version. See `docs/template-initialization.md` for application selection, ownership, ports, database, authentication, worker, telemetry, deployment, optional AI settings, and the upstream-reference policy.
 
 ## Template releases
 
-Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball. CI packages and installs the same artifact, invokes its public `preset` entry point, and runs a differently named generated repository through frozen installation, validation, migrations, seed data, production images, preview smoke tests, performance budgets, deterministic teardown, identity checks, and Git-cleanliness checks before the release workflow can publish it.
+Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball with the public `preset` entry point and the `agentic-webapp-upgrade` command. CI validates generation, a previous-release upgrade fixture, and a differently named generated repository through frozen installation, validation, migrations, seed data, production images, preview smoke tests, performance budgets, deterministic teardown, identity checks, and Git-cleanliness checks before publication.
 
-See `docs/template-releases.md` for versioning and publishing, and `docs/template-validation.md` for the generated-workspace lifecycle.
+See `docs/template-releases.md` for versioning and publishing, `docs/template-validation.md` for the generated-workspace lifecycle, and `docs/template-upgrades.md` for downstream migrations.
+
+## Upgrade a generated workspace
+
+Install the target release artifact temporarily and preview its ordered migration plan:
+
+```bash
+pnpm add --save-dev ./downloaded-workspace-plugin-0.2.0.tgz
+pnpm exec agentic-webapp-upgrade --to 0.2.0 --dry-run
+```
+
+After reviewing ownership classes and conflicts, rerun with `--apply`, execute `pnpm check`, and commit the upgrade separately from application changes. Applied migrations synchronize the repository-local `pnpm template:upgrade` command.
 
 ## Runtime requirements
 
