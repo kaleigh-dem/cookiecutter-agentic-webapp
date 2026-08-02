@@ -109,7 +109,7 @@ function createWorkspaceTree(): Tree {
   );
   tree.write(
     'README.md',
-    'Upstream template: https://github.com/kaleigh-dem/cookiecutter-agentic-webapp\n',
+    'Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform\n',
   );
   tree.write('.github/CODEOWNERS', `* @${['kaleigh', 'dem'].join('-')}\n`);
   return tree;
@@ -161,7 +161,7 @@ describe('init generator', () => {
         },
         "schemaVersion": 2,
         "upstream": {
-          "repository": "kaleigh-dem/cookiecutter-agentic-webapp",
+          "repository": "kaleigh-dem/nx-fullstack-platform",
         },
       }
     `);
@@ -214,7 +214,7 @@ describe('init generator', () => {
       tree.read('packages/observability/src/service.ts', 'utf-8'),
     ).toContain('customer-portal-api');
     expect(tree.read('README.md', 'utf-8')).toContain(
-      'https://github.com/kaleigh-dem/cookiecutter-agentic-webapp',
+      'https://github.com/kaleigh-dem/nx-fullstack-platform',
     );
     expect(tree.read('.github/CODEOWNERS', 'utf-8')).toContain(
       '/apps/worker/ @acme/platform @acme/security',

@@ -18,7 +18,7 @@ const templateClassName = ['Agentic', 'Webapp'].join('');
 const templatePropertyName = ['agentic', 'Webapp'].join('');
 const upstreamRepository = [
   ['kaleigh', 'dem'].join('-'),
-  ['cookiecutter', templateSlug].join('-'),
+  ['nx', 'fullstack', 'platform'].join('-'),
 ].join('/');
 const upstreamUrl = `https://github.com/${upstreamRepository}`;
 const personalCodeowner = `@${['kaleigh', 'dem'].join('-')}`;

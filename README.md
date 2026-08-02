@@ -2,7 +2,7 @@
 
 A production-minded Nx monorepo template for a large TypeScript web application operated by humans and coding agents.
 
-> Upstream template: https://github.com/kaleigh-dem/cookiecutter-agentic-webapp. The repository name is retained from the original Cookiecutter prototype; generated workspaces use their configured identity throughout.
+> Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform. Generated workspaces use their configured identity throughout.
 
 ## Why Nx
 
@@ -28,7 +28,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 
 ```bash
 npx create-nx-workspace@23.1.0 my-workspace \
-  --template kaleigh-dem/cookiecutter-agentic-webapp
+  --template kaleigh-dem/nx-fullstack-platform
 ```
 
 After installing dependencies, replace the template identity and record the generated repository's profiles:

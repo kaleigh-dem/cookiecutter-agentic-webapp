@@ -161,7 +161,7 @@ async function assertGeneratedContract(workspace, expectedVersion) {
 
   assert.equal(manifest.schemaVersion, 2);
   assert.deepEqual(manifest.upstream, {
-    repository: 'kaleigh-dem/cookiecutter-agentic-webapp',
+    repository: 'kaleigh-dem/nx-fullstack-platform',
     version: expectedVersion,
   });
   assert.deepEqual(manifest.application, {

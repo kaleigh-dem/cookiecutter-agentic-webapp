@@ -41,7 +41,7 @@ const templateIdentity = {
   displayName: 'Agentic Webapp',
   packageScope: '@agentic-webapp',
   propertyName: 'agenticWebapp',
-  repository: 'kaleigh-dem/cookiecutter-agentic-webapp',
+  repository: 'kaleigh-dem/nx-fullstack-platform',
   slug: 'agentic-webapp',
   snakeName: 'agentic_webapp',
   upperSnakeName: 'AGENTIC_WEBAPP',

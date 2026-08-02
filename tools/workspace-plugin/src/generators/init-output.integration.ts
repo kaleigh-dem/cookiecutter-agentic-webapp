@@ -180,7 +180,7 @@ async function main(): Promise<void> {
     assert.match(first['workspace.template.json'] ?? '', /"ai": true/);
     assert.match(
       first['workspace.template.json'] ?? '',
-      /"repository": "kaleigh-dem\/cookiecutter-agentic-webapp"/,
+      /"repository": "kaleigh-dem\/nx-fullstack-platform"/,
     );
     assert.match(
       first['workspace.template.json'] ?? '',
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
     assert.match(first['.env.example'] ?? '', /localhost:55432\/smoke_app/);
     assert.match(
       first['README.md'] ?? '',
-      /kaleigh-dem\/cookiecutter-agentic-webapp/,
+      /kaleigh-dem\/nx-fullstack-platform/,
     );
     assert.equal(first['.github/workflows/generated-workspace.yml'], undefined);
     assert.equal(first['.github/workflows/template-release.yml'], undefined);

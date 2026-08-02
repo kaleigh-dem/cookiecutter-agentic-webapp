@@ -1,4 +1,4 @@
 export const upstreamTemplateRepository = [
   ['kaleigh', 'dem'].join('-'),
-  ['cookiecutter', ['agentic', 'webapp'].join('-')].join('-'),
+  ['nx', 'fullstack', 'platform'].join('-'),
 ].join('/');

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "upstream": {
-    "repository": "kaleigh-dem/cookiecutter-agentic-webapp",
+    "repository": "kaleigh-dem/nx-fullstack-platform",
     "version": "0.1.0"
   },
   "application": {

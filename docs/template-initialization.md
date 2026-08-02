@@ -76,7 +76,7 @@ Initialization rewrites every text file outside generated caches and dependency 
 - database defaults in environment files and Compose health checks
 - generated CODEOWNERS and application-specific ownership paths
 
-Binary files and ignored build directories are not modified. Intentional references to the upstream template, `kaleigh-dem/cookiecutter-agentic-webapp`, are preserved only in attribution, generator metadata, tests of that metadata, and `workspace.template.json`.
+Binary files and ignored build directories are not modified. Intentional references to the upstream template, `kaleigh-dem/nx-fullstack-platform`, are preserved only in attribution, generator metadata, tests of that metadata, and `workspace.template.json`.
 
 Applications omitted from `--applications` are removed from `apps/`, their root TypeScript project references are removed, and container builds are scoped to the selected applications.
 
