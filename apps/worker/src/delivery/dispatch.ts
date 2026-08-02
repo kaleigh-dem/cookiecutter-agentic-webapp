@@ -25,6 +25,7 @@ export type ExecuteAgentTaskHandler = (
 export interface DispatchOutboxMessageOptions {
   readonly delivery: OutboxDisposition;
   readonly handleExecuteAgentTask?: ExecuteAgentTaskHandler;
+  readonly maxAttempts?: number;
   readonly signal?: AbortSignal;
 }
 
@@ -161,6 +162,7 @@ export async function dispatchOutboxMessage(
     handle(payload, undefined, {
       jobId: message.id,
       attemptCount: message.attemptCount,
+      maxAttempts: options.maxAttempts ?? 1,
       ...(options.signal ? { signal: options.signal } : {}),
     }),
     options.signal,
