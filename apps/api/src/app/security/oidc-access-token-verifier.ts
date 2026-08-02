@@ -68,10 +68,7 @@ export interface OidcClaimsMapper {
   map(claims: Readonly<Record<string, unknown>>): OidcAuthenticatedPrincipal;
 }
 
-export type OidcFetch = (
-  input: URL,
-  init?: RequestInit,
-) => Promise<Response>;
+export type OidcFetch = (input: URL, init?: RequestInit) => Promise<Response>;
 
 interface JwtHeader {
   readonly alg: SupportedJwtAlgorithm;
