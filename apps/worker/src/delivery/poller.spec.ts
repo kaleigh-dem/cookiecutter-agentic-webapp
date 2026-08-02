@@ -1,0 +1,113 @@
+import type {
+  ClaimedOutboxMessage,
+  PostgresOutboxDelivery,
+} from '@agentic-webapp/database';
+import { describe, expect, it, vi } from 'vitest';
+
+import { pollWorkerOnce, type WorkerLogger } from './poller';
+
+function message(id: string): ClaimedOutboxMessage {
+  return {
+    id,
+    kind: 'agent-task.execute.v2',
+    payload: {
+      version: 2,
+      taskId: '22222222-2222-4222-8222-222222222222',
+      actorId: 'actor-1',
+      userId: 'actor-1',
+      prompt: 'Execute the task',
+      requestId: `request-${id}`,
+      traceId: '33333333333333333333333333333333',
+      jobId: id,
+      correlationId: `correlation-${id}`,
+      occurredAt: '2026-08-02T12:00:00.000Z',
+    },
+    correlationId: `correlation-${id}`,
+    attemptCount: 1,
+    nextAttemptAt: new Date('2026-08-02T12:00:00.000Z'),
+    workerId: 'worker-1',
+    claimToken: '44444444-4444-4444-8444-444444444444',
+    claimExpiresAt: new Date('2026-08-02T12:01:00.000Z'),
+    createdAt: new Date('2026-08-02T11:59:00.000Z'),
+  };
+}
+
+function logger() {
+  const info = vi.fn();
+  const error = vi.fn();
+  return { info, error, logger: { info, error } satisfies WorkerLogger };
+}
+
+describe('pollWorkerOnce', () => {
+  it('claims a bounded batch and dispatches each message', async () => {
+    const messages = [
+      message('11111111-1111-4111-8111-111111111111'),
+      message('55555555-5555-4555-8555-555555555555'),
+    ];
+    const claim = vi.fn(async () => messages);
+    const dispatch = vi.fn(async () => 'acknowledged' as const);
+    const { info, logger: workerLogger } = logger();
+
+    await expect(
+      pollWorkerOnce({
+        batchSize: 10,
+        delivery: { claim } as unknown as PostgresOutboxDelivery,
+        dispatch,
+        leaseDurationMs: 30_000,
+        logger: workerLogger,
+        workerId: 'worker-1',
+      }),
+    ).resolves.toBe(2);
+
+    expect(claim).toHaveBeenCalledWith({
+      workerId: 'worker-1',
+      batchSize: 10,
+      leaseDurationMs: 30_000,
+    });
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(info).toHaveBeenCalledTimes(2);
+  });
+
+  it('isolates unexpected handler failures to the affected message', async () => {
+    const first = message('11111111-1111-4111-8111-111111111111');
+    const second = message('55555555-5555-4555-8555-555555555555');
+    const claim = vi.fn(async () => [first, second]);
+    const dispatch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('temporary dependency failure'))
+      .mockResolvedValueOnce('acknowledged');
+    const { error, logger: workerLogger } = logger();
+
+    await pollWorkerOnce({
+      batchSize: 10,
+      delivery: { claim } as unknown as PostgresOutboxDelivery,
+      dispatch,
+      leaseDurationMs: 30_000,
+      logger: workerLogger,
+      workerId: 'worker-1',
+    });
+
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(error).toHaveBeenCalledWith(
+      'worker.message.failed',
+      expect.objectContaining({ message: 'temporary dependency failure' }),
+    );
+  });
+
+  it('surfaces claim failures to the outer polling loop', async () => {
+    const claim = vi.fn(async () => {
+      throw new Error('database unavailable');
+    });
+    const { logger: workerLogger } = logger();
+
+    await expect(
+      pollWorkerOnce({
+        batchSize: 10,
+        delivery: { claim } as unknown as PostgresOutboxDelivery,
+        leaseDurationMs: 30_000,
+        logger: workerLogger,
+        workerId: 'worker-1',
+      }),
+    ).rejects.toThrow('database unavailable');
+  });
+});
