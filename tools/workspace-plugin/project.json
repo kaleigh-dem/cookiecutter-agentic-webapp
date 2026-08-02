@@ -8,9 +8,12 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{workspaceRoot}/dist/tools/workspace-plugin"],
+      "outputs": [
+        "{workspaceRoot}/dist/tools/workspace-plugin",
+        "{projectRoot}/dist/template-upgrade"
+      ],
       "options": {
-        "command": "tsc -p tools/workspace-plugin/tsconfig.lib.json"
+        "command": "tsc -p tools/workspace-plugin/tsconfig.lib.json && node tools/workspace-plugin/scripts/copy-upgrade-assets.mjs"
       }
     },
     "typecheck": {
