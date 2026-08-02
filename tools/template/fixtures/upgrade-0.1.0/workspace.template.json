@@ -11,13 +11,9 @@
   },
   "repository": {
     "owner": "fixture-owner",
-    "codeowners": [
-      "@fixture-owner"
-    ]
+    "codeowners": ["@fixture-owner"]
   },
-  "applications": [
-    "api"
-  ],
+  "applications": ["api"],
   "ports": {
     "web": 3000,
     "api": 4000,
