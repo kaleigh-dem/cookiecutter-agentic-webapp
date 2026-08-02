@@ -1,0 +1,35 @@
+name: Apply OIDC review fix formatting
+
+on:
+  push:
+    branches:
+      - agent/p12-01-oidc-access-token-verifier
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p12-01-oidc-access-token-verifier
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write apps/api/src/app/security/oidc-provider-metadata.spec.ts
+      - name: Commit formatted regression test and remove helper workflow
+        run: |
+          rm .github/workflows/apply-oidc-review-fix.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add apps/api/src/app/security/oidc-provider-metadata.spec.ts .github/workflows/apply-oidc-review-fix.yml
+          git commit -m "Format OIDC provider metadata regression tests"
+          git push
