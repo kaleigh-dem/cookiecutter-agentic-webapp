@@ -30,7 +30,7 @@ function message(
       occurredAt: '2026-08-02T12:00:00.000Z',
     },
     correlationId: 'correlation-1',
-    attemptCount: 1,
+    attemptCount: 2,
     nextAttemptAt: new Date('2026-08-02T12:00:00.000Z'),
     workerId: 'worker-1',
     claimToken: '44444444-4444-4444-8444-444444444444',
@@ -65,6 +65,7 @@ describe('dispatchOutboxMessage', () => {
 
     expect(handle).toHaveBeenCalledWith(claimed.payload, undefined, {
       jobId: claimed.id,
+      attemptCount: claimed.attemptCount,
     });
     expect(acknowledge).toHaveBeenCalledWith({
       id: claimed.id,
@@ -85,7 +86,10 @@ describe('dispatchOutboxMessage', () => {
         envelope?: ExecuteAgentTaskJobEnvelope,
       ) =>
         new Promise((resolve) => {
-          expect(envelope?.signal).toBe(controller.signal);
+          expect(envelope).toMatchObject({
+            attemptCount: 2,
+            signal: controller.signal,
+          });
           completeHandler = () => resolve({ accepted: true });
         }),
     );
@@ -142,6 +146,41 @@ describe('dispatchOutboxMessage', () => {
     expect(fail).toHaveBeenCalledWith(
       expect.objectContaining({ errorCode: 'invalid_contract' }),
     );
+  });
+
+  it('quarantines v2 payloads whose job identity differs from the claimed row', async () => {
+    const { acknowledge, delivery, fail } = disposition();
+    const handle = vi.fn(async () => ({ accepted: true }));
+    const claimed = message({
+      payload: {
+        version: 2,
+        taskId: '22222222-2222-4222-8222-222222222222',
+        actorId: 'actor-1',
+        userId: 'actor-1',
+        prompt: 'Execute the task',
+        requestId: 'request-1',
+        traceId: '33333333333333333333333333333333',
+        jobId: '55555555-5555-4555-8555-555555555555',
+        correlationId: 'correlation-1',
+        occurredAt: '2026-08-02T12:00:00.000Z',
+      },
+    });
+
+    await expect(
+      dispatchOutboxMessage(claimed, {
+        delivery,
+        handleExecuteAgentTask: handle as ExecuteAgentTaskHandler,
+      }),
+    ).resolves.toBe('quarantined');
+
+    expect(fail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: claimed.id,
+        errorCode: 'idempotency_identity_mismatch',
+      }),
+    );
+    expect(handle).not.toHaveBeenCalled();
+    expect(acknowledge).not.toHaveBeenCalled();
   });
 
   it('leaves the lease active when the handler fails unexpectedly', async () => {

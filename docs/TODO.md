@@ -116,7 +116,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Replace the heartbeat-only loop with real polling or queue consumption while retaining operational heartbeat metrics where useful.
   - Reject unknown event types or unsupported versions through a quarantine path.
 
-- [ ] **P11-04 Make handlers idempotent and stateful.**
+- [x] **P11-04 Make handlers idempotent and stateful.**
   - Define idempotency keys and duplicate-delivery behavior.
   - Implement Agent Task state transitions from `queued` to `running` and `succeeded` or `failed`.
   - Make state transitions conditional so replay cannot regress completed work.

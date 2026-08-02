@@ -12,7 +12,7 @@ import {
   type ExecuteAgentTaskJobResult,
 } from './contract';
 
-type ExecuteAgentTask = (
+export type ExecuteAgentTask = (
   payload: ExecuteAgentTaskJobPayload,
   context: ExecuteAgentTaskJobContext,
 ) => Promise<ExecuteAgentTaskJobResult>;
@@ -24,7 +24,7 @@ function throwIfAborted(signal?: AbortSignal): void {
     : new Error('Agent Task execution was aborted.');
 }
 
-const completeAgentTask: ExecuteAgentTask = async (payload, context) => {
+export const completeAgentTask: ExecuteAgentTask = async (payload, context) => {
   throwIfAborted(context.signal);
   return {
     taskId: payload.taskId,
@@ -39,20 +39,32 @@ export async function handleExecuteAgentTaskJob(
   envelope: ExecuteAgentTaskJobEnvelope = {},
 ): Promise<ExecuteAgentTaskJobResult> {
   const validated = agentTaskExecutionRequestedSchema.parse(payload);
-  const jobId = validated.version === 2 ? validated.jobId : envelope.jobId;
+  const payloadJobId = validated.version === 2 ? validated.jobId : undefined;
+  const jobId = envelope.jobId ?? payloadJobId;
+  if (!jobId) {
+    throw new Error(
+      'Agent Task execution requires a persisted job identifier.',
+    );
+  }
+  if (payloadJobId && envelope.jobId && payloadJobId !== envelope.jobId) {
+    throw new Error(
+      'Agent Task execution payload jobId does not match the persisted job identifier.',
+    );
+  }
+  const attemptCount = envelope.attemptCount ?? 1;
   const correlationContext =
     validated.version === 2
       ? createCorrelationContext({
           requestId: validated.requestId,
           traceId: validated.traceId,
           userId: validated.userId,
-          jobId: validated.jobId,
+          jobId,
           correlationId: validated.correlationId,
         })
       : createCorrelationContext({
           userId: validated.actorId,
           correlationId: validated.correlationId,
-          ...(envelope.jobId ? { jobId: envelope.jobId } : {}),
+          jobId,
         });
 
   return runWithRemoteTrace(
@@ -65,13 +77,16 @@ export async function handleExecuteAgentTaskJob(
         'agent_task.id': validated.taskId,
         'messaging.operation.name': 'process',
         'messaging.message.type': `agent-task.execute.v${validated.version}`,
-        ...(jobId ? { 'messaging.message.id': jobId } : {}),
+        'messaging.message.id': jobId,
+        'messaging.message.receive_count': attemptCount,
       },
     },
     () =>
       runWithCorrelationContext(correlationContext, () => {
         throwIfAborted(envelope.signal);
         return execute(validated, {
+          jobId,
+          attemptCount,
           ...(envelope.signal ? { signal: envelope.signal } : {}),
         });
       }),

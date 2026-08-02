@@ -67,7 +67,7 @@ export type components = {
       id: string;
       prompt: string;
       /** @enum {string} */
-      status: 'queued' | 'running' | 'completed' | 'failed';
+      status: 'queued' | 'running' | 'succeeded' | 'failed';
       title: string;
     };
     CreateAgentTaskRequest: {

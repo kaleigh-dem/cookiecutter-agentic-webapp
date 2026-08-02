@@ -10,6 +10,7 @@ import {
 
 import { appSchema } from './platform';
 
+export type AgentTaskRowStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 export type JobOutboxState = 'pending' | 'processing' | 'processed' | 'failed';
 
 export const agentTasks = appSchema.table('agent_tasks', {
@@ -17,8 +18,29 @@ export const agentTasks = appSchema.table('agent_tasks', {
   ownerId: text('owner_id').notNull(),
   title: varchar('title', { length: 120 }).notNull(),
   prompt: text('prompt').notNull(),
-  status: varchar('status', { length: 32 }).notNull(),
+  status: varchar('status', { length: 32 })
+    .$type<AgentTaskRowStatus>()
+    .notNull(),
   correlationId: text('correlation_id').notNull(),
+  executionJobId: uuid('execution_job_id'),
+  executionAttemptCount: integer('execution_attempt_count')
+    .notNull()
+    .default(0),
+  executionDeliveryAttempt: integer('execution_delivery_attempt'),
+  executionStartedAt: timestamp('execution_started_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
+  executionSucceededAt: timestamp('execution_succeeded_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
+  executionFailedAt: timestamp('execution_failed_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
+  lastExecutionErrorCode: text('last_execution_error_code'),
+  lastExecutionErrorMessage: text('last_execution_error_message'),
   createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
     .notNull()
     .defaultNow(),

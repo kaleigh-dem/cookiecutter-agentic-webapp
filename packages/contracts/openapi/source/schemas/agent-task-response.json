@@ -16,7 +16,7 @@
     },
     "status": {
       "type": "string",
-      "enum": ["queued", "running", "completed", "failed"]
+      "enum": ["queued", "running", "succeeded", "failed"]
     },
     "correlationId": {
       "type": "string"

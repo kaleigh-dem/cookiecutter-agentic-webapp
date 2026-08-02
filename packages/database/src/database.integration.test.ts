@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { DrizzleAgentTaskExecutionStore } from './adapters/agent-task-execution';
 import { createDatabase } from './client';
 import { runMigrations } from './migrations';
 import { resetDatabase } from './reset';
@@ -15,6 +16,10 @@ import { getMigrationStatus } from './status';
 
 const execFileAsync = promisify(execFile);
 const POSTGRES_IMAGE = 'postgres:17-alpine';
+const legacyRunningTaskId = '99999999-9999-4999-8999-999999999999';
+const legacyCompletedTaskId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const legacyRunningJobId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const legacyCreatedAt = new Date('2026-07-31T17:00:00.000Z');
 
 async function withTemporaryEnvironmentFile(
   content: string,
@@ -68,7 +73,7 @@ describe('database foundation', () => {
     await runMigrations({ connectionString });
 
     let status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(4);
+    expect(status.applied).toHaveLength(5);
     expect(status.pending).toEqual([]);
 
     await withTemporaryEnvironmentFile(
@@ -89,6 +94,9 @@ describe('database foundation', () => {
         );
 
         expect(stdout).toContain('20260731140100000_add_seed_manifest');
+        expect(stdout).toContain(
+          '20260802160000000_add_agent_task_execution_state',
+        );
         expect(stdout).toContain('"pending": []');
       },
     );
@@ -105,17 +113,97 @@ describe('database foundation', () => {
 
     await runMigrations({ connectionString, direction: 'down', count: 1 });
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(3);
-    expect(status.pending).toEqual(['20260802110000000_add_outbox_leasing']);
+    expect(status.applied).toHaveLength(4);
+    expect(status.pending).toEqual([
+      '20260802160000000_add_agent_task_execution_state',
+    ]);
+
+    const legacyConnection = createDatabase({
+      connectionString,
+      maxConnections: 1,
+    });
+    try {
+      await legacyConnection.pool.query(
+        `
+          insert into app.agent_tasks (
+            id, owner_id, title, prompt, status, correlation_id, created_at
+          ) values
+            ($1, 'actor-1', 'Legacy running task', 'Resume safely.', 'running', 'legacy-running', $3),
+            ($2, 'actor-1', 'Legacy completed task', 'Keep complete.', 'completed', 'legacy-completed', $3)
+        `,
+        [legacyRunningTaskId, legacyCompletedTaskId, legacyCreatedAt],
+      );
+    } finally {
+      await legacyConnection.close();
+    }
 
     await runMigrations({ connectionString });
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(4);
+    expect(status.applied).toHaveLength(5);
     expect(status.pending).toEqual([]);
+
+    const migratedConnection = createDatabase({
+      connectionString,
+      maxConnections: 1,
+    });
+    try {
+      const { rows } = await migratedConnection.pool.query<{
+        id: string;
+        status: string;
+        executionJobId: string | null;
+        executionDeliveryAttempt: number | null;
+        executionStartedAt: Date | null;
+        executionSucceededAt: Date | null;
+      }>(
+        `
+          select
+            id,
+            status,
+            execution_job_id as "executionJobId",
+            execution_delivery_attempt as "executionDeliveryAttempt",
+            execution_started_at as "executionStartedAt",
+            execution_succeeded_at as "executionSucceededAt"
+          from app.agent_tasks
+          where id = any($1::uuid[])
+        `,
+        [[legacyRunningTaskId, legacyCompletedTaskId]],
+      );
+      const migratedRows = Object.fromEntries(rows.map((row) => [row.id, row]));
+      expect(migratedRows[legacyRunningTaskId]).toMatchObject({
+        status: 'running',
+        executionJobId: null,
+        executionDeliveryAttempt: null,
+        executionStartedAt: legacyCreatedAt,
+      });
+      expect(migratedRows[legacyCompletedTaskId]).toMatchObject({
+        status: 'succeeded',
+        executionSucceededAt: legacyCreatedAt,
+      });
+
+      const execution = new DrizzleAgentTaskExecutionStore(
+        migratedConnection.database,
+      );
+      await expect(
+        execution.begin({
+          taskId: legacyRunningTaskId,
+          jobId: legacyRunningJobId,
+          deliveryAttempt: 1,
+          startedAt: new Date('2026-08-02T15:00:00.000Z'),
+        }),
+      ).resolves.toMatchObject({
+        outcome: 'started',
+        record: {
+          jobId: legacyRunningJobId,
+          deliveryAttempt: 1,
+        },
+      });
+    } finally {
+      await migratedConnection.close();
+    }
 
     await resetDatabase(connectionString, 'test');
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(4);
+    expect(status.applied).toHaveLength(5);
     expect(status.pending).toEqual([]);
   });
 

@@ -24,7 +24,11 @@ describe('handleExecuteAgentTaskJob', () => {
       payload,
       async (validated, context) => {
         expect(validated).toEqual(payload);
-        expect(context.signal).toBe(controller.signal);
+        expect(context).toEqual({
+          jobId: payload.jobId,
+          attemptCount: 3,
+          signal: controller.signal,
+        });
         expect(getCorrelationContext()).toEqual({
           requestId: 'request-1',
           traceId: 'trace-1',
@@ -38,7 +42,7 @@ describe('handleExecuteAgentTaskJob', () => {
           completedAt: '2026-07-31T17:01:00.000Z',
         };
       },
-      { signal: controller.signal },
+      { attemptCount: 3, signal: controller.signal },
     );
 
     expect(result).toEqual({
@@ -60,8 +64,12 @@ describe('handleExecuteAgentTaskJob', () => {
 
     await handleExecuteAgentTaskJob(
       payload,
-      async (validated) => {
+      async (validated, context) => {
         expect(validated).toEqual(payload);
+        expect(context).toMatchObject({
+          jobId: '33333333-3333-4333-8333-333333333333',
+          attemptCount: 2,
+        });
         expect(getCorrelationContext()).toEqual(
           expect.objectContaining({
             userId: 'actor-1',
@@ -77,7 +85,10 @@ describe('handleExecuteAgentTaskJob', () => {
           completedAt: '2026-07-31T17:01:00.000Z',
         };
       },
-      { jobId: '33333333-3333-4333-8333-333333333333' },
+      {
+        jobId: '33333333-3333-4333-8333-333333333333',
+        attemptCount: 2,
+      },
     );
   });
 });
