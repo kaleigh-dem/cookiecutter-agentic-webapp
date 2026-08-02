@@ -56,6 +56,13 @@ export const workerChecks = [
   },
 ];
 
+class WorkflowDeadlineError extends Error {
+  constructor(timeoutMs) {
+    super(`The Agent Task did not succeed within ${timeoutMs}ms.`);
+    this.name = 'WorkflowDeadlineError';
+  }
+}
+
 function requiredEnvironment(environment, name) {
   const value = environment[name]?.trim();
   if (!value) throw new Error(`${name} is required.`);
@@ -82,31 +89,119 @@ function profileArgument(arguments_) {
   return value;
 }
 
-async function requestWithTimeout(
-  url,
-  init,
-  fetchImplementation,
-  timeoutMs = REQUEST_TIMEOUT_MS,
+async function promiseWithTimeout(
+  promise,
+  timeoutMs,
+  timeoutError,
+  onTimeout,
 ) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  if (timeoutMs <= 0) throw timeoutError;
+
+  let timeout;
   try {
-    return await fetchImplementation(url, {
-      ...init,
-      cache: 'no-store',
-      signal: controller.signal,
-    });
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => {
+          try {
+            onTimeout?.();
+          } finally {
+            reject(timeoutError);
+          }
+        }, timeoutMs);
+      }),
+    ]);
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function responseJson(response) {
+async function requestWithTimeout(
+  url,
+  init,
+  fetchImplementation,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+  timeoutError = new Error(`Request timed out after ${timeoutMs}ms.`),
+) {
+  const controller = new AbortController();
+  return promiseWithTimeout(
+    fetchImplementation(url, {
+      ...init,
+      cache: 'no-store',
+      signal: controller.signal,
+    }),
+    timeoutMs,
+    timeoutError,
+    () => controller.abort(timeoutError),
+  );
+}
+
+function remainingWorkflowTime(deadline, now, timeoutMs) {
+  const remaining = deadline - now();
+  if (remaining <= 0) throw new WorkflowDeadlineError(timeoutMs);
+  return remaining;
+}
+
+async function requestWithinWorkflowDeadline(
+  url,
+  init,
+  fetchImplementation,
+  { deadline, now, timeoutMs },
+) {
+  const remaining = remainingWorkflowTime(deadline, now, timeoutMs);
+  const requestTimeoutMs = Math.min(REQUEST_TIMEOUT_MS, remaining);
+  const timeoutError =
+    requestTimeoutMs === remaining
+      ? new WorkflowDeadlineError(timeoutMs)
+      : new Error(`Request timed out after ${requestTimeoutMs}ms.`);
+
+  return requestWithTimeout(
+    url,
+    init,
+    fetchImplementation,
+    requestTimeoutMs,
+    timeoutError,
+  );
+}
+
+async function responseJsonWithinWorkflowDeadline(
+  response,
+  { deadline, now, timeoutMs },
+) {
+  const remaining = remainingWorkflowTime(deadline, now, timeoutMs);
+  const timeoutError = new WorkflowDeadlineError(timeoutMs);
+
   try {
-    return await response.json();
-  } catch {
+    return await promiseWithTimeout(
+      response.json(),
+      remaining,
+      timeoutError,
+      () => {
+        void response.body?.cancel().catch(() => undefined);
+      },
+    );
+  } catch (error) {
+    if (error instanceof WorkflowDeadlineError) throw error;
     return undefined;
   }
+}
+
+async function sleepWithinWorkflowDeadline(
+  sleep,
+  delayMs,
+  { deadline, now, timeoutMs },
+) {
+  const remaining = remainingWorkflowTime(deadline, now, timeoutMs);
+  const sleepDurationMs = Math.min(delayMs, remaining);
+  const timeoutError = new WorkflowDeadlineError(timeoutMs);
+
+  await promiseWithTimeout(
+    Promise.resolve(sleep(sleepDurationMs)),
+    remaining,
+    timeoutError,
+  );
+
+  if (sleepDurationMs < delayMs || now() >= deadline) throw timeoutError;
 }
 
 function errorMessage(error) {
@@ -152,6 +247,7 @@ export async function runAgentTaskWorkflow({
   createId = randomUUID,
   sleep = (milliseconds) =>
     new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)),
+  now = Date.now,
   pollIntervalMs = WORKFLOW_POLL_INTERVAL_MS,
   timeoutMs = WORKFLOW_TIMEOUT_MS,
 } = {}) {
@@ -168,10 +264,16 @@ export async function runAgentTaskWorkflow({
     'content-type': 'application/json',
     'x-correlation-id': correlationId,
   };
+  const deadlineContext = {
+    deadline: now() + timeoutMs,
+    now,
+    timeoutMs,
+  };
+  let taskId;
+  let lastStatus;
 
-  let createdResponse;
   try {
-    createdResponse = await requestWithTimeout(
+    const createdResponse = await requestWithinWorkflowDeadline(
       new URL('/api/agent-tasks', apiBaseUrl),
       {
         method: 'POST',
@@ -182,91 +284,99 @@ export async function runAgentTaskWorkflow({
         }),
       },
       fetchImplementation,
+      deadlineContext,
     );
-  } catch (error) {
-    return { name, error: errorMessage(error), passed: false };
-  }
+    const created = await responseJsonWithinWorkflowDeadline(
+      createdResponse,
+      deadlineContext,
+    );
 
-  const created = await responseJson(createdResponse);
-  if (
-    createdResponse.status !== 201 ||
-    !created ||
-    typeof created.id !== 'string'
-  ) {
+    if (
+      createdResponse.status !== 201 ||
+      !created ||
+      typeof created.id !== 'string'
+    ) {
+      return {
+        name,
+        status: createdResponse.status,
+        response: created,
+        error: 'The API did not create an Agent Task.',
+        passed: false,
+      };
+    }
+
+    taskId = created.id;
+    lastStatus = created.status;
+    const maximumPolls = Math.max(
+      1,
+      Math.ceil(timeoutMs / Math.max(1, pollIntervalMs)),
+    );
+
+    for (let poll = 0; poll < maximumPolls; poll += 1) {
+      if (poll > 0) {
+        await sleepWithinWorkflowDeadline(
+          sleep,
+          pollIntervalMs,
+          deadlineContext,
+        );
+      }
+
+      const taskResponse = await requestWithinWorkflowDeadline(
+        new URL(`/api/agent-tasks/${taskId}`, apiBaseUrl),
+        { headers: { authorization: headers.authorization } },
+        fetchImplementation,
+        deadlineContext,
+      );
+      const task = await responseJsonWithinWorkflowDeadline(
+        taskResponse,
+        deadlineContext,
+      );
+
+      if (taskResponse.status !== 200 || !task) {
+        return {
+          name,
+          taskId,
+          status: taskResponse.status,
+          response: task,
+          error: 'The API did not return the created Agent Task.',
+          passed: false,
+        };
+      }
+
+      lastStatus = task.status;
+      if (lastStatus === 'succeeded') {
+        return {
+          name,
+          taskId,
+          correlationId,
+          terminalStatus: lastStatus,
+          polls: poll + 1,
+          passed: true,
+        };
+      }
+      if (lastStatus === 'failed') {
+        return {
+          name,
+          taskId,
+          correlationId,
+          terminalStatus: lastStatus,
+          error: 'The deployed worker transitioned the Agent Task to failed.',
+          passed: false,
+        };
+      }
+    }
+
+    throw new WorkflowDeadlineError(timeoutMs);
+  } catch (error) {
     return {
       name,
-      status: createdResponse.status,
-      response: created,
-      error: 'The API did not create an Agent Task.',
+      ...(taskId ? { taskId } : {}),
+      correlationId,
+      ...(lastStatus ? { terminalStatus: lastStatus } : {}),
+      error: errorMessage(error),
       passed: false,
     };
   }
-
-  const maximumPolls = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
-  let lastStatus = created.status;
-
-  for (let poll = 0; poll < maximumPolls; poll += 1) {
-    if (poll > 0) await sleep(pollIntervalMs);
-
-    let taskResponse;
-    try {
-      taskResponse = await requestWithTimeout(
-        new URL(`/api/agent-tasks/${created.id}`, apiBaseUrl),
-        { headers: { authorization: headers.authorization } },
-        fetchImplementation,
-      );
-    } catch (error) {
-      return {
-        name,
-        taskId: created.id,
-        error: errorMessage(error),
-        passed: false,
-      };
-    }
-
-    const task = await responseJson(taskResponse);
-    if (taskResponse.status !== 200 || !task) {
-      return {
-        name,
-        taskId: created.id,
-        status: taskResponse.status,
-        response: task,
-        error: 'The API did not return the created Agent Task.',
-        passed: false,
-      };
-    }
-
-    lastStatus = task.status;
-    if (lastStatus === 'succeeded') {
-      return {
-        name,
-        taskId: created.id,
-        correlationId,
-        terminalStatus: lastStatus,
-        polls: poll + 1,
-        passed: true,
-      };
-    }
-    if (lastStatus === 'failed') {
-      return {
-        name,
-        taskId: created.id,
-        correlationId,
-        terminalStatus: lastStatus,
-        error: 'The deployed worker transitioned the Agent Task to failed.',
-        passed: false,
-      };
-    }
-  }
-
-  return {
-    name,
-    taskId: created.id,
-    correlationId,
-    terminalStatus: lastStatus,
-    error: `The Agent Task did not succeed within ${timeoutMs}ms.`,
-    passed: false,
-  };
 }
 
 export async function runSmokeSuite(options = {}) {
