@@ -5,8 +5,10 @@ import { pathToFileURL } from 'node:url';
 const REQUEST_TIMEOUT_MS = 5_000;
 const WORKFLOW_TIMEOUT_MS = 15_000;
 const WORKFLOW_POLL_INTERVAL_MS = 250;
+const RELEASE_PROFILE = 'release';
+const LIVE_AGENT_TASK_PROFILE = 'live-agent-task';
 
-export const checks = [
+export const releaseChecks = [
   {
     name: 'web-home',
     environment: 'WEB_BASE_URL',
@@ -31,6 +33,9 @@ export const checks = [
     path: '/api/metrics',
     expectedStatus: 401,
   },
+];
+
+export const workerChecks = [
   {
     name: 'worker-liveness',
     environment: 'WORKER_BASE_URL',
@@ -54,6 +59,26 @@ export const checks = [
 function requiredEnvironment(environment, name) {
   const value = environment[name]?.trim();
   if (!value) throw new Error(`${name} is required.`);
+  return value;
+}
+
+function smokeProfile(profile) {
+  const normalized = profile?.trim() || RELEASE_PROFILE;
+  if (![RELEASE_PROFILE, LIVE_AGENT_TASK_PROFILE].includes(normalized)) {
+    throw new Error(
+      `Smoke profile must be ${RELEASE_PROFILE} or ${LIVE_AGENT_TASK_PROFILE}.`,
+    );
+  }
+  return normalized;
+}
+
+function profileArgument(arguments_) {
+  const index = arguments_.indexOf('--profile');
+  if (index < 0) return undefined;
+  const value = arguments_[index + 1];
+  if (!value || value.startsWith('--')) {
+    throw new Error('--profile requires a value.');
+  }
   return value;
 }
 
@@ -245,16 +270,30 @@ export async function runAgentTaskWorkflow({
 }
 
 export async function runSmokeSuite(options = {}) {
+  const environment = options.environment ?? process.env;
+  const profile = smokeProfile(
+    options.profile ?? environment.SMOKE_TEST_PROFILE ?? RELEASE_PROFILE,
+  );
   const results = [];
-  for (const check of checks) {
-    results.push(await runCheck(check, options));
+
+  for (const check of releaseChecks) {
+    results.push(await runCheck(check, { ...options, environment }));
   }
-  results.push(await runAgentTaskWorkflow(options));
+
+  if (profile === LIVE_AGENT_TASK_PROFILE) {
+    for (const check of workerChecks) {
+      results.push(await runCheck(check, { ...options, environment }));
+    }
+    results.push(await runAgentTaskWorkflow({ ...options, environment }));
+  }
+
   return results;
 }
 
-export async function main() {
-  const results = await runSmokeSuite();
+export async function main(arguments_ = process.argv.slice(2)) {
+  const results = await runSmokeSuite({
+    profile: profileArgument(arguments_),
+  });
   process.stdout.write(`${JSON.stringify({ results }, null, 2)}\n`);
   if (results.some((result) => !result.passed)) process.exitCode = 1;
 }
