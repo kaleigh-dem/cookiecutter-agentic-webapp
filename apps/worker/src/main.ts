@@ -14,6 +14,7 @@ import {
 import { startNodeTelemetry } from '@agentic-webapp/observability/telemetry';
 
 import { runWorkerLoop } from './delivery/poller';
+import { defaultRetryPolicy } from './delivery/retry-policy';
 import { createStatefulExecuteAgentTaskHandler } from './jobs/execute-agent-task/stateful-handler';
 
 const BATCH_SIZE = 10;
@@ -74,6 +75,10 @@ async function startWorker(): Promise<void> {
       batchSize: BATCH_SIZE,
       leaseDurationMs: LEASE_DURATION_MS,
       pollIntervalMs: POLL_INTERVAL_MS,
+      retryBaseDelayMs: defaultRetryPolicy.baseDelayMs,
+      retryJitterRatio: defaultRetryPolicy.jitterRatio,
+      retryMaxAttempts: defaultRetryPolicy.maxAttempts,
+      retryMaxDelayMs: defaultRetryPolicy.maxDelayMs,
       telemetryEnabled: telemetry.enabled,
       workerId,
     });
@@ -85,6 +90,7 @@ async function startWorker(): Promise<void> {
       leaseDurationMs: LEASE_DURATION_MS,
       logger,
       pollIntervalMs: POLL_INTERVAL_MS,
+      retryPolicy: defaultRetryPolicy,
       signal: abortController.signal,
       workerId,
     });
@@ -101,7 +107,10 @@ async function startWorker(): Promise<void> {
   }
 }
 
-void startWorker().catch((error: unknown) => {
-  logger.error('worker.start.failed', error);
+void startWorker().catch(() => {
+  logger.error(
+    'worker.start.failed',
+    new Error('The worker failed to start.'),
+  );
   process.exitCode = 1;
 });
