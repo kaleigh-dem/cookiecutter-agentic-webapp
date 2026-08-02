@@ -21,6 +21,7 @@ describe('preset generator', () => {
           'node tools/template/smoke-release-artifact.mjs',
         'template:workspace:e2e':
           'node tools/template/generated-workspace-e2e.mjs',
+        'template:upgrade': 'node tools/template/upgrade.mjs',
       },
     });
     writeJson(tree, 'tools/workspace-plugin/package.json', {
@@ -33,9 +34,17 @@ describe('preset generator', () => {
     tree.write('CHANGELOG.md', '# Changelog\n');
     tree.write('docs/template-releases.md', '# Releases\n');
     tree.write('docs/template-validation.md', '# Validation\n');
+    tree.write('docs/template-upgrades.md', '# Upgrades\n');
+    tree.write('tools/template/fixtures/upgrade-0.1.0/package.json', '{}\n');
     tree.write('tools/template/generated-workspace-e2e.mjs', 'export {};\n');
     tree.write('tools/template/release.mjs', 'export {};\n');
     tree.write('tools/template/smoke-release-artifact.mjs', 'export {};\n');
+    tree.write('tools/template/upgrade.mjs', 'export {};\n');
+    tree.write('tools/template/ownership.json', '{}\n');
+    tree.write(
+      'tools/template/migrations/0.1.0-to-0.2.0.mjs',
+      'export default {};\n',
+    );
 
     await presetGenerator(tree, {
       applicationSlug: 'smoke-app',
@@ -49,20 +58,26 @@ describe('preset generator', () => {
       skipFormat: true,
     });
 
-    expect(
-      readJson<{
-        upstream: { repository: string; version: string };
-      }>(tree, 'workspace.template.json').upstream,
-    ).toEqual({
+    const manifest = readJson<{
+      schemaVersion: number;
+      upstream: { repository: string; version: string };
+      upgrade: { ownershipPolicyVersion: number };
+    }>(tree, 'workspace.template.json');
+    expect(manifest.schemaVersion).toBe(3);
+    expect(manifest.upstream).toEqual({
       repository: upstreamTemplateRepository,
       version: templateVersion,
     });
+    expect(manifest.upgrade).toEqual({ ownershipPolicyVersion: 1 });
 
     const packageJson = readJson<{
       scripts: Record<string, string>;
     }>(tree, 'package.json');
     expect(packageJson.scripts['initialize:workspace']).toBe(
       'nx g @smoke/workspace-plugin:preset',
+    );
+    expect(packageJson.scripts['template:upgrade']).toBe(
+      'node tools/template/upgrade.mjs',
     );
     expect(
       Object.keys(packageJson.scripts).filter((script) =>
@@ -78,6 +93,7 @@ describe('preset generator', () => {
     expect(tree.exists('CHANGELOG.md')).toBe(false);
     expect(tree.exists('docs/template-releases.md')).toBe(false);
     expect(tree.exists('docs/template-validation.md')).toBe(false);
+    expect(tree.exists('tools/template/fixtures')).toBe(false);
     expect(tree.exists('tools/template/generated-workspace-e2e.mjs')).toBe(
       false,
     );
@@ -85,6 +101,13 @@ describe('preset generator', () => {
     expect(tree.exists('tools/template/smoke-release-artifact.mjs')).toBe(
       false,
     );
+
+    expect(tree.exists('docs/template-upgrades.md')).toBe(true);
+    expect(tree.exists('tools/template/upgrade.mjs')).toBe(true);
+    expect(tree.exists('tools/template/ownership.json')).toBe(true);
+    expect(
+      tree.exists('tools/template/migrations/0.1.0-to-0.2.0.mjs'),
+    ).toBe(true);
 
     expect(
       readJson<{
