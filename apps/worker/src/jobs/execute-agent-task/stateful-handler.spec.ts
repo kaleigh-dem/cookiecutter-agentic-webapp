@@ -4,6 +4,7 @@ import type {
 } from '@agentic-webapp/database';
 import { describe, expect, it, vi } from 'vitest';
 
+import { PermanentJobError, RetryableJobError } from '../failure';
 import type { ExecuteAgentTaskJobPayload } from './contract';
 import { createStatefulExecuteAgentTaskHandler } from './stateful-handler';
 
@@ -68,6 +69,7 @@ function store(overrides: Partial<AgentTaskExecutionStore> = {}) {
 const envelope = {
   jobId: payload.jobId,
   attemptCount: 1,
+  maxAttempts: 5,
 };
 
 describe('createStatefulExecuteAgentTaskHandler', () => {
@@ -167,12 +169,60 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('persists safe failure metadata and rethrows execution errors', async () => {
+  it('leaves retryable failures resumable before the attempt limit', async () => {
+    const execution = store();
+    const execute = vi.fn(async () => {
+      throw new RetryableJobError('dependency_unavailable');
+    });
+    const handler = createStatefulExecuteAgentTaskHandler(execution.store, {
+      execute,
+    });
+
+    await expect(handler(payload, undefined, envelope)).rejects.toThrow(
+      'retryable dependency',
+    );
+    expect(execution.fail).not.toHaveBeenCalled();
+    expect(execution.succeed).not.toHaveBeenCalled();
+  });
+
+  it('persists a terminal task failure when retry attempts are exhausted', async () => {
+    const execution = store();
+    const execute = vi.fn(async () => {
+      throw new RetryableJobError('dependency_unavailable');
+    });
+    const handler = createStatefulExecuteAgentTaskHandler(execution.store, {
+      execute,
+      now: (() => {
+        const times = [
+          new Date('2026-08-02T15:01:00.000Z'),
+          new Date('2026-08-02T15:02:00.000Z'),
+        ];
+        return () => times.shift() ?? new Date('2026-08-02T15:02:00.000Z');
+      })(),
+    });
+
+    await expect(
+      handler(payload, undefined, {
+        ...envelope,
+        attemptCount: 5,
+      }),
+    ).rejects.toThrow('retryable dependency');
+    expect(execution.fail).toHaveBeenCalledWith({
+      taskId: payload.taskId,
+      jobId: payload.jobId,
+      deliveryAttempt: 5,
+      finishedAt: new Date('2026-08-02T15:02:00.000Z'),
+      errorCode: 'dependency_unavailable',
+      errorMessage: 'Agent Task execution failed temporarily.',
+    });
+  });
+
+  it('persists safe metadata for permanent failures and rethrows', async () => {
     const execution = store();
     const sensitiveMessage =
       'Authorization: Bearer super-secret-token; prompt=private request';
     const execute = vi.fn(async () => {
-      throw new TypeError(sensitiveMessage);
+      throw new PermanentJobError('business_rule_rejected', sensitiveMessage);
     });
     const handler = createStatefulExecuteAgentTaskHandler(execution.store, {
       execute,
@@ -193,8 +243,8 @@ describe('createStatefulExecuteAgentTaskHandler', () => {
       jobId: payload.jobId,
       deliveryAttempt: 1,
       finishedAt: new Date('2026-08-02T15:02:00.000Z'),
-      errorCode: 'type_error',
-      errorMessage: 'Agent Task execution failed.',
+      errorCode: 'business_rule_rejected',
+      errorMessage: 'Agent Task execution failed permanently.',
     });
     const persistedFailure = execution.fail.mock.calls[0]?.[0];
     expect(JSON.stringify(persistedFailure)).not.toContain(
