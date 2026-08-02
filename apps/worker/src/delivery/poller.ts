@@ -25,6 +25,65 @@ export interface PollWorkerOptions {
   ) => Promise<'acknowledged' | 'quarantined'>;
 }
 
+function claimReference(message: ClaimedOutboxMessage) {
+  return {
+    id: message.id,
+    workerId: message.workerId,
+    claimToken: message.claimToken,
+  };
+}
+
+function startLeaseRenewal(
+  message: ClaimedOutboxMessage,
+  options: PollWorkerOptions,
+): () => void {
+  const renewalIntervalMs = Math.max(
+    1,
+    Math.floor(options.leaseDurationMs / 2),
+  );
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const renew = async () => {
+    if (stopped) return;
+
+    try {
+      const claimExpiresAt = await options.delivery.renew({
+        ...claimReference(message),
+        leaseDurationMs: options.leaseDurationMs,
+      });
+
+      if (claimExpiresAt) {
+        options.logger.info('worker.message.lease-renewed', {
+          claimExpiresAt: claimExpiresAt.toISOString(),
+          eventKind: message.kind,
+          outboxId: message.id,
+        });
+      } else {
+        options.logger.error(
+          'worker.message.lease-renewal-failed',
+          new Error(
+            `Unable to renew outbox message ${message.id}; the claim is no longer current.`,
+          ),
+        );
+      }
+    } catch (error) {
+      options.logger.error('worker.message.lease-renewal-failed', error);
+    }
+
+    if (!stopped) {
+      timer = setTimeout(() => void renew(), renewalIntervalMs);
+    }
+  };
+
+  timer = setTimeout(() => void renew(), renewalIntervalMs);
+
+  return () => {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+  };
+}
+
 export async function pollWorkerOnce(
   options: PollWorkerOptions,
 ): Promise<number> {
@@ -34,21 +93,31 @@ export async function pollWorkerOnce(
     leaseDurationMs: options.leaseDurationMs,
   });
   const dispatch = options.dispatch ?? dispatchOutboxMessage;
+  const stopRenewals = new Map(
+    messages.map((message) => [message.id, startLeaseRenewal(message, options)]),
+  );
 
-  for (const message of messages) {
-    try {
-      const disposition = await dispatch(message, {
-        delivery: options.delivery,
-      });
-      options.logger.info('worker.message.completed', {
-        attemptCount: message.attemptCount,
-        disposition,
-        eventKind: message.kind,
-        outboxId: message.id,
-      });
-    } catch (error) {
-      options.logger.error('worker.message.failed', error);
+  try {
+    for (const message of messages) {
+      try {
+        const disposition = await dispatch(message, {
+          delivery: options.delivery,
+        });
+        options.logger.info('worker.message.completed', {
+          attemptCount: message.attemptCount,
+          disposition,
+          eventKind: message.kind,
+          outboxId: message.id,
+        });
+      } catch (error) {
+        options.logger.error('worker.message.failed', error);
+      } finally {
+        stopRenewals.get(message.id)?.();
+        stopRenewals.delete(message.id);
+      }
     }
+  } finally {
+    for (const stop of stopRenewals.values()) stop();
   }
 
   return messages.length;
