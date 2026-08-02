@@ -173,7 +173,7 @@ describe('preview smoke test', () => {
         createId: () => 'fixed-id',
         sleep: async () => undefined,
         pollIntervalMs: 1,
-        timeoutMs: 1,
+        timeoutMs: 1_000,
       }),
     ).resolves.toEqual(
       expect.objectContaining({
