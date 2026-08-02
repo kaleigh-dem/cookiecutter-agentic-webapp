@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "upstream": {
+    "repository": "kaleigh-dem/cookiecutter-agentic-webapp",
+    "version": "0.1.0"
+  },
+  "application": {
+    "slug": "upgrade-fixture",
+    "displayName": "Upgrade Fixture",
+    "packageScope": "@fixture"
+  },
+  "repository": {
+    "owner": "fixture-owner",
+    "codeowners": ["@fixture-owner"]
+  },
+  "applications": ["api"],
+  "ports": {
+    "web": 3000,
+    "api": 4000,
+    "database": 5432
+  },
+  "database": {
+    "name": "upgrade_fixture"
+  },
+  "profiles": {
+    "authentication": "development",
+    "workerTransport": "none",
+    "telemetry": false,
+    "deployment": "local",
+    "ai": false
+  }
+}

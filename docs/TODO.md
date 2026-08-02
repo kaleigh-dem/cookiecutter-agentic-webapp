@@ -82,7 +82,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Apply migrations and seeds, build images, start the preview stack, run smoke and performance checks, and verify deterministic teardown.
   - Fail when the generated repository is dirty or retains unintended upstream-template identity after validation.
 
-- [ ] **P10-06 Add a downstream upgrade strategy.**
+- [x] **P10-06 Add a downstream upgrade strategy.**
   - Implement Nx migrations or explicit codemods for breaking template changes.
   - Define which files are template-managed, generated-once, or application-owned.
   - Add an upgrade command with dry-run output and conflict guidance.
