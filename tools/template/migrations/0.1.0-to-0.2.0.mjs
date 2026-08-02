@@ -18,9 +18,9 @@ export default {
     {
       type: 'merge-json',
       path: 'workspace.template.json',
-      description: 'Advance provenance and ownership metadata to schema version 3.',
+      description: 'Advance provenance and ownership metadata.',
       patch: {
-        schemaVersion: 3,
+        schemaVersion: 2,
         upstream: {
           version: '0.2.0',
         },
@@ -43,7 +43,7 @@ Generated repositories record their originating release in \`workspace.template.
 Download the workspace-plugin tarball attached to the target template release and install it temporarily:
 
 \`\`\`bash
-pnpm add --save-dev ./agentic-webapp-workspace-plugin-<version>.tgz
+pnpm add --save-dev ./downloaded-workspace-plugin-<version>.tgz
 pnpm exec agentic-webapp-upgrade --to <version> --dry-run
 \`\`\`
 
