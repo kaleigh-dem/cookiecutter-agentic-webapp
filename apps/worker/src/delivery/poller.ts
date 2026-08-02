@@ -2,6 +2,11 @@ import type {
   ClaimedOutboxMessage,
   PostgresOutboxDelivery,
 } from '@agentic-webapp/database';
+import {
+  createCorrelationContext,
+  runWithCorrelationContext,
+  type CorrelationContext,
+} from '@agentic-webapp/observability';
 
 import { classifyJobFailure } from '../jobs/failure';
 import {
@@ -16,9 +21,23 @@ import {
   validateRetryPolicy,
 } from './retry-policy';
 
+export const workerMetricNames = {
+  failures: 'worker_failures_total',
+  oldestMessageAge: 'worker_oldest_message_age_ms',
+  processingDuration: 'worker_message_processing_duration_ms',
+  queueDepth: 'worker_queue_depth',
+  retries: 'worker_retries_total',
+} as const;
+
 export interface WorkerLogger {
   info(event: string, fields?: Record<string, unknown>): void;
   error(event: string, error?: unknown): void;
+}
+
+export interface WorkerMetrics {
+  increment(name: string, value?: number): void;
+  observe(name: string, milliseconds: number): void;
+  setGauge(name: string, value: number): void;
 }
 
 export interface PollWorkerOptions {
@@ -27,10 +46,14 @@ export interface PollWorkerOptions {
   readonly batchSize: number;
   readonly leaseDurationMs: number;
   readonly logger: WorkerLogger;
+  readonly metrics?: WorkerMetrics;
   readonly handleExecuteAgentTask?: ExecuteAgentTaskHandler;
   readonly retryPolicy?: RetryPolicy;
   readonly now?: () => Date;
+  readonly performanceNow?: () => number;
   readonly random?: () => number;
+  readonly stopSignal?: AbortSignal;
+  readonly forceSignal?: AbortSignal;
   readonly dispatch?: (
     message: ClaimedOutboxMessage,
     options: DispatchOutboxMessageOptions,
@@ -48,6 +71,38 @@ function claimReference(message: ClaimedOutboxMessage) {
     workerId: message.workerId,
     claimToken: message.claimToken,
   };
+}
+
+function stringField(
+  value: unknown,
+  field: string,
+): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const candidate = (value as Record<string, unknown>)[field];
+  return typeof candidate === 'string' && candidate.trim()
+    ? candidate.trim()
+    : undefined;
+}
+
+function messageCorrelationContext(
+  message: ClaimedOutboxMessage,
+): CorrelationContext {
+  const actorId = stringField(message.payload, 'actorId');
+  const userId = stringField(message.payload, 'userId') ?? actorId;
+
+  return createCorrelationContext({
+    ...(stringField(message.payload, 'requestId')
+      ? { requestId: stringField(message.payload, 'requestId') }
+      : {}),
+    ...(stringField(message.payload, 'traceId')
+      ? { traceId: stringField(message.payload, 'traceId') }
+      : {}),
+    ...(userId ? { userId } : {}),
+    ...(actorId ? { actorId } : {}),
+    eventId: message.id,
+    jobId: message.id,
+    correlationId: message.correlationId,
+  });
 }
 
 function startLeaseRenewal(
@@ -155,12 +210,20 @@ function startLeaseRenewal(
 
 async function settleDispatchFailure(
   message: ClaimedOutboxMessage,
-  renewal: LeaseRenewal | undefined,
+  processingSignal: AbortSignal | undefined,
   error: unknown,
   options: PollWorkerOptions,
   retryPolicy: RetryPolicy,
 ): Promise<void> {
-  if (renewal?.signal.aborted) return;
+  if (processingSignal?.aborted) {
+    options.logger.info('worker.message.abandoned', {
+      attemptCount: message.attemptCount,
+      eventKind: message.kind,
+      outboxId: message.id,
+      reason: options.forceSignal?.aborted ? 'drain-timeout' : 'claim-lost',
+    });
+    return;
+  }
 
   const failure = classifyJobFailure(error);
   const exhausted = message.attemptCount >= retryPolicy.maxAttempts;
@@ -187,6 +250,7 @@ async function settleDispatchFailure(
       );
       return;
     }
+    options.metrics?.increment(workerMetricNames.retries);
     options.logger.info('worker.message.retry-scheduled', {
       attemptCount: message.attemptCount,
       errorCode: failure.errorCode,
@@ -210,6 +274,7 @@ async function settleDispatchFailure(
     );
     return;
   }
+  options.metrics?.increment(workerMetricNames.failures);
   options.logger.info('worker.message.dead-lettered', {
     attemptCount: message.attemptCount,
     errorCode: failure.errorCode,
@@ -219,9 +284,29 @@ async function settleDispatchFailure(
   });
 }
 
+async function refreshQueueMetrics(options: PollWorkerOptions): Promise<void> {
+  if (!options.metrics) return;
+
+  try {
+    const queue = await options.delivery.getQueueMetrics();
+    options.metrics.setGauge(workerMetricNames.queueDepth, queue.queueDepth);
+    options.metrics.setGauge(
+      workerMetricNames.oldestMessageAge,
+      queue.oldestMessageAgeMs,
+    );
+  } catch {
+    options.logger.error(
+      'worker.metrics.refresh-failed',
+      new Error('Unable to refresh worker queue metrics.'),
+    );
+  }
+}
+
 export async function pollWorkerOnce(
   options: PollWorkerOptions,
 ): Promise<number> {
+  if (options.stopSignal?.aborted) return 0;
+
   const retryPolicy = validateRetryPolicy(
     options.retryPolicy ?? defaultRetryPolicy,
   );
@@ -231,55 +316,93 @@ export async function pollWorkerOnce(
     leaseDurationMs: options.leaseDurationMs,
   });
   const dispatch = options.dispatch ?? dispatchOutboxMessage;
+  const contexts = new Map(
+    messages.map((message) => [message.id, messageCorrelationContext(message)]),
+  );
   const renewals = new Map(
     messages.map((message) => [
       message.id,
-      startLeaseRenewal(message, options),
+      runWithCorrelationContext(
+        contexts.get(message.id) ?? messageCorrelationContext(message),
+        () => startLeaseRenewal(message, options),
+      ),
     ]),
   );
 
   try {
     for (const message of messages) {
       const renewal = renewals.get(message.id);
-      try {
-        const disposition = await dispatch(message, {
-          delivery: options.delivery,
-          maxAttempts: retryPolicy.maxAttempts,
-          ...(options.handleExecuteAgentTask
-            ? { handleExecuteAgentTask: options.handleExecuteAgentTask }
-            : {}),
-          ...(renewal ? { signal: renewal.signal } : {}),
-        });
-        options.logger.info('worker.message.completed', {
-          attemptCount: message.attemptCount,
-          disposition,
-          eventKind: message.kind,
-          outboxId: message.id,
-        });
-      } catch (error) {
+      const context = contexts.get(message.id) ?? messageCorrelationContext(message);
+
+      await runWithCorrelationContext(context, async () => {
+        const startedAt = options.performanceNow?.() ?? performance.now();
+        const processingSignal = renewal
+          ? options.forceSignal
+            ? AbortSignal.any([renewal.signal, options.forceSignal])
+            : renewal.signal
+          : options.forceSignal;
+
         try {
-          await settleDispatchFailure(
-            message,
-            renewal,
-            error,
-            options,
-            retryPolicy,
+          if (options.forceSignal?.aborted) {
+            options.logger.info('worker.message.abandoned', {
+              attemptCount: message.attemptCount,
+              eventKind: message.kind,
+              outboxId: message.id,
+              reason: 'drain-timeout',
+            });
+            return;
+          }
+
+          const disposition = await dispatch(message, {
+            delivery: options.delivery,
+            maxAttempts: retryPolicy.maxAttempts,
+            ...(options.handleExecuteAgentTask
+              ? { handleExecuteAgentTask: options.handleExecuteAgentTask }
+              : {}),
+            ...(processingSignal ? { signal: processingSignal } : {}),
+          });
+          if (disposition === 'quarantined') {
+            options.metrics?.increment(workerMetricNames.failures);
+          }
+          options.logger.info('worker.message.completed', {
+            attemptCount: message.attemptCount,
+            disposition,
+            eventKind: message.kind,
+            outboxId: message.id,
+          });
+        } catch (error) {
+          try {
+            await settleDispatchFailure(
+              message,
+              processingSignal,
+              error,
+              options,
+              retryPolicy,
+            );
+          } catch {
+            options.logger.error(
+              'worker.message.disposition-failed',
+              new Error('Unable to persist the outbox failure disposition.'),
+            );
+          }
+        } finally {
+          options.metrics?.observe(
+            workerMetricNames.processingDuration,
+            Math.max(
+              0,
+              (options.performanceNow?.() ?? performance.now()) - startedAt,
+            ),
           );
-        } catch {
-          options.logger.error(
-            'worker.message.disposition-failed',
-            new Error('Unable to persist the outbox failure disposition.'),
-          );
+          renewal?.stop();
+          renewals.delete(message.id);
         }
-      } finally {
-        renewal?.stop();
-        renewals.delete(message.id);
-      }
+      });
     }
   } finally {
     for (const renewal of renewals.values()) renewal.stop();
   }
 
+  await refreshQueueMetrics(options);
   return messages.length;
 }
 
@@ -307,7 +430,7 @@ export async function runWorkerLoop(
 ): Promise<void> {
   while (!options.signal.aborted) {
     try {
-      await pollWorkerOnce(options);
+      await pollWorkerOnce({ ...options, stopSignal: options.signal });
     } catch {
       options.logger.error(
         'worker.poll.failed',
