@@ -280,6 +280,9 @@ async function packagePlugin(version, outputDirectory) {
     path.join(stageRoot, 'dist'),
     { recursive: true },
   );
+  await cp(path.join(pluginRoot, 'bin'), path.join(stageRoot, 'bin'), {
+    recursive: true,
+  });
   await copyGeneratorSchemas(stageRoot);
   await writeJson(
     path.join(stageRoot, 'generators.json'),
@@ -293,7 +296,7 @@ async function packagePlugin(version, outputDirectory) {
   const packaged = {
     ...pluginPackage,
     private: false,
-    files: ['dist', 'generators.json', 'README.md'],
+    files: ['bin', 'dist', 'generators.json', 'README.md'],
   };
   await writeJson(path.join(stageRoot, 'package.json'), packaged);
 
