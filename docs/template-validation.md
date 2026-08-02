@@ -30,7 +30,7 @@ Default ports are retained so the generated preview stack exercises the document
 4. installs the generated repository again with the rewritten frozen lockfile;
 5. verifies template provenance, generated identity, selected applications, and removal of template-maintainer workflows and scripts;
 6. creates a baseline Git commit and runs `pnpm check` plus the repository-wide identity detector;
-7. builds production images, starts PostgreSQL and Redis, applies migrations, and starts the API, worker, and web preview services;
+7. builds production images, starts PostgreSQL, applies migrations, and starts the API, worker, and web preview services;
 8. applies the development seed, verifies migration status, reruns preview smoke tests, and enforces performance budgets;
 9. tears the Compose project down twice and confirms that no labeled containers, networks, or volumes remain;
 10. fails when validation changes tracked generated content, leaves unintended upstream identity, or modifies the source checkout.
