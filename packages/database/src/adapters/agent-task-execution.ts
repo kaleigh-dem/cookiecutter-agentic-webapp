@@ -50,19 +50,20 @@ export type BeginAgentTaskExecutionResult =
         | 'already-succeeded'
         | 'already-failed'
         | 'in-progress'
-        | 'missing'
         | 'conflict';
-      readonly record?: AgentTaskExecutionRecord;
+      readonly record: AgentTaskExecutionRecord;
+    }
+  | {
+      readonly outcome: 'missing';
     };
 
 export type FinishAgentTaskExecutionResult =
   | {
-      readonly outcome: 'transitioned' | 'duplicate';
+      readonly outcome: 'transitioned' | 'duplicate' | 'conflict';
       readonly record: AgentTaskExecutionRecord;
     }
   | {
-      readonly outcome: 'missing' | 'conflict';
-      readonly record?: AgentTaskExecutionRecord;
+      readonly outcome: 'missing';
     };
 
 function toRecord(row: AgentTaskRow): AgentTaskExecutionRecord {
