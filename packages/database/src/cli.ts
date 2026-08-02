@@ -45,6 +45,12 @@ function optionValue(args: string[], name: string): string | undefined {
   return value;
 }
 
+function requireOption(args: string[], name: string): string {
+  const value = optionValue(args, name)?.trim();
+  if (!value) throw new Error(`--${name} is required.`);
+  return value;
+}
+
 function optionalLimit(args: string[]): number | undefined {
   const value = optionValue(args, 'limit');
   if (value === undefined) return undefined;
@@ -115,17 +121,14 @@ async function main(): Promise<void> {
       await resetDatabase(requireDatabaseUrl());
       return;
     case 'outbox:list-failed': {
+      const limit = optionalLimit(args);
+      const kind = optionValue(args, 'kind');
+      const errorCode = optionValue(args, 'error-code');
       const messages = await withOutboxDelivery((delivery) =>
         delivery.listFailed({
-          ...(optionalLimit(args) === undefined
-            ? {}
-            : { limit: optionalLimit(args) }),
-          ...(optionValue(args, 'kind')
-            ? { kind: optionValue(args, 'kind') }
-            : {}),
-          ...(optionValue(args, 'error-code')
-            ? { errorCode: optionValue(args, 'error-code') }
-            : {}),
+          ...(limit === undefined ? {} : { limit }),
+          ...(kind ? { kind } : {}),
+          ...(errorCode ? { errorCode } : {}),
         }),
       );
       console.log(
@@ -148,13 +151,17 @@ async function main(): Promise<void> {
       if (!id || id.startsWith('--')) {
         throw new Error('outbox:replay requires a failed outbox UUID.');
       }
+      const replayedBy = requireOption(args, 'by');
+      const reason = requireOption(args, 'reason');
       const replayed = await withOutboxDelivery((delivery) =>
-        delivery.replayFailed({ id }),
+        delivery.replayFailed({ id, replayedBy, reason }),
       );
       if (!replayed) {
         throw new Error(`Failed outbox message ${id} was not found.`);
       }
-      console.log(JSON.stringify({ id, replayed: true }, null, 2));
+      console.log(
+        JSON.stringify({ id, replayed: true, replayedBy, reason }, null, 2),
+      );
       return;
     }
     default:
