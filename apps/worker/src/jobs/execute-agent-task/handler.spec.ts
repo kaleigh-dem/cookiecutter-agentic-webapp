@@ -34,6 +34,8 @@ describe('handleExecuteAgentTaskJob', () => {
           requestId: 'request-1',
           traceId: 'trace-1',
           userId: 'actor-1',
+          actorId: 'actor-1',
+          eventId: '22222222-2222-4222-8222-222222222222',
           jobId: '22222222-2222-4222-8222-222222222222',
           correlationId: 'correlation-1',
         });
@@ -75,6 +77,8 @@ describe('handleExecuteAgentTaskJob', () => {
         expect(getCorrelationContext()).toEqual(
           expect.objectContaining({
             userId: 'actor-1',
+            actorId: 'actor-1',
+            eventId: '33333333-3333-4333-8333-333333333333',
             jobId: '33333333-3333-4333-8333-333333333333',
             correlationId: 'correlation-1',
             requestId: expect.any(String),

@@ -50,15 +50,29 @@ services:
     image: ${WORKER_IMAGE}
     init: true
     restart: unless-stopped
+    stop_grace_period: 30s
     environment:
       DATABASE_URL: ${DATABASE_URL}
       LOG_LEVEL: ${LOG_LEVEL}
       NODE_ENV: ${NODE_ENV}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${OTEL_SERVICE_VERSION}
+      WORKER_DRAIN_TIMEOUT_MS: '25000'
+      WORKER_OPERATIONS_PORT: '4001'
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4001/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
 
   web:
     image: ${WEB_IMAGE}

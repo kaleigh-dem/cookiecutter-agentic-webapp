@@ -128,7 +128,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Add dead-letter or quarantine inspection and replay commands.
   - Document operator actions and alert thresholds.
 
-- [ ] **P11-06 Complete worker observability and shutdown.**
+- [x] **P11-06 Complete worker observability and shutdown.**
   - Propagate request, actor, correlation, trace, and event identifiers into worker spans and logs.
   - Add queue depth, processing duration, retry, failure, and oldest-message-age metrics.
   - Stop claiming new work during shutdown and allow bounded draining of in-flight jobs.

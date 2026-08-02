@@ -69,9 +69,13 @@ A retry or replay is another at-least-once delivery and uses the original messag
 
 ### Shutdown and observability
 
-On `SIGINT` or `SIGTERM`, a worker stops polling first, waits for in-flight handlers for a bounded drain period, and then releases or allows leases to expire. Readiness requires the selected transport dependency; liveness does not depend on queue depth.
+The worker exposes an internal operations server. Liveness is process-only. Readiness requires PostgreSQL and an accepting lifecycle state, so it becomes unavailable before shutdown stops claims and whenever the required database probe fails.
 
-Logs, spans, and metrics carry the event, job, correlation, request, actor, and trace identifiers already present in the versioned contract. The baseline will measure claim latency, processing duration, retries, failures, queue depth, oldest eligible message age, active leases, and lease recovery.
+On `SIGINT` or `SIGTERM`, the deployed worker marks itself unready and stops issuing new claim statements. It continues renewing and processing the current claimed batch for a bounded drain period, which defaults to 25 seconds. If work remains when that deadline expires, the worker aborts the remaining handler signal and abandons those claims without acknowledging, retrying, or dead-lettering them. The fenced rows remain recoverable after their leases expire. The preview container grants a 30-second stop period so application drain and resource cleanup complete before forced termination.
+
+Each claimed message restores request, actor, user, correlation, trace, event, and job identifiers into structured logging context. The consumer span restores the upstream trace parent when present and records the task ID, event kind, receive count, and those identifiers as attributes. Legacy version 1 events receive generated request and trace identifiers while preserving durable event and job identity.
+
+The deployed metrics are PostgreSQL-backed queue depth and oldest non-terminal message age gauges, a message-processing duration histogram, and counters for successfully persisted retries and terminal failures. Queue metric refresh errors are logged without stopping delivery; dependency readiness remains the source of truth for whether the worker may accept new work. Exact endpoints, metric names, configuration, and drain operations are documented in `docs/worker-operations.md`.
 
 ### Redis
 
@@ -100,4 +104,4 @@ Rejected as a guarantee. A database transaction cannot atomically cover arbitrar
 - Polling adds database load, so batch size, poll interval, indexes, lease duration, and retention require measured defaults and operational metrics.
 - Completion order is not guaranteed; handlers and state models must tolerate duplicates and reordering.
 - Future Redis, cloud queue, or streaming adapters must preserve the documented claim, acknowledgement, retry, quarantine, shutdown, and observability semantics or record a superseding ADR.
-- P11-04 through P11-07 make execution stateful and idempotent, add retry policy, complete operations, and prove the workflow end to end.
+- P11-07 proves the complete workflow end to end under normal and failure conditions.

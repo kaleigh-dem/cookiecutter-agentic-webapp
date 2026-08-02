@@ -81,6 +81,11 @@ export interface FailedOutboxMessage {
   readonly createdAt: Date;
 }
 
+export interface OutboxQueueMetrics {
+  readonly queueDepth: number;
+  readonly oldestMessageAgeMs: number;
+}
+
 interface ClaimedOutboxRow {
   readonly id: string;
   readonly kind: string;
@@ -114,6 +119,11 @@ interface FailedOutboxRow {
 
 interface ClaimExpirationRow {
   readonly claimExpiresAt: Date;
+}
+
+interface OutboxQueueMetricsRow {
+  readonly queueDepth: number;
+  readonly oldestMessageAgeMs: number;
 }
 
 function requireBoundedInteger(
@@ -191,6 +201,33 @@ function normalizeClaimReference(
 
 export class PostgresOutboxDelivery {
   public constructor(private readonly pool: Pool) {}
+
+  public async getQueueMetrics(): Promise<OutboxQueueMetrics> {
+    const result = await this.pool.query<OutboxQueueMetricsRow>(
+      `
+        select
+          count(*) filter (
+            where state in ('pending', 'processing')
+          )::integer as "queueDepth",
+          greatest(
+            0,
+            coalesce(
+              extract(
+                epoch from (
+                  current_timestamp - min(created_at) filter (
+                    where state in ('pending', 'processing')
+                  )
+                )
+              ) * 1000,
+              0
+            )
+          )::double precision as "oldestMessageAgeMs"
+        from app.job_outbox
+      `,
+    );
+
+    return result.rows[0] ?? { queueDepth: 0, oldestMessageAgeMs: 0 };
+  }
 
   public async claim(
     options: ClaimOutboxOptions,

@@ -62,11 +62,15 @@ export async function handleExecuteAgentTaskJob(
           requestId: validated.requestId,
           traceId: validated.traceId,
           userId: validated.userId,
+          actorId: validated.actorId,
+          eventId: jobId,
           jobId,
           correlationId: validated.correlationId,
         })
       : createCorrelationContext({
           userId: validated.actorId,
+          actorId: validated.actorId,
+          eventId: jobId,
           correlationId: validated.correlationId,
           jobId,
         });
@@ -79,6 +83,11 @@ export async function handleExecuteAgentTaskJob(
         : {}),
       attributes: {
         'agent_task.id': validated.taskId,
+        'app.actor.id': validated.actorId,
+        'app.correlation.id': validated.correlationId,
+        'app.event.id': jobId,
+        'app.request.id': correlationContext.requestId,
+        'app.trace.id': correlationContext.traceId,
         'messaging.operation.name': 'process',
         'messaging.message.type': `agent-task.execute.v${validated.version}`,
         'messaging.message.id': jobId,
