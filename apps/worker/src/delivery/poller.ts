@@ -94,7 +94,10 @@ export async function pollWorkerOnce(
   });
   const dispatch = options.dispatch ?? dispatchOutboxMessage;
   const stopRenewals = new Map(
-    messages.map((message) => [message.id, startLeaseRenewal(message, options)]),
+    messages.map((message) => [
+      message.id,
+      startLeaseRenewal(message, options),
+    ]),
   );
 
   try {
