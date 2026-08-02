@@ -38,6 +38,8 @@ pnpm outbox:replay -- 11111111-1111-4111-8111-111111111111 \
   --reason="Dependency recovered; incident INC-42"
 ```
 
+The command exits with an error when the row does not exist or is no longer in the failed state, so an operator cannot silently replay an already-requeued message.
+
 Replay preserves the original outbox ID, previous safe failure evidence, and cumulative Agent Task execution-attempt count. It resets the outbox delivery count for a new bounded retry cycle, records the operator and reason, and atomically returns a matching failed Agent Task to `queued`. A succeeded task is never regressed. Replaying a row that is no longer failed is rejected.
 
 After replay, confirm that the row leaves the failed list and reaches `processed`, or returns to failed with a new error and incremented replay audit count.
