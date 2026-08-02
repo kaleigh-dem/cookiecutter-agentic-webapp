@@ -13,7 +13,7 @@ The reference workflow needs a delivery design that is reliable with multiple wo
 
 Use a transport boundary with a PostgreSQL outbox polling adapter as the only baseline implementation.
 
-The outbox remains the durable source of truth. The API does not publish directly to a second broker, and the baseline does not dual-write PostgreSQL and Redis. Worker composition depends on a delivery port rather than issuing transport-specific commands from job handlers. A future queue adapter may implement the same delivery responsibilities, but it must add its own infrastructure, relay semantics, tests, and operational documentation before becoming a supported profile.
+The outbox remains the durable source of truth. The API does not publish directly to a second broker, and the baseline does not dual-write PostgreSQL and Redis. Worker composition depends on a delivery port rather than issuing transport-specific commands from job handlers. A future queue adapter may implement the same delivery responsibilities, but it must add its own infrastructure, relay semantics, tests, and operational documentation before becoming an implemented runtime option.
 
 ### Delivery port
 
@@ -71,7 +71,7 @@ Logs, spans, and metrics carry the event, job, correlation, request, actor, and 
 
 Remove Redis from the default local, preview, and production-shaped stack because it has no current delivery, caching, session, or distributed-control responsibility. Remove `REDIS_URL` from required baseline configuration. Redis may be introduced later by a concrete queue adapter or distributed rate limiter, with separate ownership, security, availability, backup, and cost decisions.
 
-The initialization generator supports `postgres` as the worker transport when the worker application is selected and `none` when it is not. Unsupported transports are not recorded as selectable profiles.
+The initialization generator defaults a selected worker to `postgres`. Its `redis` value remains declarative metadata for a future adapter and does not provision Redis or make that transport production-ready; adopters choosing it must first supply the adapter and its infrastructure.
 
 ## Alternatives considered
 
