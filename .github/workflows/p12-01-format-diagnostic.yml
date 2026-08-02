@@ -10,13 +10,15 @@ on:
       - .github/workflows/p12-01-format-diagnostic.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
@@ -25,15 +27,21 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Print formatter diff
+      - name: Format and remove diagnostic
         run: |
           pnpm exec prettier --write \
             apps/api/src/app/security/oidc-access-token-verifier.ts \
             apps/api/src/app/security/oidc-access-token-verifier.spec.ts \
             docs/getting-started.md \
             docs/oidc-authentication.md
-          git diff -- \
+          rm .github/workflows/p12-01-format-diagnostic.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
             apps/api/src/app/security/oidc-access-token-verifier.ts \
             apps/api/src/app/security/oidc-access-token-verifier.spec.ts \
             docs/getting-started.md \
-            docs/oidc-authentication.md
+            docs/oidc-authentication.md \
+            .github/workflows/p12-01-format-diagnostic.yml
+          git commit -m "chore: format P12-01 changes"
+          git push
