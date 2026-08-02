@@ -1,4 +1,9 @@
-import { metrics, type Counter, type Histogram } from '@opentelemetry/api';
+import {
+  metrics,
+  type Counter,
+  type Histogram,
+  type ObservableGauge,
+} from '@opentelemetry/api';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 
@@ -6,6 +11,8 @@ export interface CorrelationContext {
   requestId: string;
   traceId: string;
   userId?: string;
+  actorId?: string;
+  eventId?: string;
   jobId?: string;
   correlationId?: string;
 }
@@ -19,6 +26,8 @@ export function createCorrelationContext(
     requestId: input.requestId?.trim() || randomUUID(),
     traceId: input.traceId?.trim() || randomUUID().replaceAll('-', ''),
     ...(input.userId?.trim() ? { userId: input.userId.trim() } : {}),
+    ...(input.actorId?.trim() ? { actorId: input.actorId.trim() } : {}),
+    ...(input.eventId?.trim() ? { eventId: input.eventId.trim() } : {}),
     ...(input.jobId?.trim() ? { jobId: input.jobId.trim() } : {}),
     ...(input.correlationId?.trim()
       ? { correlationId: input.correlationId.trim() }
@@ -139,9 +148,11 @@ interface DurationAggregate {
 export class MetricsRegistry {
   private readonly counters = new Map<string, number>();
   private readonly durations = new Map<string, DurationAggregate>();
+  private readonly gauges = new Map<string, number>();
   private readonly meter = metrics.getMeter('@agentic-webapp/observability');
   private readonly exportedCounters = new Map<string, Counter>();
   private readonly exportedDurations = new Map<string, Histogram>();
+  private readonly exportedGauges = new Map<string, ObservableGauge>();
 
   public increment(name: string, value = 1): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + value);
@@ -169,6 +180,21 @@ export class MetricsRegistry {
     histogram.record(milliseconds);
   }
 
+  public setGauge(name: string, value: number): void {
+    if (!Number.isFinite(value)) {
+      throw new Error(`Gauge ${name} must be set to a finite number.`);
+    }
+
+    this.gauges.set(name, value);
+    if (this.exportedGauges.has(name)) return;
+
+    const gauge = this.meter.createObservableGauge(name);
+    gauge.addCallback((result) => {
+      result.observe(this.gauges.get(name) ?? 0);
+    });
+    this.exportedGauges.set(name, gauge);
+  }
+
   public snapshot(): Record<string, unknown> {
     return {
       counters: Object.fromEntries(this.counters),
@@ -184,6 +210,7 @@ export class MetricsRegistry {
           },
         ]),
       ),
+      gauges: Object.fromEntries(this.gauges),
     };
   }
 }
