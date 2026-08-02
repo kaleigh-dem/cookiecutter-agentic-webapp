@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@agentic-webapp/contracts": "workspace:*",
+    "@agentic-webapp/database": "workspace:*",
     "@agentic-webapp/observability": "workspace:*"
   }
 }
