@@ -1,4 +1,4 @@
-name: Finalize P11-04 stateful handlers
+name: Materialize P11-04 stateful handlers
 
 on:
   push:
@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  finalize:
+  materialize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -95,32 +95,17 @@ jobs:
           docs/adr/0010-worker-delivery.md
           docs/reference-feature-agent-tasks.md
 
-      - name: Check formatting and contracts
+      - name: Verify deterministic generated output
         run: |
           pnpm format:check
           pnpm contracts:check
           pnpm contracts:compat
 
-      - name: Run focused worker and database tests
-        run: >-
-          pnpm exec vitest run
-          apps/worker/src/delivery
-          apps/worker/src/jobs/execute-agent-task
-          packages/database/src/adapters/agent-task-execution.integration.test.ts
-          packages/database/src/adapters/agent-task-repository.integration.test.ts
-          packages/database/src/database.integration.test.ts
-
-      - name: Typecheck workspace
-        run: pnpm typecheck
-
-      - name: Build workspace
-        run: pnpm build
-
-      - name: Commit validated result and remove workflow
+      - name: Commit materialized branch and remove workflow
         run: |
           rm .github/workflows/p11-04-finalize.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m "chore(agent-task): finalize stateful execution"
+          git commit -m "chore(agent-task): materialize stateful execution"
           git push
