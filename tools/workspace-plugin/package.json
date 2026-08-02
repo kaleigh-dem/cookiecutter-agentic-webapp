@@ -9,9 +9,6 @@
     "url": "git+https://github.com/kaleigh-dem/cookiecutter-agentic-webapp.git",
     "directory": "tools/workspace-plugin"
   },
-  "bin": {
-    "agentic-webapp-upgrade": "./bin/agentic-webapp-upgrade.mjs"
-  },
   "generators": "./generators.json",
   "nx": {
     "generators": "./generators.json"
