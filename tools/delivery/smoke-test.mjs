@@ -1,4 +1,12 @@
-const checks = [
+import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const REQUEST_TIMEOUT_MS = 5_000;
+const WORKFLOW_TIMEOUT_MS = 15_000;
+const WORKFLOW_POLL_INTERVAL_MS = 250;
+
+export const checks = [
   {
     name: 'web-home',
     environment: 'WEB_BASE_URL',
@@ -23,20 +31,80 @@ const checks = [
     path: '/api/metrics',
     expectedStatus: 401,
   },
+  {
+    name: 'worker-liveness',
+    environment: 'WORKER_BASE_URL',
+    path: '/health/live',
+    expectedStatus: 200,
+  },
+  {
+    name: 'worker-readiness',
+    environment: 'WORKER_BASE_URL',
+    path: '/health/ready',
+    expectedStatus: 200,
+  },
+  {
+    name: 'worker-metrics',
+    environment: 'WORKER_BASE_URL',
+    path: '/metrics',
+    expectedStatus: 200,
+  },
 ];
 
-async function runCheck(check) {
-  const baseUrl = process.env[check.environment];
-  if (!baseUrl) throw new Error(`${check.environment} is required.`);
+function requiredEnvironment(environment, name) {
+  const value = environment[name]?.trim();
+  if (!value) throw new Error(`${name} is required.`);
+  return value;
+}
 
+async function requestWithTimeout(
+  url,
+  init,
+  fetchImplementation,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(new URL(check.path, baseUrl), {
+    return await fetchImplementation(url, {
+      ...init,
       cache: 'no-store',
-      redirect: 'manual',
       signal: controller.signal,
     });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function responseJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return undefined;
+  }
+}
+
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export async function runCheck(
+  check,
+  {
+    environment = process.env,
+    fetchImplementation = fetch,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+  } = {},
+) {
+  const baseUrl = requiredEnvironment(environment, check.environment);
+
+  try {
+    const response = await requestWithTimeout(
+      new URL(check.path, baseUrl),
+      { redirect: 'manual' },
+      fetchImplementation,
+      timeoutMs,
+    );
     return {
       name: check.name,
       expectedStatus: check.expectedStatus,
@@ -47,23 +115,156 @@ async function runCheck(check) {
     return {
       name: check.name,
       expectedStatus: check.expectedStatus,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
       passed: false,
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
-async function main() {
-  const results = [];
-  for (const check of checks) results.push(await runCheck(check));
+export async function runAgentTaskWorkflow({
+  environment = process.env,
+  fetchImplementation = fetch,
+  createId = randomUUID,
+  sleep = (milliseconds) =>
+    new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds)),
+  pollIntervalMs = WORKFLOW_POLL_INTERVAL_MS,
+  timeoutMs = WORKFLOW_TIMEOUT_MS,
+} = {}) {
+  const name = 'agent-task-terminal-workflow';
+  const apiBaseUrl = requiredEnvironment(environment, 'API_BASE_URL');
+  const accessToken = requiredEnvironment(
+    environment,
+    'AUTH_DEVELOPMENT_TOKEN',
+  );
+  const correlationId = `preview-${createId()}`;
+  const title = `Preview workflow ${createId()}`;
+  const headers = {
+    authorization: `Bearer ${accessToken}`,
+    'content-type': 'application/json',
+    'x-correlation-id': correlationId,
+  };
 
+  let createdResponse;
+  try {
+    createdResponse = await requestWithTimeout(
+      new URL('/api/agent-tasks', apiBaseUrl),
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title,
+          prompt: 'Prove the deployed transactional outbox worker path.',
+        }),
+      },
+      fetchImplementation,
+    );
+  } catch (error) {
+    return { name, error: errorMessage(error), passed: false };
+  }
+
+  const created = await responseJson(createdResponse);
+  if (
+    createdResponse.status !== 201 ||
+    !created ||
+    typeof created.id !== 'string'
+  ) {
+    return {
+      name,
+      status: createdResponse.status,
+      response: created,
+      error: 'The API did not create an Agent Task.',
+      passed: false,
+    };
+  }
+
+  const maximumPolls = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
+  let lastStatus = created.status;
+
+  for (let poll = 0; poll < maximumPolls; poll += 1) {
+    if (poll > 0) await sleep(pollIntervalMs);
+
+    let taskResponse;
+    try {
+      taskResponse = await requestWithTimeout(
+        new URL(`/api/agent-tasks/${created.id}`, apiBaseUrl),
+        { headers: { authorization: headers.authorization } },
+        fetchImplementation,
+      );
+    } catch (error) {
+      return {
+        name,
+        taskId: created.id,
+        error: errorMessage(error),
+        passed: false,
+      };
+    }
+
+    const task = await responseJson(taskResponse);
+    if (taskResponse.status !== 200 || !task) {
+      return {
+        name,
+        taskId: created.id,
+        status: taskResponse.status,
+        response: task,
+        error: 'The API did not return the created Agent Task.',
+        passed: false,
+      };
+    }
+
+    lastStatus = task.status;
+    if (lastStatus === 'succeeded') {
+      return {
+        name,
+        taskId: created.id,
+        correlationId,
+        terminalStatus: lastStatus,
+        polls: poll + 1,
+        passed: true,
+      };
+    }
+    if (lastStatus === 'failed') {
+      return {
+        name,
+        taskId: created.id,
+        correlationId,
+        terminalStatus: lastStatus,
+        error: 'The deployed worker transitioned the Agent Task to failed.',
+        passed: false,
+      };
+    }
+  }
+
+  return {
+    name,
+    taskId: created.id,
+    correlationId,
+    terminalStatus: lastStatus,
+    error: `The Agent Task did not succeed within ${timeoutMs}ms.`,
+    passed: false,
+  };
+}
+
+export async function runSmokeSuite(options = {}) {
+  const results = [];
+  for (const check of checks) {
+    results.push(await runCheck(check, options));
+  }
+  results.push(await runAgentTaskWorkflow(options));
+  return results;
+}
+
+export async function main() {
+  const results = await runSmokeSuite();
   process.stdout.write(`${JSON.stringify({ results }, null, 2)}\n`);
   if (results.some((result) => !result.passed)) process.exitCode = 1;
 }
 
-void main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+  void main().catch((error) => {
+    console.error(errorMessage(error));
+    process.exitCode = 1;
+  });
+}
