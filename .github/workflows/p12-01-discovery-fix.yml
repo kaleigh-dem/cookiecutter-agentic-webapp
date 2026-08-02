@@ -1,0 +1,62 @@
+name: P12-01 discovery fix
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/p12-01-discovery-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Correct discovery URL and remove workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          verifier = Path('apps/api/src/app/security/oidc-access-token-verifier.ts')
+          content = verifier.read_text()
+          old = """  const issuerPath = url.pathname.replace(/\\/$/, '');
+          url.pathname = `/.well-known/openid-configuration${
+            issuerPath === '' || issuerPath === '/' ? '' : issuerPath
+          }`;
+          """
+          new = """  url.pathname = `${url.pathname.replace(/\\/$/, '')}/.well-known/openid-configuration`;
+          """
+          if old not in content:
+              raise SystemExit('expected discovery helper not found')
+          verifier.write_text(content.replace(old, new))
+
+          spec = Path('apps/api/src/app/security/oidc-access-token-verifier.spec.ts')
+          content = spec.read_text()
+          spec.write_text(content.replace(
+              'https://identity.example.com/.well-known/openid-configuration/tenant',
+              'https://identity.example.com/tenant/.well-known/openid-configuration',
+          ))
+          PY
+          pnpm exec prettier --write \
+            apps/api/src/app/security/oidc-access-token-verifier.ts \
+            apps/api/src/app/security/oidc-access-token-verifier.spec.ts
+          rm .github/workflows/p12-01-discovery-fix.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            apps/api/src/app/security/oidc-access-token-verifier.ts \
+            apps/api/src/app/security/oidc-access-token-verifier.spec.ts \
+            .github/workflows/p12-01-discovery-fix.yml
+          git commit -m "fix: follow OIDC discovery path rules"
+          git push
