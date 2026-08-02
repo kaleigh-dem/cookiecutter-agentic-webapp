@@ -35,7 +35,7 @@ jobs:
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
-      - run: pnpm format:check
+      - run: pnpm format && git diff --exit-code
       - run: pnpm delivery:check
       - name: Verify release tooling
         run: |
