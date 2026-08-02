@@ -1,6 +1,10 @@
 import type { ClaimedOutboxMessage } from '@agentic-webapp/database';
 import { describe, expect, it, vi } from 'vitest';
 
+import type {
+  ExecuteAgentTaskJobEnvelope,
+  ExecuteAgentTaskJobPayload,
+} from '../jobs/execute-agent-task/contract';
 import {
   dispatchOutboxMessage,
   type ExecuteAgentTaskHandler,
@@ -75,7 +79,11 @@ describe('dispatchOutboxMessage', () => {
     const controller = new AbortController();
     let completeHandler: (() => void) | undefined;
     const handle = vi.fn(
-      (_payload, _execute, envelope) =>
+      (
+        _payload: ExecuteAgentTaskJobPayload,
+        _execute: undefined,
+        envelope?: ExecuteAgentTaskJobEnvelope,
+      ) =>
         new Promise((resolve) => {
           expect(envelope?.signal).toBe(controller.signal);
           completeHandler = () => resolve({ accepted: true });
