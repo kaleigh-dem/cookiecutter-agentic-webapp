@@ -65,6 +65,18 @@
       "options": {
         "command": "tsx packages/database/src/cli.ts reset"
       }
+    },
+    "outbox-list-failed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts outbox:list-failed"
+      }
+    },
+    "outbox-replay": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx packages/database/src/cli.ts outbox:replay"
+      }
     }
   }
 }
