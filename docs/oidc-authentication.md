@@ -21,7 +21,7 @@ AUTH_OIDC_AUDIENCE=agentic-api
 
 `AUTH_OIDC_ISSUER` must be the exact HTTPS issuer string carried in access tokens and returned by the provider discovery document. `AUTH_OIDC_AUDIENCE` accepts one or more comma-separated audiences; at least one must appear in the token `aud` claim.
 
-The verifier resolves the provider metadata through OpenID Connect Discovery, verifies that the discovered issuer exactly matches the configured issuer, and loads signing keys from the discovered HTTPS `jwks_uri`.
+The verifier resolves the provider metadata through OpenID Connect Discovery, verifies that the discovered issuer exactly matches the configured issuer, and loads signing keys from the discovered HTTPS `jwks_uri`. For an issuer with a path, the discovery suffix is appended to that path, such as `https://identity.example.com/tenant/.well-known/openid-configuration`.
 
 ## Signature and claim validation
 
