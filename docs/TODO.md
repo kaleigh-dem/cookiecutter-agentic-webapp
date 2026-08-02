@@ -89,7 +89,7 @@ Tasks are listed in implementation order. Existing task IDs remain stable for re
   - Test upgrading at least one fixture from the previous released template version.
   - Document how generated repositories receive dependency and template updates.
 
-- [ ] **P10-07 Refresh onboarding and template documentation.**
+- [x] **P10-07 Refresh onboarding and template documentation.**
   - Remove language that says the template migration is under review once template E2E passes.
   - Document supported profiles, required local tooling, first-run commands, and production replacement points.
   - Add a generated-project checklist covering repository settings, secrets, environments, ownership, and branch protection.
