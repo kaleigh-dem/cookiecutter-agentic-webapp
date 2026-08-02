@@ -4,10 +4,12 @@ import type { AgentTaskExecutionRequested } from '@agentic-webapp/contracts';
 import type { Pool } from 'pg';
 
 const MAX_BATCH_SIZE = 100;
+const MAX_INSPECTION_LIMIT = 100;
 const MAX_LEASE_DURATION_MS = 24 * 60 * 60 * 1000;
 const MAX_WORKER_ID_LENGTH = 200;
 const MAX_ERROR_CODE_LENGTH = 100;
 const MAX_ERROR_MESSAGE_LENGTH = 2000;
+const MAX_EVENT_KIND_LENGTH = 200;
 
 export interface OutboxClaimReference {
   readonly id: string;
@@ -46,6 +48,31 @@ export interface FailOutboxOptions extends OutboxClaimReference {
   readonly errorMessage: string;
 }
 
+export interface ListFailedOutboxOptions {
+  readonly limit?: number;
+  readonly kind?: string;
+  readonly errorCode?: string;
+}
+
+export interface ReplayFailedOutboxOptions {
+  readonly id: string;
+  readonly replayAt?: Date;
+}
+
+export interface FailedOutboxMessage {
+  readonly id: string;
+  readonly kind: string;
+  readonly correlationId: string;
+  readonly attemptCount: number;
+  readonly lastErrorCode: string | null;
+  readonly lastErrorMessage: string | null;
+  readonly lastErrorAt: Date | null;
+  readonly failedAt: Date;
+  readonly replayCount: number;
+  readonly lastReplayedAt: Date | null;
+  readonly createdAt: Date;
+}
+
 interface ClaimedOutboxRow {
   readonly id: string;
   readonly kind: string;
@@ -56,6 +83,20 @@ interface ClaimedOutboxRow {
   readonly claimedBy: string;
   readonly claimToken: string;
   readonly claimExpiresAt: Date;
+  readonly createdAt: Date;
+}
+
+interface FailedOutboxRow {
+  readonly id: string;
+  readonly kind: string;
+  readonly correlationId: string;
+  readonly attemptCount: number;
+  readonly lastErrorCode: string | null;
+  readonly lastErrorMessage: string | null;
+  readonly lastErrorAt: Date | null;
+  readonly failedAt: Date;
+  readonly replayCount: number;
+  readonly lastReplayedAt: Date | null;
   readonly createdAt: Date;
 }
 
@@ -115,6 +156,15 @@ function requireErrorText(
     );
   }
   return normalized;
+}
+
+function optionalFilter(
+  value: string | undefined,
+  label: string,
+  maximum: number,
+): string | null {
+  if (value === undefined) return null;
+  return requireErrorText(value, label, maximum);
 }
 
 function normalizeClaimReference(
@@ -350,6 +400,74 @@ export class PostgresOutboxDelivery {
       ],
     );
 
+    return result.rows.length === 1;
+  }
+
+  public async listFailed(
+    options: ListFailedOutboxOptions = {},
+  ): Promise<FailedOutboxMessage[]> {
+    const limit = requireBoundedInteger(
+      options.limit ?? 50,
+      'limit',
+      MAX_INSPECTION_LIMIT,
+    );
+    const kind = optionalFilter(options.kind, 'kind', MAX_EVENT_KIND_LENGTH);
+    const errorCode = optionalFilter(
+      options.errorCode,
+      'errorCode',
+      MAX_ERROR_CODE_LENGTH,
+    );
+    const result = await this.pool.query<FailedOutboxRow>(
+      `
+        select
+          id,
+          kind,
+          correlation_id as "correlationId",
+          attempt_count as "attemptCount",
+          last_error_code as "lastErrorCode",
+          last_error_message as "lastErrorMessage",
+          last_error_at as "lastErrorAt",
+          failed_at as "failedAt",
+          replay_count as "replayCount",
+          last_replayed_at as "lastReplayedAt",
+          created_at as "createdAt"
+        from app.job_outbox
+        where
+          state = 'failed'
+          and ($2::text is null or kind = $2)
+          and ($3::text is null or last_error_code = $3)
+        order by failed_at desc, id
+        limit $1::integer
+      `,
+      [limit, kind, errorCode],
+    );
+    return result.rows;
+  }
+
+  public async replayFailed(
+    options: ReplayFailedOutboxOptions,
+  ): Promise<boolean> {
+    const id = requireUuid(options.id, 'id');
+    const replayAt = requireDate(options.replayAt ?? new Date(), 'replayAt');
+    const result = await this.pool.query<{ readonly id: string }>(
+      `
+        update app.job_outbox
+        set
+          state = 'pending',
+          attempt_count = 0,
+          next_attempt_at = $2,
+          claimed_by = null,
+          claim_token = null,
+          claim_expires_at = null,
+          processed_at = null,
+          failed_at = null,
+          replay_count = replay_count + 1,
+          last_replayed_at = $2
+        where id = $1::uuid and state = 'failed'
+        returning id
+      `,
+      [id, replayAt],
+    );
     return result.rows.length === 1;
   }
 }
