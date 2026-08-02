@@ -30,11 +30,13 @@ Domain job handlers receive validated event data and execution context. They do 
 
 ### Claiming and concurrency
 
-P11-02 will extend `app.job_outbox` with processing state, attempt count, next-attempt time, claim owner, claim expiration, and terminal failure information.
+The `app.job_outbox` schema tracks processing state, attempt count, next-attempt time, claim owner, a per-claim ownership token, claim expiration, the last safe error summary, successful processing time, and terminal failure time.
 
-The PostgreSQL adapter claims rows in a short transaction using `FOR UPDATE SKIP LOCKED` or an equivalent atomic update. Eligible rows are ordered by `next_attempt_at`, then `created_at`, then `id`. The adapter updates the lease and attempt metadata before committing the claim transaction. Handlers run after that transaction commits, so database locks are not held while application work executes.
+`PostgresOutboxDelivery` claims rows in one statement using `FOR UPDATE SKIP LOCKED` followed by an atomic update. Eligible rows are ordered by `next_attempt_at`, then `created_at`, then `id`. The adapter updates lease and attempt metadata before returning the claimed records. Handlers run after the claim statement commits, so database locks are not held while application work executes.
 
-Multiple worker replicas may poll concurrently. At most one unexpired lease may own a row at a time. A worker crash leaves the row recoverable after its lease expires. Each process uses bounded batch size and bounded in-process concurrency; scaling is achieved by changing those limits or adding replicas rather than by allowing unbounded promises.
+Multiple worker replicas may poll concurrently. At most one unexpired lease may own a row at a time. Every claim receives a new UUID ownership token; acknowledgement, renewal, retry scheduling, and terminal failure updates require the current worker identifier and token while the lease is unexpired. A stale worker therefore cannot mutate a row after another worker recovers it. A worker crash leaves the row claimable after its lease expires.
+
+Each process uses bounded batch size and bounded in-process concurrency; scaling is achieved by changing those limits or adding replicas rather than by allowing unbounded promises. Long-running handlers renew their lease before expiration.
 
 ### Ordering
 
@@ -58,6 +60,8 @@ Failures are classified before the lease is released:
 - invalid payloads, unsupported event versions, unknown event kinds, and permanent business failures are quarantined without repeated execution;
 - a retryable message that reaches the configured attempt limit moves to terminal dead-letter state;
 - failure records retain the classification, safe error summary, attempt count, and relevant timestamps for inspection and replay.
+
+The delivery adapter provides guarded reschedule and terminal-failure transitions. P11-05 defines the policy that chooses between them, computes backoff, distinguishes quarantine from dead-letter outcomes, and exposes operator replay.
 
 A retry or replay is another at-least-once delivery and must use the original message identifier. Operators may replay quarantined work only through an explicit command that records who initiated the replay and why.
 
@@ -94,4 +98,4 @@ Rejected as a guarantee. A database transaction cannot atomically cover arbitrar
 - Polling adds database load, so batch size, poll interval, indexes, lease duration, and retention require measured defaults and operational metrics.
 - Completion order is not guaranteed; handlers and state models must tolerate duplicates and reordering.
 - Future Redis, cloud queue, or streaming adapters must preserve the documented claim, acknowledgement, retry, quarantine, shutdown, and observability semantics or record a superseding ADR.
-- P11-02 through P11-07 implement and verify this decision; this ADR does not mark those tasks complete.
+- P11-03 through P11-07 compose, execute, harden, observe, and prove this implemented delivery foundation.

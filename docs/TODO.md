@@ -1,6 +1,6 @@
 # Template Roadmap
 
-Last updated: 2026-08-01
+Last updated: 2026-08-02
 
 This file tracks active work required to turn the repository from a validated reference application into a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as checked-off tasks here.
 
@@ -105,7 +105,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Document ordering, delivery guarantees, concurrency, retry, and failure semantics in an ADR.
   - Remove Redis from the default stack if it has no concrete responsibility.
 
-- [ ] **P11-02 Implement outbox leasing and dispatch.**
+- [x] **P11-02 Implement outbox leasing and dispatch.**
   - Add atomic record claiming suitable for multiple worker replicas, such as `FOR UPDATE SKIP LOCKED` or equivalent leases.
   - Track attempts, claim expiration, next-attempt time, processing state, and terminal failure information.
   - Prevent duplicate concurrent processing while allowing recovery after worker crashes.

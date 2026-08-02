@@ -1,7 +1,16 @@
 import type { AgentTaskExecutionRequested } from '@agentic-webapp/contracts';
-import { jsonb, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { appSchema } from './platform';
+
+export type JobOutboxState = 'pending' | 'processing' | 'processed' | 'failed';
 
 export const agentTasks = appSchema.table('agent_tasks', {
   id: uuid('id').primaryKey(),
@@ -20,10 +29,34 @@ export const jobOutbox = appSchema.table('job_outbox', {
   kind: text('kind').notNull(),
   payload: jsonb('payload').$type<AgentTaskExecutionRequested>().notNull(),
   correlationId: text('correlation_id').notNull(),
+  state: varchar('state', { length: 32 })
+    .$type<JobOutboxState>()
+    .notNull()
+    .default('pending'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', {
+    mode: 'date',
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+  claimedBy: text('claimed_by'),
+  claimToken: uuid('claim_token'),
+  claimExpiresAt: timestamp('claim_expires_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
+  lastErrorCode: text('last_error_code'),
+  lastErrorMessage: text('last_error_message'),
+  lastErrorAt: timestamp('last_error_at', {
+    mode: 'date',
+    withTimezone: true,
+  }),
   createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
     .notNull()
     .defaultNow(),
   processedAt: timestamp('processed_at', { mode: 'date', withTimezone: true }),
+  failedAt: timestamp('failed_at', { mode: 'date', withTimezone: true }),
 });
 
 export type AgentTaskRow = typeof agentTasks.$inferSelect;
