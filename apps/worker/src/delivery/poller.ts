@@ -39,13 +39,14 @@ function startLeaseRenewal(
 ): () => void {
   const renewalIntervalMs = Math.max(
     1,
-    Math.floor(options.leaseDurationMs / 2),
+    Math.floor(options.leaseDurationMs / 3),
   );
   let stopped = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let renewalInFlight = false;
 
   const renew = async () => {
-    if (stopped) return;
+    if (stopped || renewalInFlight) return;
+    renewalInFlight = true;
 
     try {
       const claimExpiresAt = await options.delivery.renew({
@@ -69,18 +70,16 @@ function startLeaseRenewal(
       }
     } catch (error) {
       options.logger.error('worker.message.lease-renewal-failed', error);
-    }
-
-    if (!stopped) {
-      timer = setTimeout(() => void renew(), renewalIntervalMs);
+    } finally {
+      renewalInFlight = false;
     }
   };
 
-  timer = setTimeout(() => void renew(), renewalIntervalMs);
+  const timer = setInterval(() => void renew(), renewalIntervalMs);
 
   return () => {
     stopped = true;
-    if (timer) clearTimeout(timer);
+    clearInterval(timer);
   };
 }
 
