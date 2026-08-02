@@ -69,7 +69,7 @@ export interface OidcClaimsMapper {
 }
 
 export type OidcFetch = (
-  input: URL | RequestInfo,
+  input: URL,
   init?: RequestInit,
 ) => Promise<Response>;
 
@@ -323,7 +323,11 @@ function parseJwt(accessToken: string): ParsedJwt {
     throw invalidAccessToken();
   }
 
-  const [encodedHeader, encodedPayload, encodedSignature] = segments;
+  const [encodedHeader, encodedPayload, encodedSignature] = segments as [
+    string,
+    string,
+    string,
+  ];
   const rawHeader = decodeJsonSegment(encodedHeader);
   const rawAlgorithm = rawHeader.alg;
   if (
