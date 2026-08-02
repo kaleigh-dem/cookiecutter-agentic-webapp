@@ -35,7 +35,7 @@ async function up() {
   run('pnpm', ['containers:build'], {
     env: { ...process.env, ...values },
   });
-  run('docker', [...compose, 'up', '-d', '--wait', 'postgres', 'redis']);
+  run('docker', [...compose, 'up', '-d', '--wait', 'postgres']);
   run('pnpm', ['db:migrate'], {
     env: {
       ...process.env,
