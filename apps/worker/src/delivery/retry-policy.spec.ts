@@ -11,12 +11,8 @@ describe('retry policy', () => {
     expect(calculateRetryDelayMs(1, defaultRetryPolicy, () => 0)).toBe(500);
     expect(calculateRetryDelayMs(2, defaultRetryPolicy, () => 0)).toBe(1_000);
     expect(calculateRetryDelayMs(3, defaultRetryPolicy, () => 1)).toBe(4_000);
-    expect(calculateRetryDelayMs(20, defaultRetryPolicy, () => 1)).toBe(
-      60_000,
-    );
-    expect(calculateRetryDelayMs(20, defaultRetryPolicy, () => 0)).toBe(
-      30_000,
-    );
+    expect(calculateRetryDelayMs(20, defaultRetryPolicy, () => 1)).toBe(60_000);
+    expect(calculateRetryDelayMs(20, defaultRetryPolicy, () => 0)).toBe(30_000);
   });
 
   it('rejects invalid policy and random values', () => {
@@ -26,8 +22,8 @@ describe('retry policy', () => {
         maxDelayMs: defaultRetryPolicy.baseDelayMs - 1,
       }),
     ).toThrow('maxDelayMs');
-    expect(() =>
-      calculateRetryDelayMs(1, defaultRetryPolicy, () => 2),
-    ).toThrow('random');
+    expect(() => calculateRetryDelayMs(1, defaultRetryPolicy, () => 2)).toThrow(
+      'random',
+    );
   });
 });

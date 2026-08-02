@@ -108,9 +108,6 @@ async function startWorker(): Promise<void> {
 }
 
 void startWorker().catch(() => {
-  logger.error(
-    'worker.start.failed',
-    new Error('The worker failed to start.'),
-  );
+  logger.error('worker.start.failed', new Error('The worker failed to start.'));
   process.exitCode = 1;
 });

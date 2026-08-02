@@ -25,7 +25,11 @@ describe('classifyJobFailure', () => {
   });
 
   it('classifies known infrastructure and programming failures', () => {
-    expect(classifyJobFailure(Object.assign(new Error('socket'), { code: 'ECONNRESET' }))).toMatchObject({
+    expect(
+      classifyJobFailure(
+        Object.assign(new Error('socket'), { code: 'ECONNRESET' }),
+      ),
+    ).toMatchObject({
       disposition: 'retryable',
       errorCode: 'dependency_unavailable',
     });

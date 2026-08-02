@@ -33,7 +33,12 @@ export function validateRetryPolicy(policy: RetryPolicy): RetryPolicy {
   ) {
     throw new Error('jitterRatio must be between 0 and 1.');
   }
-  return { maxAttempts, baseDelayMs, maxDelayMs, jitterRatio: policy.jitterRatio };
+  return {
+    maxAttempts,
+    baseDelayMs,
+    maxDelayMs,
+    jitterRatio: policy.jitterRatio,
+  };
 }
 
 export function calculateRetryDelayMs(

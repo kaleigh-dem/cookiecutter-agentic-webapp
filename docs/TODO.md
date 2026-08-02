@@ -122,7 +122,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Make state transitions conditional so replay cannot regress completed work.
   - Persist execution metadata needed for support and audit investigation.
 
-- [ ] **P11-05 Add retry and dead-letter behavior.**
+- [x] **P11-05 Add retry and dead-letter behavior.**
   - Use bounded exponential backoff with jitter.
   - Distinguish retryable infrastructure failures from permanent contract or business failures.
   - Add dead-letter or quarantine inspection and replay commands.

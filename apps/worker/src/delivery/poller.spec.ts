@@ -165,7 +165,9 @@ describe('pollWorkerOnce', () => {
       expect(renew).toHaveBeenCalledTimes(2);
       expect(error).toHaveBeenCalledWith(
         'worker.message.lease-renewal-failed',
-        expect.objectContaining({ message: 'The outbox lease renewal failed.' }),
+        expect.objectContaining({
+          message: 'The outbox lease renewal failed.',
+        }),
       );
       expect(JSON.stringify(error.mock.calls)).not.toContain('secret-token');
 
