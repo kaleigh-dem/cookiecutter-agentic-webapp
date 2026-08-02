@@ -68,6 +68,60 @@ describe('pollWorkerOnce', () => {
     expect(info).toHaveBeenCalledTimes(2);
   });
 
+  it('renews processing and queued claims until each message completes', async () => {
+    vi.useFakeTimers();
+    try {
+      const first = message('11111111-1111-4111-8111-111111111111');
+      const second = message('55555555-5555-4555-8555-555555555555');
+      const claim = vi.fn(async () => [first, second]);
+      const renew = vi.fn(async () => new Date('2026-08-02T12:01:30.000Z'));
+      let completeFirst: (() => void) | undefined;
+      const dispatch = vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<'acknowledged'>((resolve) => {
+              completeFirst = () => resolve('acknowledged');
+            }),
+        )
+        .mockResolvedValueOnce('acknowledged');
+      const { logger: workerLogger } = logger();
+
+      const polling = pollWorkerOnce({
+        batchSize: 10,
+        delivery: { claim, renew } as unknown as PostgresOutboxDelivery,
+        dispatch,
+        leaseDurationMs: 30_000,
+        logger: workerLogger,
+        workerId: 'worker-1',
+      });
+
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      expect(renew).toHaveBeenCalledTimes(2);
+      expect(renew).toHaveBeenCalledWith({
+        id: first.id,
+        workerId: first.workerId,
+        claimToken: first.claimToken,
+        leaseDurationMs: 30_000,
+      });
+      expect(renew).toHaveBeenCalledWith({
+        id: second.id,
+        workerId: second.workerId,
+        claimToken: second.claimToken,
+        leaseDurationMs: 30_000,
+      });
+
+      completeFirst?.();
+      await expect(polling).resolves.toBe(2);
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(renew).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('isolates unexpected handler failures to the affected message', async () => {
     const first = message('11111111-1111-4111-8111-111111111111');
     const second = message('55555555-5555-4555-8555-555555555555');
