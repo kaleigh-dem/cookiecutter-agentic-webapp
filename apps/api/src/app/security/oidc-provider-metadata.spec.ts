@@ -37,13 +37,10 @@ describe('OIDC provider metadata validation', () => {
     'maps a %s discovery jwks_uri to identity_provider_unavailable',
     async (_case, jwksUri) => {
       const fetchImplementation = vi.fn<OidcFetch>(async () =>
-        new Response(
-          JSON.stringify({ issuer: ISSUER, jwks_uri: jwksUri }),
-          {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          },
-        ),
+        new Response(JSON.stringify({ issuer: ISSUER, jwks_uri: jwksUri }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
       );
       const verifier = new OidcAccessTokenVerifier(
         config(),
