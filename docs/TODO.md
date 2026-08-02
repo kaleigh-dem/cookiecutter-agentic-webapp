@@ -134,7 +134,7 @@ Goal: make the worker and transactional outbox a functioning end-to-end example 
   - Stop claiming new work during shutdown and allow bounded draining of in-flight jobs.
   - Add readiness behavior that reflects required dependencies.
 
-- [-] **P11-07 Prove the workflow end to end.**
+- [x] **P11-07 Prove the workflow end to end.**
   - Add a test that creates an Agent Task through the browser or API and observes eventual terminal processing.
   - Cover two concurrent workers, duplicate delivery, retry, crash recovery, and dead-letter behavior.
   - Include the live worker in preview smoke tests and performance budgets.
@@ -146,7 +146,7 @@ Exit criteria: a browser-created task is persisted with its outbox event, claime
 
 Goal: provide a production-capable security path while keeping providers replaceable.
 
-- [ ] **P12-01 Add a reference OIDC access-token verifier.**
+- [-] **P12-01 Add a reference OIDC access-token verifier.**
   - Support discovery and JWKS retrieval with bounded caching and key rotation.
   - Validate issuer, audience, algorithm, expiration, not-before, and clock skew.
   - Map claims to the existing principal and permission model through a configurable adapter.
