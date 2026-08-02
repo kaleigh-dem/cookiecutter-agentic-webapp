@@ -37,6 +37,7 @@
     "template:release:pack": "node tools/template/release.mjs pack",
     "template:release:notes": "node tools/template/release.mjs notes",
     "template:release:smoke": "node tools/template/smoke-release-artifact.mjs",
+    "template:workspace:e2e": "node tools/template/generated-workspace-e2e.mjs",
     "initialize:workspace": "nx g @agentic-webapp/workspace-plugin:preset",
     "template:identity:check": "node tools/template/check-identity.mjs",
     "generate:domain": "nx g @agentic-webapp/workspace-plugin:domain",

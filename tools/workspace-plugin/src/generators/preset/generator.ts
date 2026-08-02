@@ -6,9 +6,12 @@ import type { InitGeneratorSchema } from '../init/schema';
 import { formatGeneratorFiles } from '../shared';
 
 const templateMaintainerPaths = [
+  '.github/workflows/generated-workspace.yml',
   '.github/workflows/template-release.yml',
   'CHANGELOG.md',
   'docs/template-releases.md',
+  'docs/template-validation.md',
+  'tools/template/generated-workspace-e2e.mjs',
   'tools/template/release.mjs',
   'tools/template/smoke-release-artifact.mjs',
 ] as const;
@@ -19,6 +22,7 @@ const templateMaintainerScripts = [
   'template:release:pack',
   'template:release:notes',
   'template:release:smoke',
+  'template:workspace:e2e',
 ] as const;
 
 interface WorkspaceManifest {

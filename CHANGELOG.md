@@ -4,6 +4,10 @@ All notable template changes are documented in this file. Template releases foll
 
 ## [Unreleased]
 
+### Added
+
+- Generated-workspace end-to-end CI covering released preset installation, repository validation, database migration and seed, production preview images, smoke and performance checks, deterministic teardown, identity neutrality, and Git cleanliness.
+
 ## [0.1.0] - 2026-08-01
 
 ### Added
