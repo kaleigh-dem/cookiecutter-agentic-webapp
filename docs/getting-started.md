@@ -4,7 +4,7 @@ This guide covers the first decisions and commands for a repository created from
 
 ## Required local tooling
 
-Install these tools before creating or running a workspace:
+Install these tools before initializing or running a workspace:
 
 - Git
 - Node.js 24 LTS; the repository includes `.node-version`
@@ -24,14 +24,11 @@ docker compose version
 
 The supported Node.js and pnpm ranges are enforced by `package.json`. See `docs/runtime-support.md` for the runtime upgrade policy.
 
-## Create and initialize a workspace
+## Initialize the checked-out template content
 
-Create the Nx workspace from the template repository, then initialize its permanent identity and profiles:
+After creating the repository from the released template source, install dependencies and apply its permanent identity and profiles:
 
 ```bash
-npx create-nx-workspace@23.1.0 customer-portal \
-  --template kaleigh-dem/cookiecutter-agentic-webapp
-cd customer-portal
 corepack enable
 pnpm install --frozen-lockfile
 pnpm initialize:workspace customer-portal \
