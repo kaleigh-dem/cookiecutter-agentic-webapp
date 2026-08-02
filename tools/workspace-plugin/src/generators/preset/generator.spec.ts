@@ -32,6 +32,11 @@ describe('preset generator', () => {
     tree.write('.github/workflows/generated-workspace.yml', 'name: e2e\n');
     tree.write('.github/workflows/template-release.yml', 'name: release\n');
     tree.write('CHANGELOG.md', '# Changelog\n');
+    tree.write('docs/getting-started.md', '# Generated workspace onboarding\n');
+    tree.write(
+      'docs/generated-project-checklist.md',
+      '# Generated project checklist\n',
+    );
     tree.write('docs/template-releases.md', '# Releases\n');
     tree.write('docs/template-validation.md', '# Validation\n');
     tree.write('docs/template-upgrades.md', '# Upgrades\n');
@@ -102,6 +107,8 @@ describe('preset generator', () => {
       false,
     );
 
+    expect(tree.exists('docs/getting-started.md')).toBe(true);
+    expect(tree.exists('docs/generated-project-checklist.md')).toBe(true);
     expect(tree.exists('docs/template-upgrades.md')).toBe(true);
     expect(tree.exists('tools/template/upgrade.mjs')).toBe(true);
     expect(tree.exists('tools/template/ownership.json')).toBe(true);
