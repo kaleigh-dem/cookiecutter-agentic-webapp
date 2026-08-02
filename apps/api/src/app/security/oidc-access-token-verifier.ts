@@ -535,7 +535,11 @@ export class OidcAccessTokenVerifier {
     if (issuer !== this.config.issuer || typeof jwksUri !== 'string') {
       throw identityProviderUnavailable();
     }
-    requireHttpsUrl(jwksUri, 'OIDC jwks_uri');
+    try {
+      requireHttpsUrl(jwksUri, 'OIDC jwks_uri');
+    } catch {
+      throw identityProviderUnavailable();
+    }
 
     const document = { issuer, jwksUri };
     this.discoveryCache = {
