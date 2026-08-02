@@ -4,6 +4,16 @@ All notable template changes are documented in this file. Template releases foll
 
 ## [Unreleased]
 
+### Added
+
+- Generated-workspace onboarding covering required tooling, supported profiles, first-run commands, preview validation, and explicit production replacement points.
+- A generated-project checklist for repository settings, branch protection, environments, secrets, ownership, operational readiness, and ongoing template upgrades.
+
+### Changed
+
+- Template and initialization documentation now treat the generated-workspace flow as released and verified rather than under review.
+- Generated-workspace CI verifies that downstream onboarding and governance documentation survives preset cleanup.
+
 ## [0.2.0] - 2026-08-01
 
 ### Added
