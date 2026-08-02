@@ -150,6 +150,14 @@ async function assertGeneratedContract(workspace, expectedVersion) {
   const pluginPackage = await readJson(
     path.join(workspace, 'tools/workspace-plugin/package.json'),
   );
+  const [readme, gettingStarted, projectChecklist] = await Promise.all([
+    readFile(path.join(workspace, 'README.md'), 'utf-8'),
+    readFile(path.join(workspace, 'docs/getting-started.md'), 'utf-8'),
+    readFile(
+      path.join(workspace, 'docs/generated-project-checklist.md'),
+      'utf-8',
+    ),
+  ]);
 
   assert.equal(manifest.schemaVersion, 2);
   assert.deepEqual(manifest.upstream, {
@@ -171,6 +179,12 @@ async function assertGeneratedContract(workspace, expectedVersion) {
   assert.equal(packageJson.scripts['template:workspace:e2e'], undefined);
   assert.equal(pluginPackage.name, '@generated-ci/workspace-plugin');
   assert.equal(pluginPackage.private, true);
+
+  assert.doesNotMatch(readme, /template migration is under review/i);
+  assert.match(gettingStarted, /## Supported profiles/);
+  assert.match(gettingStarted, /## Production replacement points/);
+  assert.match(projectChecklist, /## Branch protection and required checks/);
+  assert.match(projectChecklist, /## Secrets and application configuration/);
 
   const removedPaths = [
     '.github/workflows/generated-workspace.yml',
