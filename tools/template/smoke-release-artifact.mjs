@@ -109,8 +109,8 @@ try {
       `Expected upstream template version ${expectedVersion}, received ${manifest.upstream?.version}.`,
     );
   }
-  if (manifest.schemaVersion < 3) {
-    throw new Error('Preset did not write upgrade-aware manifest schema 3.');
+  if (manifest.schemaVersion < 2) {
+    throw new Error('Preset did not write the identity-aware manifest schema.');
   }
   if (manifest.application?.slug !== 'smoke-app') {
     throw new Error('Preset did not write the requested application slug.');
