@@ -14,6 +14,20 @@
       "maximumErrorRate": 0.01
     },
     {
+      "name": "worker-liveness",
+      "baseUrlEnvironment": "WORKER_BASE_URL",
+      "path": "/health/live",
+      "maximumP95Ms": 250,
+      "maximumErrorRate": 0.01
+    },
+    {
+      "name": "worker-readiness",
+      "baseUrlEnvironment": "WORKER_BASE_URL",
+      "path": "/health/ready",
+      "maximumP95Ms": 500,
+      "maximumErrorRate": 0.01
+    },
+    {
       "name": "web-home",
       "baseUrlEnvironment": "WEB_BASE_URL",
       "path": "/",
