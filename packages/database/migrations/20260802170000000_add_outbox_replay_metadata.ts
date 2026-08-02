@@ -10,6 +10,8 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       default: 0,
     },
     last_replayed_at: { type: 'timestamptz' },
+    last_replayed_by: { type: 'text' },
+    last_replay_reason: { type: 'text' },
   });
   pgm.addConstraint(outbox, 'job_outbox_replay_count_check', {
     check: 'replay_count >= 0',
@@ -26,5 +28,10 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
   pgm.dropConstraint(outbox, 'job_outbox_replay_count_check', {
     ifExists: true,
   });
-  pgm.dropColumns(outbox, ['replay_count', 'last_replayed_at']);
+  pgm.dropColumns(outbox, [
+    'replay_count',
+    'last_replayed_at',
+    'last_replayed_by',
+    'last_replay_reason',
+  ]);
 }
