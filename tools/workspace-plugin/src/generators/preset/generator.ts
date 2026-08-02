@@ -51,7 +51,7 @@ function recordTemplateVersion(tree: Tree): void {
   const manifest = readJson<WorkspaceManifest>(tree, 'workspace.template.json');
   writeJson(tree, 'workspace.template.json', {
     ...manifest,
-    schemaVersion: 3,
+    schemaVersion: 2,
     upstream: {
       ...(manifest.upstream ?? {}),
       version: templateVersion,
