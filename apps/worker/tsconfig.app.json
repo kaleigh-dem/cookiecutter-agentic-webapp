@@ -16,6 +16,9 @@
       "path": "../../packages/contracts/tsconfig.lib.json"
     },
     {
+      "path": "../../packages/database/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/observability/tsconfig.lib.json"
     }
   ]
