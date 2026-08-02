@@ -22,5 +22,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Print formatted smoke test
-        run: pnpm exec prettier tools/delivery/smoke-test.mjs
+      - name: Print formatter diff
+        run: |
+          pnpm exec prettier --write tools/delivery/smoke-test.mjs
+          git diff -- tools/delivery/smoke-test.mjs
