@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runAgentTaskWorkflow, runCheck } from './smoke-test.mjs';
+import {
+  runAgentTaskWorkflow,
+  runCheck,
+  runSmokeSuite,
+} from './smoke-test.mjs';
 
 function jsonResponse(value: unknown, status: number): Response {
   return new Response(JSON.stringify(value), {
@@ -10,9 +14,53 @@ function jsonResponse(value: unknown, status: number): Response {
 }
 
 describe('preview smoke test', () => {
+  it('keeps generic release smoke independent of worker and development credentials', async () => {
+    const fetchImplementation = vi.fn(async (url: URL | RequestInfo) => {
+      const path = new URL(url.toString()).pathname;
+      return new Response('{}', {
+        status: path === '/api/metrics' ? 401 : 200,
+      });
+    });
+
+    await expect(
+      runSmokeSuite({
+        environment: {
+          API_BASE_URL: 'https://api.example.com',
+          WEB_BASE_URL: 'https://app.example.com',
+        },
+        fetchImplementation,
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({ name: 'web-home', passed: true }),
+      expect.objectContaining({ name: 'api-liveness', passed: true }),
+      expect.objectContaining({ name: 'api-readiness', passed: true }),
+      expect.objectContaining({
+        name: 'metrics-require-authentication',
+        passed: true,
+      }),
+    ]);
+
+    expect(fetchImplementation).toHaveBeenCalledTimes(4);
+  });
+
+  it('requires worker configuration only for the live Agent Task profile', async () => {
+    await expect(
+      runSmokeSuite({
+        profile: 'live-agent-task',
+        environment: {
+          API_BASE_URL: 'https://api.example.com',
+          WEB_BASE_URL: 'https://app.example.com',
+        },
+        fetchImplementation: vi.fn(async () =>
+          Promise.resolve(new Response('{}', { status: 200 })),
+        ),
+      }),
+    ).rejects.toThrow('WORKER_BASE_URL is required.');
+  });
+
   it('checks the worker operations endpoint selected by the environment', async () => {
-    const fetchImplementation = vi.fn(
-      async () => new Response('{}', { status: 200 }),
+    const fetchImplementation = vi.fn(async () =>
+      Promise.resolve(new Response('{}', { status: 200 })),
     );
 
     await expect(
