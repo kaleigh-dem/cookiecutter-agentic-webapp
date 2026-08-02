@@ -149,10 +149,14 @@ try {
     ]),
   );
   if (dryRun.fromVersion !== '0.1.0' || dryRun.toVersion !== expectedVersion) {
-    throw new Error('Upgrade dry run did not select the expected release path.');
+    throw new Error(
+      'Upgrade dry run did not select the expected release path.',
+    );
   }
   if (dryRun.conflicts.length !== 0) {
-    throw new Error(`Upgrade dry run reported conflicts: ${JSON.stringify(dryRun.conflicts)}`);
+    throw new Error(
+      `Upgrade dry run reported conflicts: ${JSON.stringify(dryRun.conflicts)}`,
+    );
   }
   if (
     (await readFile(path.join(legacyWorkspace, 'package.json'), 'utf-8')) !==
@@ -187,9 +191,13 @@ try {
     upgradedPackage.scripts?.['template:upgrade'] !==
     'node tools/template/upgrade.mjs'
   ) {
-    throw new Error('Applied upgrade did not install the local upgrade command.');
+    throw new Error(
+      'Applied upgrade did not install the local upgrade command.',
+    );
   }
-  if ((await readFile(applicationOwnedPath, 'utf-8')) !== applicationOwnedBefore) {
+  if (
+    (await readFile(applicationOwnedPath, 'utf-8')) !== applicationOwnedBefore
+  ) {
     throw new Error('Upgrade changed application-owned fixture content.');
   }
 
