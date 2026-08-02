@@ -286,7 +286,7 @@ describe('OIDC access-token verification', () => {
 
   it('validates configuration bounds and issuer discovery paths', () => {
     expect(createOidcDiscoveryUrl(ISSUER).toString()).toBe(
-      'https://identity.example.com/.well-known/openid-configuration/tenant',
+      'https://identity.example.com/tenant/.well-known/openid-configuration',
     );
     expect(
       createOidcVerifierConfig({

@@ -163,10 +163,7 @@ function requireHttpsUrl(value: string, name: string): URL {
 
 export function createOidcDiscoveryUrl(issuer: string): URL {
   const url = requireHttpsUrl(issuer, 'AUTH_OIDC_ISSUER');
-  const issuerPath = url.pathname.replace(/\/$/, '');
-  url.pathname = `/.well-known/openid-configuration${
-    issuerPath === '' || issuerPath === '/' ? '' : issuerPath
-  }`;
+  url.pathname = `${url.pathname.replace(/\/$/, '')}/.well-known/openid-configuration`;
   url.search = '';
   url.hash = '';
   return url;
