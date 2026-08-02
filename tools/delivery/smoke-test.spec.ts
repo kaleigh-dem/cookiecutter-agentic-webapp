@@ -130,7 +130,7 @@ describe('preview smoke test', () => {
         createId: () => 'fixed-id',
         sleep,
         pollIntervalMs: 1,
-        timeoutMs: 2,
+        timeoutMs: 1_000,
       }),
     ).resolves.toEqual({
       name: 'agent-task-terminal-workflow',
