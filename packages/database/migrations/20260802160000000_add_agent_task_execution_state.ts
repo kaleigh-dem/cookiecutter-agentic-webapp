@@ -18,12 +18,12 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     last_execution_error_message: { type: 'text' },
   });
 
+  pgm.dropConstraint(tasks, 'agent_tasks_status_check');
   pgm.sql(`
     update app.agent_tasks
     set status = 'succeeded'
     where status = 'completed'
   `);
-
   pgm.addConstraint(tasks, 'agent_tasks_status_check', {
     check: "status in ('queued', 'running', 'succeeded', 'failed')",
   });
@@ -61,6 +61,9 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     set status = 'completed'
     where status = 'succeeded'
   `);
+  pgm.addConstraint(tasks, 'agent_tasks_status_check', {
+    check: "status in ('queued', 'running', 'completed', 'failed')",
+  });
 
   pgm.dropColumns(tasks, [
     'execution_job_id',
