@@ -10,7 +10,7 @@
     "directory": "tools/workspace-plugin"
   },
   "bin": {
-    "agentic-webapp-upgrade": "./dist/template-upgrade/upgrade.mjs"
+    "agentic-webapp-upgrade": "./bin/agentic-webapp-upgrade.mjs"
   },
   "generators": "./generators.json",
   "nx": {
