@@ -1,15 +1,16 @@
 name: Validate P11-05
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/p11-05-retry-dead-letter
+      - main
 
 permissions:
   contents: write
 
 jobs:
   validate:
+    if: github.head_ref == 'agent/p11-05-retry-dead-letter'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -55,18 +56,12 @@ jobs:
           PY
       - name: Format changed files
         run: pnpm exec prettier --write apps/worker/src/delivery/dispatch.ts apps/worker/src/delivery/dispatch.spec.ts apps/worker/src/delivery/poller.ts apps/worker/src/delivery/poller.spec.ts apps/worker/src/delivery/retry-policy.ts apps/worker/src/delivery/retry-policy.spec.ts apps/worker/src/jobs/failure.ts apps/worker/src/jobs/failure.spec.ts apps/worker/src/jobs/execute-agent-task/contract.ts apps/worker/src/jobs/execute-agent-task/handler.ts apps/worker/src/jobs/execute-agent-task/handler.spec.ts apps/worker/src/jobs/execute-agent-task/stateful-handler.ts apps/worker/src/jobs/execute-agent-task/stateful-handler.spec.ts apps/worker/src/main.ts packages/database/migrations/20260802170000000_add_outbox_replay_metadata.ts packages/database/project.json packages/database/src/adapters/job-outbox-delivery.ts packages/database/src/adapters/job-outbox-delivery.integration.test.ts packages/database/src/adapters/job-outbox-replay.integration.test.ts packages/database/src/cli.ts packages/database/src/schema/agent-task.ts package.json docs/TODO.md docs/adr/0010-worker-delivery.md docs/worker-retry-and-dead-letter.md
-      - name: Check workspace synchronization
-        run: pnpm exec nx sync:check
-      - name: Test worker retry behavior
-        run: pnpm exec vitest run apps/worker/src --passWithNoTests
-      - name: Test PostgreSQL delivery and replay
-        run: pnpm exec vitest run packages/database/src --passWithNoTests --testTimeout=120000 --hookTimeout=120000
-      - name: Lint touched projects
-        run: pnpm exec nx run-many -t lint --projects=worker,database
-      - name: Typecheck touched projects
-        run: pnpm exec nx run-many -t typecheck --projects=worker,database
-      - name: Build touched projects
-        run: pnpm exec nx run-many -t build --projects=worker,database
+      - run: pnpm exec nx sync:check
+      - run: pnpm exec vitest run apps/worker/src --passWithNoTests
+      - run: pnpm exec vitest run packages/database/src --passWithNoTests --testTimeout=120000 --hookTimeout=120000
+      - run: pnpm exec nx run-many -t lint --projects=worker,database
+      - run: pnpm exec nx run-many -t typecheck --projects=worker,database
+      - run: pnpm exec nx run-many -t build --projects=worker,database
       - name: Commit validated branch
         run: |
           rm .github/workflows/validate-p11-05.yml
