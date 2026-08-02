@@ -68,7 +68,7 @@ describe('database foundation', () => {
     await runMigrations({ connectionString });
 
     let status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(3);
+    expect(status.applied).toHaveLength(4);
     expect(status.pending).toEqual([]);
 
     await withTemporaryEnvironmentFile(
@@ -105,17 +105,17 @@ describe('database foundation', () => {
 
     await runMigrations({ connectionString, direction: 'down', count: 1 });
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(2);
-    expect(status.pending).toEqual(['20260731140200000_add_agent_tasks']);
+    expect(status.applied).toHaveLength(3);
+    expect(status.pending).toEqual(['20260802110000000_add_outbox_leasing']);
 
     await runMigrations({ connectionString });
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(3);
+    expect(status.applied).toHaveLength(4);
     expect(status.pending).toEqual([]);
 
     await resetDatabase(connectionString, 'test');
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(3);
+    expect(status.applied).toHaveLength(4);
     expect(status.pending).toEqual([]);
   });
 
