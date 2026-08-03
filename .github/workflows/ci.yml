@@ -9,6 +9,9 @@ permissions:
   actions: read
   contents: read
 
+env:
+  NEXT_PUBLIC_AUTHENTICATION_PROFILE: none
+
 jobs:
   affected:
     runs-on: ubuntu-latest
