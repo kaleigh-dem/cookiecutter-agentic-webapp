@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { parseEnvironmentFile } from './environment.mjs';
 import {
   validateProductionReadiness,
   validateReleaseEnvironmentMatches,
@@ -84,6 +85,40 @@ describe('production readiness validation', () => {
         nodeVersion: '24.18.0',
       }),
     ).toContain('AUTH_OIDC_AUDIENCE is required for production readiness.');
+  });
+
+  it('rejects documented production example hosts and owner values', () => {
+    const exampleValues = parseEnvironmentFile(
+      readFileSync(
+        new URL(
+          '../../infra/environments/production.env.example',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    );
+    const issues = validateProductionReadiness(
+      {
+        ...exampleValues,
+        DATABASE_URL: exampleValues.DATABASE_URL.replace(
+          'CHANGEME',
+          'strong-secret',
+        ),
+        BACKUP_OWNER: 'operations@example.test',
+      },
+      { nodeEngine: '>=24 <25', nodeVersion: '24.18.1' },
+    );
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        'DATABASE_URL contains an example placeholder.',
+        'WEB_ORIGIN contains an example placeholder.',
+        'NEXT_PUBLIC_API_BASE_URL contains an example placeholder.',
+        'AUTH_OIDC_ISSUER contains an example placeholder.',
+        'BACKUP_OWNER contains an example placeholder.',
+        'OTEL_EXPORTER_OTLP_ENDPOINT contains an example placeholder.',
+      ]),
+    );
   });
 
   it('rejects local URLs and a CORS value that is not an origin', () => {
