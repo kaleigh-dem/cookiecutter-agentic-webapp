@@ -32,6 +32,9 @@ const validProduction = {
   OTEL_SERVICE_VERSION: '1.2.3',
 };
 
+const backupOwnerIssue =
+  'BACKUP_OWNER must name a real accountable team or person.';
+
 describe('production readiness validation', () => {
   it('accepts a production-safe configuration on the supported runtime', () => {
     expect(
@@ -101,10 +104,29 @@ describe('production readiness validation', () => {
       { nodeVersion: '24.18.0' },
     );
 
-    expect(issues).toContain(
-      'BACKUP_OWNER must name a real accountable team or person.',
-    );
+    expect(issues).toContain(backupOwnerIssue);
     expect(issues).toContain('OTEL_SERVICE_VERSION must match APP_VERSION.');
+  });
+
+  it('matches only the exact example owner domain', () => {
+    for (const backupOwner of [
+      'operations@notexample.com',
+      'operations@example.com.internal',
+    ]) {
+      expect(
+        validateProductionReadiness(
+          { ...validProduction, BACKUP_OWNER: backupOwner },
+          { nodeVersion: '24.18.0' },
+        ),
+      ).not.toContain(backupOwnerIssue);
+    }
+
+    expect(
+      validateProductionReadiness(
+        { ...validProduction, BACKUP_OWNER: 'operations@example.com' },
+        { nodeVersion: '24.18.0' },
+      ),
+    ).toContain(backupOwnerIssue);
   });
 
   it('requires database TLS and a supported Node runtime', () => {
