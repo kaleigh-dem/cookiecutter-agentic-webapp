@@ -405,6 +405,15 @@ function jsonSchemaExpression(
           );
           return `${JSON.stringify(name)}: ${expression}${required.has(name) ? '' : '.optional()'}`;
         });
+      if (
+        schema.additionalProperties !== undefined &&
+        schema.additionalProperties !== true &&
+        schema.additionalProperties !== false
+      ) {
+        throw new Error(
+          `${label} uses unsupported schema-valued additionalProperties.`,
+        );
+      }
       const constructor =
         schema.additionalProperties === false
           ? 'z.strictObject'
