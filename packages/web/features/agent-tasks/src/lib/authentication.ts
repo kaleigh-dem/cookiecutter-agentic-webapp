@@ -5,10 +5,10 @@ export type BrowserAuthenticationProfile =
   | 'session';
 
 export interface BrowserAuthenticationEnvironment {
-  readonly NODE_ENV?: string;
-  readonly NEXT_PUBLIC_AUTHENTICATION_PROFILE?: string;
-  readonly NEXT_PUBLIC_AUTH_SESSION_ENDPOINT?: string;
-  readonly NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS?: string;
+  readonly NODE_ENV?: string | undefined;
+  readonly NEXT_PUBLIC_AUTHENTICATION_PROFILE?: string | undefined;
+  readonly NEXT_PUBLIC_AUTH_SESSION_ENDPOINT?: string | undefined;
+  readonly NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS?: string | undefined;
 }
 
 export interface BrowserAuthenticationAdapter {
@@ -18,14 +18,14 @@ export interface BrowserAuthenticationAdapter {
 
 export interface SessionAuthenticationAdapterOptions {
   readonly endpoint: string;
-  readonly fetchImplementation?: typeof fetch;
-  readonly now?: () => number;
-  readonly refreshSkewMs?: number;
+  readonly fetchImplementation?: typeof fetch | undefined;
+  readonly now?: (() => number) | undefined;
+  readonly refreshSkewMs?: number | undefined;
 }
 
 export interface BrowserAuthenticationDependencies {
-  readonly fetchImplementation?: typeof fetch;
-  readonly now?: () => number;
+  readonly fetchImplementation?: typeof fetch | undefined;
+  readonly now?: (() => number) | undefined;
 }
 
 interface SessionCredential {
