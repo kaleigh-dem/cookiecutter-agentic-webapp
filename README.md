@@ -85,7 +85,7 @@ The complete first-run and shutdown sequence is documented in `docs/getting-star
 
 ## Authentication
 
-Local development uses the deterministic development verifier selected in `.env.example`. Production defaults to the OIDC discovery/JWKS verifier and requires an exact issuer, one or more audiences, an algorithm allowlist, and claim mapping. See `docs/oidc-authentication.md` for configuration, rotation, cache, validation, and outage behavior. The production browser credential acquisition and refresh adapter remains a separate integration boundary.
+Local development uses deterministic browser and API development adapters. Production web builds must explicitly select OIDC, session, or intentionally unauthenticated behavior; OIDC and session profiles obtain and renew short-lived bearer credentials through a same-origin secure-session endpoint. See `docs/browser-authentication.md` for browser storage, renewal, endpoint, and generator behavior. See `docs/oidc-authentication.md` for API discovery, JWKS, claim validation, rotation, and outage behavior.
 
 ## Validation
 

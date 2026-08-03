@@ -450,6 +450,18 @@ function writeEnvironmentDefaults(
     ['API_PORT', String(options.apiPort)],
     ['WEB_ORIGIN', `http://localhost:${options.webPort}`],
     ['NEXT_PUBLIC_API_BASE_URL', `http://localhost:${options.apiPort}`],
+    ['NEXT_PUBLIC_AUTHENTICATION_PROFILE', options.authentication],
+    [
+      'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT',
+      options.authentication === 'oidc' || options.authentication === 'session'
+        ? '/auth/session/access-token'
+        : '',
+    ],
+    ['NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS', '30'],
+    [
+      'AUTH_ACCESS_TOKEN_VERIFIER',
+      options.authentication === 'development' ? 'development' : 'oidc',
+    ],
     [
       'DATABASE_URL',
       `postgresql://postgres:postgres@localhost:${options.databasePort}/${options.databaseName}`,

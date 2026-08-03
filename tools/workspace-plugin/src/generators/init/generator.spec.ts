@@ -221,12 +221,48 @@ describe('init generator', () => {
     );
     expect(tree.read('.env.example', 'utf-8')).toContain('WEB_PORT=3100');
     expect(tree.read('.env.example', 'utf-8')).toContain(
+      'NEXT_PUBLIC_AUTHENTICATION_PROFILE=oidc',
+    );
+    expect(tree.read('.env.example', 'utf-8')).toContain(
+      'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT=/auth/session/access-token',
+    );
+    expect(tree.read('.env.example', 'utf-8')).toContain(
+      'AUTH_ACCESS_TOKEN_VERIFIER=oidc',
+    );
+    expect(tree.read('.env.example', 'utf-8')).toContain(
       'DATABASE_URL=postgresql://postgres:postgres@localhost:55432/customer_portal',
     );
     expect(tree.read('.env.example', 'utf-8')).toContain(
       'OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318',
     );
   });
+
+  it.each([
+    ['development', 'development', ''],
+    ['oidc', 'oidc', '/auth/session/access-token'],
+    ['session', 'oidc', '/auth/session/access-token'],
+    ['none', 'oidc', ''],
+  ] as const)(
+    'writes explicit %s authentication runtime defaults',
+    async (profile, serverVerifier, sessionEndpoint) => {
+      const profileTree = createWorkspaceTree();
+      await initGenerator(profileTree, {
+        ...validOptions,
+        authentication: profile,
+      });
+
+      const environment = profileTree.read('.env.example', 'utf-8') ?? '';
+      expect(environment).toContain(
+        `NEXT_PUBLIC_AUTHENTICATION_PROFILE=${profile}`,
+      );
+      expect(environment).toContain(
+        `NEXT_PUBLIC_AUTH_SESSION_ENDPOINT=${sessionEndpoint}`,
+      );
+      expect(environment).toContain(
+        `AUTH_ACCESS_TOKEN_VERIFIER=${serverVerifier}`,
+      );
+    },
+  );
 
   it('is deterministic when initialization is repeated', async () => {
     await initGenerator(tree, validOptions);
