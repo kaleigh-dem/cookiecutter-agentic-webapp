@@ -139,30 +139,27 @@ describe('production readiness validation', () => {
     ]);
   });
 
-  it(
-    'wires the gate into package scripts, release automation, and the production contract',
-    () => {
-      const packageJson = JSON.parse(
-        readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
-      ) as { scripts: Record<string, string> };
-      const workflow = readFileSync(
-        new URL('../../.github/workflows/release.yml', import.meta.url),
-        'utf8',
-      );
-      const environment = readFileSync(
-        new URL(
-          '../../infra/environments/production.env.example',
-          import.meta.url,
-        ),
-        'utf8',
-      );
+  it('wires the gate into package scripts, release automation, and the production contract', () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+    ) as { scripts: Record<string, string> };
+    const workflow = readFileSync(
+      new URL('../../.github/workflows/release.yml', import.meta.url),
+      'utf8',
+    );
+    const environment = readFileSync(
+      new URL(
+        '../../infra/environments/production.env.example',
+        import.meta.url,
+      ),
+      'utf8',
+    );
 
-      expect(packageJson.scripts['production:check']).toBe(
-        'node tools/delivery/production-check.mjs',
-      );
-      expect(workflow).toContain('secrets.PRODUCTION_ENVIRONMENT');
-      expect(workflow).toContain('--compare-release-environment');
-      expect(environment).toContain('BACKUP_OWNER=');
-    },
-  );
+    expect(packageJson.scripts['production:check']).toBe(
+      'node tools/delivery/production-check.mjs',
+    );
+    expect(workflow).toContain('secrets.PRODUCTION_ENVIRONMENT');
+    expect(workflow).toContain('--compare-release-environment');
+    expect(environment).toContain('BACKUP_OWNER=');
+  });
 });
