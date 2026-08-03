@@ -58,8 +58,8 @@ The generator accepts these profile values:
 Profile values are durable repository metadata. Their runtime behavior is:
 
 - `development` authentication and `local` deployment are development-only choices. The development verifier rejects production use.
-- `oidc` selects the reference API access-token verifier documented in `docs/oidc-authentication.md`. The generated owner must configure the issuer, audience, algorithm allowlist, claim mapping, and provider operations, and must still provide the production browser credential acquisition and refresh flow.
-- `session` identifies a future browser/session boundary and does not yet provide a production session implementation.
+- `oidc` selects the reference API access-token verifier documented in `docs/oidc-authentication.md` and the in-memory browser credential adapter documented in `docs/browser-authentication.md`. The generated owner must configure the issuer, audience, algorithm allowlist, claim mapping, and provider operations, including application-owned login, callback, logout, and secure-session routes.
+- `session` selects the same browser credential adapter for an application-owned server session. The adapter obtains and renews short-lived API access tokens without persisting them in browser storage; the generated owner must still implement login, callback, logout, and the secure same-origin session credential endpoint.
 - `postgres` selects the baseline transport direction documented in `docs/adr/0010-worker-delivery.md`: a transport boundary with PostgreSQL outbox polling, lease-based claims, at-least-once delivery, idempotent handlers, retries, and quarantine. `redis` records a future adapter direction only; it does not add Redis to Compose, configure `REDIS_URL`, or make that transport runnable. An adopter selecting it must supply an adapter with equivalent semantics, infrastructure, tests, and operational ownership.
 - `kubernetes` records the deployment target but does not generate organization-specific cluster, ingress, secret, policy, or autoscaling configuration.
 - `ai=true` records optional product intent without adding a model-provider dependency to the default workspace.

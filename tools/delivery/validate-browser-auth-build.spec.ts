@@ -83,10 +83,59 @@ describe('release browser authentication validation', () => {
     expect(webProject.targets.container.options.command).not.toContain(
       'NEXT_PUBLIC_AUTHENTICATION_PROFILE:-development',
     );
+    expect(webProject.targets.container.options.command).toContain(
+      '--target ${WEB_IMAGE_TARGET:-runtime}',
+    );
     expect(dockerfile).toContain('ARG NEXT_PUBLIC_AUTHENTICATION_PROFILE\n');
     expect(dockerfile).not.toContain(
       'ARG NEXT_PUBLIC_AUTHENTICATION_PROFILE=development',
     );
+    expect(dockerfile).toContain('FROM dependencies AS preview');
+    expect(dockerfile).toContain('FROM dependencies AS build');
+    expect(dockerfile).toContain('NODE_ENV=development');
+    expect(dockerfile).toContain('NODE_ENV=production');
+  });
+
+  it('limits the development browser profile to an explicit development preview image', () => {
+    const previewEnvironment = readFileSync(
+      new URL('../../infra/environments/preview.local.env', import.meta.url),
+      'utf8',
+    );
+    const deliveryWorkflow = readFileSync(
+      new URL('../../.github/workflows/delivery.yml', import.meta.url),
+      'utf8',
+    );
+
+    expect(previewEnvironment).toContain('WEB_IMAGE_TARGET=preview');
+    expect(previewEnvironment).toContain(
+      'NEXT_PUBLIC_AUTHENTICATION_PROFILE=development',
+    );
+    expect(deliveryWorkflow).toContain(
+      'Verify browser authentication in the preview image',
+    );
+    expect(deliveryWorkflow).toContain("PLAYWRIGHT_USE_PREVIEW_IMAGE: 'true'");
+  });
+
+  it('keeps generated-workspace onboarding aligned with the session adapter', () => {
+    const gettingStarted = readFileSync(
+      new URL('../../docs/getting-started.md', import.meta.url),
+      'utf8',
+    );
+    const templateInitialization = readFileSync(
+      new URL('../../docs/template-initialization.md', import.meta.url),
+      'utf8',
+    );
+
+    for (const documentation of [gettingStarted, templateInitialization]) {
+      expect(documentation).toContain('browser credential adapter');
+      expect(documentation).toContain('login');
+      expect(documentation).toContain('callback');
+      expect(documentation).toContain('secure');
+      expect(documentation).not.toContain('future browser/session');
+      expect(documentation).not.toContain(
+        'does not yet provide a production session implementation',
+      );
+    }
   });
 
   it('makes the release workflow pass and validate explicit deployed settings', () => {

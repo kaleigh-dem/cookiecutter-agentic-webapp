@@ -1,6 +1,6 @@
 ARG NODE_VERSION=24
 
-FROM node:${NODE_VERSION}-bookworm-slim AS build
+FROM node:${NODE_VERSION}-bookworm-slim AS dependencies
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 ARG NEXT_PUBLIC_AUTHENTICATION_PROFILE
 ARG NEXT_PUBLIC_AUTH_SESSION_ENDPOINT=
@@ -20,6 +20,18 @@ COPY packages ./packages
 COPY tools ./tools
 
 RUN pnpm install --frozen-lockfile
+
+FROM dependencies AS preview
+ENV HOSTNAME=0.0.0.0 \
+    NODE_ENV=development \
+    PORT=3000
+RUN chown -R node:node /workspace
+USER node
+EXPOSE 3000
+CMD ["pnpm", "exec", "next", "dev", "apps/web", "--hostname", "0.0.0.0", "--port", "3000"]
+
+FROM dependencies AS build
+ENV NODE_ENV=production
 RUN pnpm nx run web:build
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
