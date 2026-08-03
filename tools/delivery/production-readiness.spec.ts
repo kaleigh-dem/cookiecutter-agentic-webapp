@@ -94,6 +94,45 @@ describe('production readiness validation', () => {
     );
   });
 
+  it('rejects bracketed and mapped IPv6 loopback URLs', () => {
+    for (const webOrigin of ['https://[::1]', 'https://[::ffff:127.0.0.1]']) {
+      expect(
+        validateProductionReadiness(
+          { ...validProduction, WEB_ORIGIN: webOrigin },
+          { nodeVersion: '24.18.0' },
+        ),
+      ).toContain('WEB_ORIGIN must not use a local hostname in production.');
+    }
+
+    expect(
+      validateProductionReadiness(
+        {
+          ...validProduction,
+          NEXT_PUBLIC_API_BASE_URL: 'https://[0:0:0:0:0:ffff:7f00:1]',
+        },
+        { nodeVersion: '24.18.0' },
+      ),
+    ).toContain(
+      'NEXT_PUBLIC_API_BASE_URL must not use a local hostname in production.',
+    );
+
+    for (const databaseHost of [
+      '[::1]',
+      '[::ffff:127.0.0.1]',
+      '[0:0:0:0:0:ffff:7f00:1]',
+    ]) {
+      expect(
+        validateProductionReadiness(
+          {
+            ...validProduction,
+            DATABASE_URL: `postgresql://app:secret@${databaseHost}:5432/app?sslmode=require`,
+          },
+          { nodeVersion: '24.18.0' },
+        ),
+      ).toContain('DATABASE_URL must not use a local hostname in production.');
+    }
+  });
+
   it('requires telemetry alignment and accountable backup ownership', () => {
     const issues = validateProductionReadiness(
       {

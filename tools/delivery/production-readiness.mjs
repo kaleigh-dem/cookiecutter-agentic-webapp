@@ -1,13 +1,9 @@
+import { isIP } from 'node:net';
+
 import { validateDeploymentEnvironment } from './environment.mjs';
 
 const productionBrowserProfiles = new Set(['none', 'oidc', 'session']);
-const loopbackHostnames = new Set([
-  '0.0.0.0',
-  '127.0.0.1',
-  '::1',
-  'host.docker.internal',
-  'localhost',
-]);
+const localHostnames = new Set(['host.docker.internal', 'localhost']);
 const releaseEnvironmentKeys = [
   'APP_VERSION',
   'NEXT_PUBLIC_API_BASE_URL',
@@ -16,12 +12,66 @@ const releaseEnvironmentKeys = [
 ];
 
 function normalizeHostname(hostname) {
-  return hostname.toLowerCase().replace(/\.$/u, '');
+  const normalized = hostname.toLowerCase().replace(/\.$/u, '');
+  return normalized.startsWith('[') && normalized.endsWith(']')
+    ? normalized.slice(1, -1)
+    : normalized;
+}
+
+function parseIpv4Address(hostname) {
+  if (isIP(hostname) !== 4) return null;
+  return hostname.split('.').map(Number);
+}
+
+function expandIpv6Address(hostname) {
+  if (isIP(hostname) !== 6) return null;
+
+  const [leftPart = '', rightPart = ''] = hostname.split('::');
+  const left = leftPart ? leftPart.split(':') : [];
+  const right = rightPart ? rightPart.split(':') : [];
+  const omittedGroups = 8 - left.length - right.length;
+  const groups = hostname.includes('::')
+    ? [...left, ...Array.from({ length: omittedGroups }, () => '0'), ...right]
+    : left;
+
+  if (omittedGroups < 0 || groups.length !== 8) return null;
+  return groups.map((group) => Number.parseInt(group, 16));
+}
+
+function isLocalIpAddress(hostname) {
+  const ipv4 = parseIpv4Address(hostname);
+  if (ipv4) {
+    return ipv4[0] === 127 || ipv4.every((octet) => octet === 0);
+  }
+
+  const ipv6 = expandIpv6Address(hostname);
+  if (!ipv6) return false;
+
+  const isUnspecified = ipv6.every((group) => group === 0);
+  const isLoopback =
+    ipv6.slice(0, 7).every((group) => group === 0) && ipv6[7] === 1;
+  if (isUnspecified || isLoopback) return true;
+
+  const isIpv4Mapped =
+    ipv6.slice(0, 5).every((group) => group === 0) && ipv6[5] === 0xffff;
+  if (!isIpv4Mapped) return false;
+
+  const mappedIpv4 = [
+    ipv6[6] >> 8,
+    ipv6[6] & 0xff,
+    ipv6[7] >> 8,
+    ipv6[7] & 0xff,
+  ];
+  return mappedIpv4[0] === 127 || mappedIpv4.every((octet) => octet === 0);
 }
 
 function isLocalHostname(hostname) {
   const normalized = normalizeHostname(hostname);
-  return loopbackHostnames.has(normalized) || normalized.endsWith('.local');
+  return (
+    localHostnames.has(normalized) ||
+    normalized.endsWith('.local') ||
+    isLocalIpAddress(normalized)
+  );
 }
 
 function parseUrl(value) {
