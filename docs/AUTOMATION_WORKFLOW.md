@@ -107,8 +107,8 @@ ACTION: ROTATE_BOTH
 The supervisor rotates the developer and reviewer together before the next phase:
 
 1. Capture only phase/task, open PR, exact SHA, unresolved review IDs, checks, and next action.
-2. Create one fresh ChatGPT developer chat named `Scheduled Phase <N> Developer`, GPT-5.6 Sol/High, with one Daily fallback task.
-3. Create one fresh local Codex reviewer task named `Scheduled PR Phase <N> Reviewer`, GPT-5.6 Luna/Extra High, with one two-hour fallback heartbeat.
+2. Create one fresh ChatGPT developer chat named `Scheduled Developer - Phase <N>`, GPT-5.6 Sol/High, with one Daily fallback task.
+3. Create one fresh local Codex reviewer task named `Scheduled PR Reviewer - Phase <N>`, GPT-5.6 Luna/Extra High, with one two-hour fallback heartbeat.
 4. Update the supervisor and both role prompts with the new counterpart IDs before sending the checkpoint.
 5. Verify both replacements accept the checkpoint, then disable/delete the old schedules and rename/archive the old chats.
 6. Verify exactly one active developer schedule, one reviewer schedule, and one standalone supervisor remain.
