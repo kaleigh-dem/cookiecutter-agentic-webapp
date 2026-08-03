@@ -214,6 +214,7 @@ export function validateProductionReadiness(
   }
 
   for (const key of [
+    'AUTH_OIDC_AUDIENCE',
     'AUTH_OIDC_ISSUER',
     'BACKUP_OWNER',
     'OTEL_EXPORTER_OTLP_ENDPOINT',
