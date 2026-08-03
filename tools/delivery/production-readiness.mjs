@@ -69,6 +69,7 @@ function isLocalHostname(hostname) {
   const normalized = normalizeHostname(hostname);
   return (
     localHostnames.has(normalized) ||
+    normalized.endsWith('.localhost') ||
     normalized.endsWith('.local') ||
     isLocalIpAddress(normalized)
   );
