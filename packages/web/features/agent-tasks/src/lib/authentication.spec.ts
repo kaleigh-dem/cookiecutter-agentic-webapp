@@ -150,9 +150,7 @@ describe('browser authentication adapter', () => {
     );
 
     await expect(pendingRenewal).rejects.toThrow('renewal was invalidated');
-    await expect(adapter.getAccessToken()).resolves.toBe(
-      'fresh-session-token',
-    );
+    await expect(adapter.getAccessToken()).resolves.toBe('fresh-session-token');
     expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 
