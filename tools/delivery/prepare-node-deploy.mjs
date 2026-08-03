@@ -8,6 +8,7 @@ const services = {
     buildDirectory: 'dist/apps/api',
     workspacePackages: [
       ['packages/backend/agent-task', 'dist/packages/backend/agent-task'],
+      ['packages/backend/rate-limit', 'dist/packages/backend/rate-limit'],
       ['packages/contracts', 'dist/packages/contracts'],
       ['packages/database', 'dist/packages/database'],
       ['packages/observability', 'dist/packages/observability'],
@@ -17,12 +18,21 @@ const services = {
     appDirectory: 'apps/worker',
     buildDirectory: 'dist/apps/worker',
     workspacePackages: [
+      ['packages/backend/rate-limit', 'dist/packages/backend/rate-limit'],
       ['packages/contracts', 'dist/packages/contracts'],
       ['packages/database', 'dist/packages/database'],
       ['packages/observability', 'dist/packages/observability'],
     ],
   },
 };
+
+export function deploymentWorkspacePackages(serviceName) {
+  return (
+    services[serviceName]?.workspacePackages.map(([packageDirectory]) =>
+      path.posix.normalize(packageDirectory),
+    ) ?? []
+  );
+}
 
 function compiledTarget(value, key) {
   if (typeof value !== 'string' || !value.startsWith('./src/')) return value;
