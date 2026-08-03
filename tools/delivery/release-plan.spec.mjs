@@ -25,4 +25,25 @@ describe('release planning', () => {
     );
     expect(plan.images.api).toBe('ghcr.io/example/agentic-webapp/api:1.2.3');
   });
+
+  it('uses the production readiness gate only for production plans', () => {
+    const production = createReleasePlan({
+      environment: 'production',
+      imagePrefix: 'ghcr.io/example/app',
+      version: '1.2.3',
+    });
+    const preview = createReleasePlan({
+      environment: 'preview',
+      imagePrefix: 'ghcr.io/example/app',
+      version: '1.2.3-preview.1',
+    });
+
+    expect(production.orderedSteps[0]?.command).toBe(
+      'pnpm production:check -- infra/environments/production.env',
+    );
+    expect(production.orderedSteps[1]?.command).toContain('BACKUP_OWNER');
+    expect(preview.orderedSteps[0]?.command).toBe(
+      'node tools/delivery/validate-environment.mjs infra/environments/preview.env',
+    );
+  });
 });
