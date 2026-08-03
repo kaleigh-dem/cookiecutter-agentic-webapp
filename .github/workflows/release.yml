@@ -19,6 +19,20 @@ on:
         description: Public API URL compiled into the web image
         required: true
         type: string
+      authentication_profile:
+        description: Production-safe browser authentication profile
+        required: true
+        default: oidc
+        type: choice
+        options:
+          - oidc
+          - session
+          - none
+      auth_session_endpoint:
+        description: Same-origin endpoint that returns short-lived browser credentials
+        required: true
+        default: /auth/session/access-token
+        type: string
       push_images:
         description: Push versioned images to GHCR
         required: true
@@ -39,6 +53,9 @@ jobs:
       WORKER_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-worker:${{ inputs.version }}
       WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-web:${{ inputs.version }}
       NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_base_url }}
+      NEXT_PUBLIC_AUTHENTICATION_PROFILE: ${{ inputs.authentication_profile }}
+      NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: ${{ inputs.auth_session_endpoint }}
+      NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -52,6 +69,9 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Validate deployed browser authentication
+        run: node tools/delivery/validate-browser-auth-build.mjs
 
       - name: Generate ordered release plan
         run: |
