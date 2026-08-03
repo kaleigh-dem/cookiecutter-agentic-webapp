@@ -137,6 +137,51 @@ The supervisor rotates the developer and reviewer together before the next phase
 
 If a conversation reports a maximum-length warning, `ROTATION_REQUIRED`, or cannot accept a prompt, treat it as terminal and perform the same paired rotation immediately. Do not retry the terminal chat. If any rotation step fails, stop retries and notify the user with the exact failed step.
 
+## Blocker routing and recovery
+
+GitHub issue #33, `Automation control queue`, is the durable queue for blockers, including blockers that occur before a PR exists. Direct messages to Project Scheduler only accelerate delivery.
+
+When Scheduled Developer cannot make meaningful progress after exhausting safe in-scope alternatives, it posts one comment to issue #33:
+
+```text
+[scheduler-blocked]
+TYPE: BLOCKED
+TASK: P12-03
+BASE: <full SHA>
+PR: number or none
+BRANCH: branch or none
+CHECKS: compact pass/fail summary
+BLOCKER: concise blocker
+ACTION: UNBLOCK_AND_RESUME
+```
+
+Deduplicate by `TASK + BASE + PR + BRANCH + BLOCKER`. After posting, attempt a direct wake to Project Scheduler with the source comment ID. Do not remain falsely active and do not begin other development.
+
+Project Scheduler acknowledges before repair:
+
+```text
+[blocker-accepted]
+SOURCE: <blocker comment ID>
+TASK: P12-03
+ACTION: INVESTIGATING
+```
+
+Project Scheduler handles tooling, access, environment, and orchestration recovery without taking over product implementation. It may update automation configuration, repair handoffs, establish supported tooling, or identify a safe alternate path. If recovery requires user credentials, a product decision, destructive action, or broader authority, it asks the user instead of assuming permission.
+
+After recovery, Project Scheduler posts:
+
+```text
+[blocker-resolved]
+SOURCE: <blocker comment ID>
+TASK: P12-03
+RESOLUTION: concise result
+ACTION: RESUME_SENT
+```
+
+It then sends Scheduled Developer one compact `TYPE: RESUME` handoff containing the exact task, base, branch/PR, resolution, preserved checks, and next action. Scheduled Developer resumes the existing work instead of reimplementing it.
+
+The supervisor scans issue #33 every run. For each unaccepted blocker, it immediately wakes Project Scheduler with the source ID. If Project Scheduler is terminal or cannot accept the wake, the supervisor notifies the user. If a resolved blocker lacks a matching developer resume, it sends the resume once. Healthy or already-resolved blockers remain silent.
+
 ## Supervisor repair rules
 
 - Determine the expected owner from the open PR, exact SHA, unresolved review state, and latest deduplicated handoff.
