@@ -407,6 +407,42 @@ function validateClaims(
   }
 }
 
+function isUsableRsaSigningKey(value: unknown): value is JsonWebKey {
+  if (!isRecord(value)) return false;
+  if (
+    value.kty !== 'RSA' ||
+    typeof value.n !== 'string' ||
+    value.n === '' ||
+    typeof value.e !== 'string' ||
+    value.e === ''
+  ) {
+    return false;
+  }
+  if (value.use !== undefined && value.use !== 'sig') return false;
+  if (
+    value.key_ops !== undefined &&
+    (!Array.isArray(value.key_ops) ||
+      !value.key_ops.every((operation) => typeof operation === 'string') ||
+      !value.key_ops.includes('verify'))
+  ) {
+    return false;
+  }
+  if (
+    value.alg !== undefined &&
+    (typeof value.alg !== 'string' || !(value.alg in ALGORITHM_PARAMETERS))
+  ) {
+    return false;
+  }
+  if (value.kid !== undefined && typeof value.kid !== 'string') return false;
+
+  try {
+    createPublicKey({ key: value as JsonWebKey, format: 'jwk' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function compatibleKeys(
   keys: readonly JsonWebKey[],
   header: JwtHeader,
@@ -566,7 +602,7 @@ export class OidcAccessTokenVerifier {
       throw identityProviderUnavailable();
     }
     const keySet = {
-      keys: payload.keys.filter(isRecord) as JsonWebKey[],
+      keys: payload.keys.filter(isUsableRsaSigningKey),
     };
     if (keySet.keys.length === 0) throw identityProviderUnavailable();
 
