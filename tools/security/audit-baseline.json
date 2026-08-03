@@ -12,6 +12,11 @@
       "reason": "Transitive through the current stable Nx release; remove when Nx resolves the patched dependency."
     },
     {
+      "id": "GHSA-rgw5-rvv9-x895",
+      "package": "brace-expansion",
+      "reason": "Newly disclosed transitive advisory through Nx 23.1.0; remove after upgrading or safely overriding brace-expansion to a patched release."
+    },
+    {
       "id": "GHSA-gcfj-64vw-6mp9",
       "package": "axios",
       "reason": "Transitive through the current stable Nx release; remove when Nx resolves axios 1.18 or later."
