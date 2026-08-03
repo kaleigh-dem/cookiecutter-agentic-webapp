@@ -17,11 +17,6 @@
       "reason": "Newly disclosed transitive advisory through Nx 23.1.0; remove after upgrading or safely overriding brace-expansion to a patched release."
     },
     {
-      "id": "GHSA-7p8r-x3mc-p8w7",
-      "package": "fast-uri",
-      "reason": "Newly disclosed transitive advisory in the current locked toolchain; remove after upgrading the owning dependency or safely overriding fast-uri to a patched release."
-    },
-    {
       "id": "GHSA-gcfj-64vw-6mp9",
       "package": "axios",
       "reason": "Transitive through the current stable Nx release; remove when Nx resolves axios 1.18 or later."
@@ -60,6 +55,11 @@
       "id": "GHSA-r28c-9q8g-f849",
       "package": "postcss",
       "reason": "Transitive through the current stable Next.js release; remove when Next.js resolves the patched PostCSS release."
+    },
+    {
+      "id": "GHSA-7p8r-x3mc-p8w7",
+      "package": "fast-uri",
+      "reason": "Newly disclosed transitive advisory in the current locked toolchain; remove after upgrading the owning dependency or safely overriding fast-uri to a patched release."
     }
   ]
 }
