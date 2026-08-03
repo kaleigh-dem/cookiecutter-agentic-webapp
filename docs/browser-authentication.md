@@ -57,6 +57,8 @@ NEXT_PUBLIC_AUTH_SESSION_ENDPOINT=/auth/session/access-token
 NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS=30
 ```
 
+Changing these public variables only at container runtime does not change an already-built web image. Rebuild the image from reviewed source when selecting a different browser authentication profile or endpoint.
+
 The API remains configured independently:
 
 ```dotenv
