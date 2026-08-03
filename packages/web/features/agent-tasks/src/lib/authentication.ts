@@ -33,13 +33,37 @@ interface SessionCredential {
   readonly expiresAt: number;
 }
 
+interface SessionCredentialRenewal {
+  readonly epoch: number;
+  readonly promise: Promise<SessionCredential>;
+}
+
+const sameOriginValidationBase = new URL(
+  'https://browser-authentication.invalid',
+);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function requireSameOriginEndpoint(value: string): string {
   const endpoint = value.trim();
-  if (!endpoint.startsWith('/') || endpoint.startsWith('//')) {
+  let parsedEndpoint: URL;
+
+  try {
+    parsedEndpoint = new URL(endpoint, sameOriginValidationBase);
+  } catch {
+    throw new Error(
+      'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT must be a same-origin absolute path.',
+    );
+  }
+
+  if (
+    !endpoint.startsWith('/') ||
+    endpoint.startsWith('//') ||
+    endpoint.includes('\\') ||
+    parsedEndpoint.origin !== sameOriginValidationBase.origin
+  ) {
     throw new Error(
       'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT must be a same-origin absolute path.',
     );
@@ -133,15 +157,24 @@ export function createSessionAuthenticationAdapter(
   }
 
   let credential: SessionCredential | undefined;
-  let renewal: Promise<SessionCredential> | undefined;
+  let renewal: SessionCredentialRenewal | undefined;
+  let invalidationEpoch = 0;
 
-  async function renewCredential(): Promise<SessionCredential> {
+  function assertRenewalIsCurrent(epoch: number): void {
+    if (epoch !== invalidationEpoch) {
+      throw new Error('The authentication session renewal was invalidated.');
+    }
+  }
+
+  async function renewCredential(epoch: number): Promise<SessionCredential> {
     const response = await fetchImplementation(endpoint, {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
       headers: { accept: 'application/json' },
     });
+    assertRenewalIsCurrent(epoch);
+
     if (!response.ok) {
       throw new Error(
         response.status === 401
@@ -149,7 +182,11 @@ export function createSessionAuthenticationAdapter(
           : `The authentication session endpoint failed with ${response.status}.`,
       );
     }
-    const nextCredential = parseCredential(await response.json(), now());
+
+    const payload = await response.json();
+    assertRenewalIsCurrent(epoch);
+    const nextCredential = parseCredential(payload, now());
+    assertRenewalIsCurrent(epoch);
     credential = nextCredential;
     return nextCredential;
   }
@@ -161,13 +198,21 @@ export function createSessionAuthenticationAdapter(
         return credential.accessToken;
       }
 
-      renewal ??= renewCredential().finally(() => {
-        renewal = undefined;
-      });
-      return (await renewal).accessToken;
+      if (!renewal || renewal.epoch !== invalidationEpoch) {
+        const renewalEpoch = invalidationEpoch;
+        const promise = renewCredential(renewalEpoch).finally(() => {
+          if (renewal?.promise === promise) {
+            renewal = undefined;
+          }
+        });
+        renewal = { epoch: renewalEpoch, promise };
+      }
+      return (await renewal.promise).accessToken;
     },
     invalidate() {
+      invalidationEpoch += 1;
       credential = undefined;
+      renewal = undefined;
     },
   };
 }
