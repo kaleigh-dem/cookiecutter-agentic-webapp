@@ -20,6 +20,8 @@ Never copy old chat history forward. Ignore superseded PR heads, resolved findin
 - Implements one active TODO or fixes one existing PR. It never reviews, approves, or merges its own work.
 - Does not begin another TODO while a PR or requested fix is active.
 - After pushing a ready PR or fix head, wakes the current reviewer immediately. Its Daily schedule is only a fallback.
+- In ChatGPT, publish through the authorized GitHub plugin/connector. A missing local `gh` binary or local `gh` authentication is not a blocker because the Mac and ChatGPT environments are separate. Block only after the connector itself fails for a required permission or unsupported operation.
+- When Docker or an OS-level runner feature is unavailable, preserve all completed validation, document the unavailable gate in the PR, and rely on exact-head CI for that gate instead of withholding publication.
 
 ### Scheduled PR Reviewer
 
@@ -143,6 +145,7 @@ If a conversation reports a maximum-length warning, `ROTATION_REQUIRED`, or cann
 - If an agent only acknowledges, adjusts scheduling, or stops before its required role result, send one compact corrective wake.
 - Treat an unchanged state as stalled only after two supervisor intervals and only after confirming the expected owner is not genuinely active.
 - Correct prompt or schedule drift without replacing healthy tasks. Never create duplicate active schedules.
+- When the ChatGPT developer reports missing `gh`, redirect it to the authorized GitHub connector immediately; do not ask to install or authenticate a Mac-local CLI for a cloud environment.
 - Notify the user only when intervention occurred, repair failed, or the workflow remains stalled.
 
 ## Completion
