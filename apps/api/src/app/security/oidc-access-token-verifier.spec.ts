@@ -109,6 +109,26 @@ function claims(nowMs: number): Record<string, unknown> {
 }
 
 describe('OIDC access-token verification', () => {
+  it('maps an optional configured tenant claim into the principal', () => {
+    const mapper = new EnvironmentOidcClaimsMapper({
+      AUTH_OIDC_TENANT_CLAIM: 'organization.id',
+    });
+
+    expect(
+      mapper.map({
+        sub: 'actor-1',
+        organization: { id: 'tenant-1' },
+      }),
+    ).toEqual({
+      subject: 'actor-1',
+      permissions: [],
+      tenantId: 'tenant-1',
+    });
+    expect(() =>
+      mapper.map({ sub: 'actor-1', organization: { id: 42 } }),
+    ).toThrow(UnauthorizedException);
+  });
+
   it('discovers keys, validates claims, maps identity, and reuses bounded caches', async () => {
     const nowMs = Date.parse('2026-08-02T20:00:00.000Z');
     const pair = keyPair('current-key');

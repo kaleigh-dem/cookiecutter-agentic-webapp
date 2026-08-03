@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { startNodeTelemetry } from '@agentic-webapp/observability/telemetry';
+import { parseTrustedProxyHops } from './app/security/rate-limit-provider.js';
 
 async function bootstrap() {
   const telemetry = await startNodeTelemetry({ serviceName: 'api' });
@@ -10,8 +11,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const expressApplication = app.getHttpAdapter().getInstance() as {
     disable?: (setting: string) => void;
+    set?: (setting: string, value: unknown) => void;
   };
   expressApplication.disable?.('x-powered-by');
+  expressApplication.set?.('trust proxy', parseTrustedProxyHops(process.env));
   app.enableCors({
     origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
     methods: ['GET', 'POST'],

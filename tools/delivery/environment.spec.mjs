@@ -13,8 +13,13 @@ const validProduction = {
   DATABASE_URL: 'postgresql://app:secret@database.internal:5432/app',
   WEB_ORIGIN: 'https://app.internal',
   NEXT_PUBLIC_API_BASE_URL: 'https://api.internal',
-  API_RATE_LIMIT_MAX: '120',
+  API_RATE_LIMIT_STORE: 'postgres',
+  API_RATE_LIMIT_ANONYMOUS_MAX: '60',
+  API_RATE_LIMIT_AUTHENTICATED_MAX: '120',
+  API_RATE_LIMIT_ROUTE_MAX: '60',
+  API_RATE_LIMIT_TENANT_MAX: '1000',
   API_RATE_LIMIT_WINDOW_MS: '60000',
+  API_TRUSTED_PROXY_HOPS: '1',
 };
 
 describe('deployment environment validation', () => {
@@ -42,6 +47,21 @@ describe('deployment environment validation', () => {
     );
     expect(issues).toContain(
       'WEB_ORIGIN must use HTTPS outside local development.',
+    );
+  });
+
+  it('rejects process-local production rate limiting and invalid proxy hops', () => {
+    const issues = validateDeploymentEnvironment({
+      ...validProduction,
+      API_RATE_LIMIT_STORE: 'memory',
+      API_TRUSTED_PROXY_HOPS: '11',
+    });
+
+    expect(issues).toContain(
+      'Production requires API_RATE_LIMIT_STORE=postgres.',
+    );
+    expect(issues).toContain(
+      'API_TRUSTED_PROXY_HOPS must be an integer from 0 to 10.',
     );
   });
 

@@ -47,6 +47,7 @@ export interface OidcSecurityEnvironment {
   readonly AUTH_OIDC_SUBJECT_CLAIM?: string;
   readonly AUTH_OIDC_PERMISSIONS_CLAIM?: string;
   readonly AUTH_OIDC_SCOPE_CLAIM?: string;
+  readonly AUTH_OIDC_TENANT_CLAIM?: string;
 }
 
 export interface OidcVerifierConfig {
@@ -62,6 +63,7 @@ export interface OidcVerifierConfig {
 export interface OidcAuthenticatedPrincipal {
   readonly subject: string;
   readonly permissions: readonly string[];
+  readonly tenantId?: string;
 }
 
 export interface OidcClaimsMapper {
@@ -263,12 +265,14 @@ export class EnvironmentOidcClaimsMapper implements OidcClaimsMapper {
   private readonly subjectClaim: string;
   private readonly permissionsClaim: string;
   private readonly scopeClaim: string;
+  private readonly tenantClaim: string | undefined;
 
   public constructor(environment: OidcSecurityEnvironment) {
     this.subjectClaim = environment.AUTH_OIDC_SUBJECT_CLAIM?.trim() || 'sub';
     this.permissionsClaim =
       environment.AUTH_OIDC_PERMISSIONS_CLAIM?.trim() || 'permissions';
     this.scopeClaim = environment.AUTH_OIDC_SCOPE_CLAIM?.trim() || 'scope';
+    this.tenantClaim = environment.AUTH_OIDC_TENANT_CLAIM?.trim() || undefined;
   }
 
   public map(
@@ -283,10 +287,20 @@ export class EnvironmentOidcClaimsMapper implements OidcClaimsMapper {
       ...normalizePermissions(readClaim(claims, this.permissionsClaim)),
       ...normalizePermissions(readClaim(claims, this.scopeClaim)),
     ]);
+    const tenant = this.tenantClaim
+      ? readClaim(claims, this.tenantClaim)
+      : undefined;
+    if (
+      tenant !== undefined &&
+      (typeof tenant !== 'string' || tenant.trim() === '')
+    ) {
+      throw invalidAccessToken();
+    }
 
     return {
       subject: subject.trim(),
       permissions: [...permissions],
+      ...(typeof tenant === 'string' ? { tenantId: tenant.trim() } : {}),
     };
   }
 }

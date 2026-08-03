@@ -4,7 +4,7 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 
 ## Workflow
 
-1. The browser creates a correlation identifier and calls the generated `createAgentTask` client method with a bearer access token. Local development and the repository-local preview use the deterministic development identity; generated production applications must replace it with a production verifier in Phase 12.
+1. The browser creates a correlation identifier and calls the generated `createAgentTask` client method with a bearer access token. Local development and the repository-local preview use the deterministic development identity; generated production applications use the configured OIDC verifier and browser credential adapter.
 2. The API authentication and authorization guards resolve the principal and require `agent-tasks:write` or `agent-tasks:read` as appropriate.
 3. `CreateAgentTask` validates and normalizes the command, creates the domain entity, and produces the generated `AgentTaskExecutionRequested` contract.
 4. `DrizzleAgentTaskRepository` writes the task and outbox event in one transaction.

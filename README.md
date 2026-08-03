@@ -20,6 +20,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - versioned Nx preset artifacts, downstream migrations, and upgrade ownership policy
 - Nx MCP configuration and agent instructions
 - PostgreSQL development service and optional OpenTelemetry collector
+- PostgreSQL-backed distributed API rate limiting with explicit proxy trust
 - production OCI images, preview orchestration, release plans, and performance budgets
 - GitHub Actions using standalone, affected, and generated-workspace validation
 - generated-repository onboarding and governance checklists
@@ -86,6 +87,8 @@ The complete first-run and shutdown sequence is documented in `docs/getting-star
 ## Authentication
 
 Local development uses deterministic browser and API development adapters. Production web builds must explicitly select OIDC, session, or intentionally unauthenticated behavior; OIDC and session profiles obtain and renew short-lived bearer credentials through a same-origin secure-session endpoint. See `docs/browser-authentication.md` for browser storage, renewal, endpoint, and generator behavior. See `docs/oidc-authentication.md` for API discovery, JWKS, claim validation, rotation, and outage behavior.
+
+Production API replicas share anonymous, authenticated, route, and tenant rate-limit policies through PostgreSQL. See `docs/rate-limiting.md` for thresholds, trusted-proxy configuration, failure behavior, and operations.
 
 ## Validation
 

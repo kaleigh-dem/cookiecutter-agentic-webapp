@@ -126,6 +126,9 @@ importers:
       '@agentic-webapp/backend-agent-task':
         specifier: workspace:*
         version: link:../../packages/backend/agent-task
+      '@agentic-webapp/backend-rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/backend/rate-limit
       '@agentic-webapp/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -223,6 +226,8 @@ importers:
         specifier: workspace:*
         version: link:../../contracts
 
+  packages/backend/rate-limit: {}
+
   packages/contracts:
     devDependencies:
       openapi-typescript:
@@ -234,6 +239,9 @@ importers:
       '@agentic-webapp/backend-agent-task':
         specifier: workspace:*
         version: link:../backend/agent-task
+      '@agentic-webapp/backend-rate-limit':
+        specifier: workspace:*
+        version: link:../backend/rate-limit
       '@agentic-webapp/contracts':
         specifier: workspace:*
         version: link:../contracts

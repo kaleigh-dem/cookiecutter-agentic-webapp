@@ -1,6 +1,6 @@
 # Template Roadmap
 
-Last updated: 2026-08-02
+Last updated: 2026-08-03
 
 This file tracks active work required to turn the repository from a validated reference application into a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as checked-off tasks here.
 
@@ -152,13 +152,13 @@ Goal: provide a production-capable security path while keeping providers replace
   - Map claims to the existing principal and permission model through a configurable adapter.
   - Keep development and test verifiers behind the same interface.
 
-- [-] **P12-02 Add a production browser authentication adapter.**
+- [x] **P12-02 Add a production browser authentication adapter.**
   - Provide one documented implementation for obtaining and refreshing user credentials or sessions.
   - Keep token storage and renewal behavior explicit and testable.
   - Ensure generated projects cannot silently ship the development token adapter in production.
   - Add generator options for development-only, OIDC, session, or intentionally unauthenticated profiles.
 
-- [ ] **P12-03 Replace process-local production rate limiting.**
+- [-] **P12-03 Replace process-local production rate limiting.**
   - Retain the in-memory limiter for local development and unit tests.
   - Add a distributed Redis or platform-backed implementation for multi-replica deployments.
   - Define trusted-proxy and client-IP handling.
@@ -184,7 +184,7 @@ Goal: provide a production-capable security path while keeping providers replace
 
 Exit criteria: a generated production profile authenticates real identities, enforces runtime contracts and distributed limits across replicas, and cannot pass the release gate with development-only security adapters.
 
-Phase gate record (2026-08-02): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`. Phase 12 remains open because P12-02 through P12-06 are not yet completed and the phase exit criteria are therefore not satisfied.
+Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177. Phase 12 remains open because P12-03 through P12-06 and the overall phase exit criteria are not yet complete.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
