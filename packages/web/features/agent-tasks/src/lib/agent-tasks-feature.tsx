@@ -5,7 +5,7 @@ import { type FormEvent, useMemo, useState } from 'react';
 
 import {
   createAuthenticationHeaders,
-  createDevelopmentAuthenticationAdapter,
+  createBrowserAuthenticationAdapter,
 } from './authentication';
 import {
   type AgentTaskFeatureState,
@@ -14,8 +14,14 @@ import {
 
 export function AgentTasksFeature() {
   const client = useMemo(() => {
-    const authentication = createDevelopmentAuthenticationAdapter({
+    const authentication = createBrowserAuthenticationAdapter({
       NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_AUTHENTICATION_PROFILE:
+        process.env.NEXT_PUBLIC_AUTHENTICATION_PROFILE,
+      NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:
+        process.env.NEXT_PUBLIC_AUTH_SESSION_ENDPOINT,
+      NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS:
+        process.env.NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS,
     });
     return createApiClient({
       baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000',
