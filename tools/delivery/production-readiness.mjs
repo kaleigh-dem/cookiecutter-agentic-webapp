@@ -55,7 +55,12 @@ function supportedNodeMajorRange(engine) {
   return { minimum: Number(match[1]), maximumExclusive: Number(match[2]) };
 }
 
-function requireProductionHttpsUrl(values, key, issues, { originOnly = false } = {}) {
+function requireProductionHttpsUrl(
+  values,
+  key,
+  issues,
+  { originOnly = false } = {},
+) {
   const value = values[key];
   if (!value) return;
 
@@ -113,7 +118,9 @@ export function validateProductionReadiness(
   const issues = [...validateDeploymentEnvironment(values)];
 
   if (values.DEPLOYMENT_ENVIRONMENT !== 'production') {
-    issues.push('Production readiness requires DEPLOYMENT_ENVIRONMENT=production.');
+    issues.push(
+      'Production readiness requires DEPLOYMENT_ENVIRONMENT=production.',
+    );
   }
   if (values.AUTH_ACCESS_TOKEN_VERIFIER !== 'oidc') {
     issues.push('Production requires AUTH_ACCESS_TOKEN_VERIFIER=oidc.');
@@ -126,7 +133,9 @@ export function validateProductionReadiness(
     );
   }
   if (browserProfile === 'development') {
-    issues.push('The development browser authentication profile is not production-safe.');
+    issues.push(
+      'The development browser authentication profile is not production-safe.',
+    );
   }
 
   for (const key of [
@@ -158,7 +167,9 @@ export function validateProductionReadiness(
   validateDatabase(values, issues);
 
   if (values.API_RATE_LIMIT_STORE !== 'postgres') {
-    issues.push('Production readiness requires distributed PostgreSQL rate limiting.');
+    issues.push(
+      'Production readiness requires distributed PostgreSQL rate limiting.',
+    );
   }
 
   const runtimeMajor = nodeMajor(nodeVersion);
