@@ -112,6 +112,50 @@ describe('browser authentication adapter', () => {
     expect(fetchImplementation).toHaveBeenCalledTimes(2);
   });
 
+  it('does not let an invalidated in-flight renewal repopulate the cache', async () => {
+    const nowMs = Date.parse('2026-08-02T20:00:00.000Z');
+    let resolveFirstResponse: ((response: Response) => void) | undefined;
+    const firstResponse = new Promise<Response>((resolve) => {
+      resolveFirstResponse = resolve;
+    });
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(async () => firstResponse)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            accessToken: 'fresh-session-token',
+            expiresAt: nowMs + 60_000,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      );
+    const adapter = createSessionAuthenticationAdapter({
+      endpoint: '/auth/session/access-token',
+      fetchImplementation,
+      now: () => nowMs,
+    });
+
+    const pendingRenewal = adapter.getAccessToken();
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
+    adapter.invalidate?.();
+    resolveFirstResponse?.(
+      new Response(
+        JSON.stringify({
+          accessToken: 'stale-session-token',
+          expiresAt: nowMs + 60_000,
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+
+    await expect(pendingRenewal).rejects.toThrow('renewal was invalidated');
+    await expect(adapter.getAccessToken()).resolves.toBe(
+      'fresh-session-token',
+    );
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
   it.each(['oidc', 'session'] as const)(
     'selects the session credential endpoint for the %s production profile',
     async (profile) => {
@@ -146,6 +190,14 @@ describe('browser authentication adapter', () => {
     expect(() =>
       createSessionAuthenticationAdapter({
         endpoint: 'https://identity.example.com/token',
+      }),
+    ).toThrow('same-origin absolute path');
+  });
+
+  it('rejects browser-normalized backslash credential endpoints', () => {
+    expect(() =>
+      createSessionAuthenticationAdapter({
+        endpoint: String.raw`/\evil`,
       }),
     ).toThrow('same-origin absolute path');
   });
