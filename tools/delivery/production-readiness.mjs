@@ -105,7 +105,9 @@ export function validateReleaseEnvironmentMatches(values, releaseEnvironment) {
   for (const key of releaseEnvironmentKeys) {
     const expected = releaseEnvironment[key]?.trim();
     if (expected && values[key] !== expected) {
-      issues.push(`${key} does not match the release image build configuration.`);
+      issues.push(
+        `${key} does not match the release image build configuration.`,
+      );
     }
   }
   return issues;
@@ -144,7 +146,8 @@ export function validateProductionReadiness(
     'OTEL_EXPORTER_OTLP_ENDPOINT',
     'OTEL_SERVICE_VERSION',
   ]) {
-    if (!values[key]) issues.push(`${key} is required for production readiness.`);
+    if (!values[key])
+      issues.push(`${key} is required for production readiness.`);
   }
 
   if (values.BACKUP_OWNER && isPlaceholderOwner(values.BACKUP_OWNER)) {
