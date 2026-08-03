@@ -26,6 +26,7 @@ const validProduction = {
   API_RATE_LIMIT_WINDOW_MS: '60000',
   API_TRUSTED_PROXY_HOPS: '1',
   AUTH_ACCESS_TOKEN_VERIFIER: 'oidc',
+  AUTH_OIDC_AUDIENCE: 'agentic-api',
   AUTH_OIDC_ISSUER: 'https://identity.internal/tenant',
   BACKUP_OWNER: 'platform-operations',
   OTEL_EXPORTER_OTLP_ENDPOINT: 'https://otel.internal',
@@ -69,6 +70,20 @@ describe('production readiness validation', () => {
     expect(issues).toContain(
       'AUTH_DEVELOPMENT_TOKEN must not be configured in production.',
     );
+  });
+
+  it('rejects a missing OIDC audience before API startup', () => {
+    const valuesWithoutAudience = Object.fromEntries(
+      Object.entries(validProduction).filter(
+        ([key]) => key !== 'AUTH_OIDC_AUDIENCE',
+      ),
+    );
+
+    expect(
+      validateProductionReadiness(valuesWithoutAudience, {
+        nodeVersion: '24.18.0',
+      }),
+    ).toContain('AUTH_OIDC_AUDIENCE is required for production readiness.');
   });
 
   it('rejects local URLs and a CORS value that is not an origin', () => {
