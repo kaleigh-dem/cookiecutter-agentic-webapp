@@ -82,6 +82,14 @@ function parseUrl(value) {
   }
 }
 
+function decodeUrlCredential(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function isPlaceholderOwner(value) {
   const normalized = value.trim().toLowerCase();
   const usesExampleDomain =
@@ -144,8 +152,20 @@ function validateDatabase(values, issues) {
   if (!parsed.username || !parsed.password) {
     issues.push('DATABASE_URL must include non-empty production credentials.');
   }
-  const sslMode = parsed.searchParams.get('sslmode');
-  if (!['require', 'verify-ca', 'verify-full'].includes(sslMode ?? '')) {
+  if (
+    parsed.username &&
+    parsed.password &&
+    [parsed.username, parsed.password].some((credential) =>
+      isPlaceholderOwner(decodeUrlCredential(credential)),
+    )
+  ) {
+    issues.push('DATABASE_URL contains an example placeholder.');
+  }
+  const sslModes = parsed.searchParams.getAll('sslmode');
+  if (
+    sslModes.length !== 1 ||
+    !['require', 'verify-ca', 'verify-full'].includes(sslModes[0] ?? '')
+  ) {
     issues.push(
       'DATABASE_URL must require TLS with sslmode=require, verify-ca, or verify-full.',
     );
