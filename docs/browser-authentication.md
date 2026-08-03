@@ -59,6 +59,8 @@ NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS=30
 
 Changing these public variables only at container runtime does not change an already-built web image. Rebuild the image from reviewed source when selecting a different browser authentication profile or endpoint.
 
+Repository CI and generated-workspace validation explicitly select `none` for their generic production compilation step. That validates that no development token can enter a production bundle; release image builds must instead select the intended deployed profile and endpoint.
+
 The API remains configured independently:
 
 ```dotenv
