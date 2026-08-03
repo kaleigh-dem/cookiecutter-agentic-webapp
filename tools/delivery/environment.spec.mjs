@@ -31,6 +31,21 @@ describe('deployment environment validation', () => {
     ).toEqual({ API_PORT: '4000', NODE_ENV: 'production' });
   });
 
+  it('redacts malformed environment content from parser errors', () => {
+    let thrown;
+    try {
+      parseEnvironmentFile(
+        'DATABASE_URL=postgresql://app:super-secret@db.internal:5432/app?sslmode=require\nMALFORMED super-secret-value\n',
+      );
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown.message).toBe('Invalid environment line 2.');
+    expect(thrown.message).not.toContain('super-secret');
+  });
+
   it('accepts a production environment with secure endpoints', () => {
     expect(validateDeploymentEnvironment(validProduction)).toEqual([]);
   });
@@ -92,6 +107,21 @@ describe('deployment environment validation', () => {
         NEXT_PUBLIC_API_BASE_URL: 'https://%65xample.com',
       }),
     ).toContain('NEXT_PUBLIC_API_BASE_URL contains an example placeholder.');
+  });
+
+  it('rejects placeholder URL subdomains and owner email domains', () => {
+    const issues = validateDeploymentEnvironment({
+      ...validProduction,
+      WEB_ORIGIN: 'https://app.example.com',
+      NEXT_PUBLIC_API_BASE_URL: 'https://api.example.test',
+      BACKUP_OWNER: 'operations@example.test',
+    });
+
+    expect(issues).toContain('WEB_ORIGIN contains an example placeholder.');
+    expect(issues).toContain(
+      'NEXT_PUBLIC_API_BASE_URL contains an example placeholder.',
+    );
+    expect(issues).toContain('BACKUP_OWNER contains an example placeholder.');
   });
 
   it('does not treat lookalike URL hosts as placeholders', () => {
