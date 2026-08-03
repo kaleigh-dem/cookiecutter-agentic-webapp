@@ -47,6 +47,8 @@ jobs:
       - run: pnpm typecheck
       - name: Build workspace
         run: pnpm build
+        env:
+          NEXT_PUBLIC_AUTHENTICATION_PROFILE: none
       - name: Verify template release artifact
         run: |
           version=$(node -p "require('./package.json').version")
@@ -89,4 +91,7 @@ jobs:
       - run: pnpm nx sync:check
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build
+      - name: Build workspace
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_AUTHENTICATION_PROFILE: none

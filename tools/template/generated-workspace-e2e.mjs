@@ -354,7 +354,9 @@ async function main() {
     execute('git', ['add', '--all'], workspace);
     execute('git', ['commit', '-m', 'Generated workspace baseline'], workspace);
 
-    execute('pnpm', ['check'], workspace);
+    execute('pnpm', ['check'], workspace, {
+      env: { NEXT_PUBLIC_AUTHENTICATION_PROFILE: 'none' },
+    });
     execute('pnpm', ['template:identity:check'], workspace);
 
     const previewEnvironment = parseEnvironment(

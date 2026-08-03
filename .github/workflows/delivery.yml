@@ -36,9 +36,14 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm delivery:check
       - name: Build and start preview
         run: pnpm preview:up
+      - name: Verify browser authentication in the preview image
+        env:
+          PLAYWRIGHT_USE_PREVIEW_IMAGE: 'true'
+        run: pnpm nx run web-feature-agent-tasks:e2e
       - name: Enforce preview performance budgets
         env:
           API_BASE_URL: http://127.0.0.1:4000
