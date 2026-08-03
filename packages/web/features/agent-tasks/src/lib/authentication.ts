@@ -60,7 +60,9 @@ function parseRefreshSkewMs(value: string | undefined): number {
 
 function parseCredential(payload: unknown, nowMs: number): SessionCredential {
   if (!isRecord(payload)) {
-    throw new Error('The authentication session endpoint returned invalid JSON.');
+    throw new Error(
+      'The authentication session endpoint returned invalid JSON.',
+    );
   }
 
   const accessToken = payload.accessToken;
@@ -118,7 +120,9 @@ export function createSessionAuthenticationAdapter(
   const now = options.now ?? Date.now;
   const refreshSkewMs = options.refreshSkewMs ?? 30_000;
   if (!fetchImplementation) {
-    throw new Error('A fetch implementation is required for session authentication.');
+    throw new Error(
+      'A fetch implementation is required for session authentication.',
+    );
   }
   if (
     !Number.isFinite(refreshSkewMs) ||
@@ -153,10 +157,7 @@ export function createSessionAuthenticationAdapter(
   return {
     async getAccessToken() {
       const currentTime = now();
-      if (
-        credential &&
-        credential.expiresAt - currentTime > refreshSkewMs
-      ) {
+      if (credential && credential.expiresAt - currentTime > refreshSkewMs) {
         return credential.accessToken;
       }
 
@@ -187,9 +188,7 @@ export function createBrowserAuthenticationAdapter(
     );
   }
   if (!['development', 'none', 'oidc', 'session'].includes(profile)) {
-    throw new Error(
-      `Unsupported browser authentication profile: ${profile}.`,
-    );
+    throw new Error(`Unsupported browser authentication profile: ${profile}.`);
   }
 
   if (profile === 'development') {

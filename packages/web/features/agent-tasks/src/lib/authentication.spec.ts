@@ -90,14 +90,15 @@ describe('browser authentication adapter', () => {
   });
 
   it('supports explicit invalidation without persistent browser storage', async () => {
-    const fetchImplementation = vi.fn<typeof fetch>(async () =>
-      new Response(
-        JSON.stringify({
-          accessToken: 'session-token',
-          expiresAt: Date.now() + 60_000,
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      ),
+    const fetchImplementation = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            accessToken: 'session-token',
+            expiresAt: Date.now() + 60_000,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
     );
     const adapter = createSessionAuthenticationAdapter({
       endpoint: '/auth/session/access-token',
@@ -114,22 +115,22 @@ describe('browser authentication adapter', () => {
   it.each(['oidc', 'session'] as const)(
     'selects the session credential endpoint for the %s production profile',
     async (profile) => {
-      const fetchImplementation = vi.fn<typeof fetch>(async () =>
-        new Response(
-          JSON.stringify({
-            accessToken: `${profile}-access-token`,
-            expiresAt: Date.now() + 60_000,
-          }),
-          { status: 200, headers: { 'content-type': 'application/json' } },
-        ),
+      const fetchImplementation = vi.fn<typeof fetch>(
+        async () =>
+          new Response(
+            JSON.stringify({
+              accessToken: `${profile}-access-token`,
+              expiresAt: Date.now() + 60_000,
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
       );
       const headers = createAuthenticationHeaders(
         createBrowserAuthenticationAdapter(
           {
             NODE_ENV: 'production',
             NEXT_PUBLIC_AUTHENTICATION_PROFILE: profile,
-            NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:
-              '/auth/session/access-token',
+            NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: '/auth/session/access-token',
           },
           { fetchImplementation },
         ),
