@@ -42,8 +42,8 @@ The adapter:
 - never writes access or refresh tokens to local storage or session storage
 - requests renewal before expiry according to `NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS`, defaulting to 30 seconds
 - deduplicates concurrent renewal requests
-- supports explicit invalidation after sign-out or an API authentication failure
-- requires the credential endpoint to be a same-origin absolute path, preventing session cookies from being sent to an arbitrary origin
+- supports explicit invalidation after sign-out or an API authentication failure, including renewal requests already in flight
+- requires the credential endpoint to be a same-origin absolute path and rejects browser-normalized backslash forms, preventing session cookies from being sent to an arbitrary origin
 
 A page reload discards the in-memory access token and obtains a fresh one through the secure server session.
 
@@ -59,7 +59,7 @@ NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS=30
 
 Changing these public variables only at container runtime does not change an already-built web image. Rebuild the image from reviewed source when selecting a different browser authentication profile or endpoint.
 
-Repository CI and generated-workspace validation explicitly select `none` for their generic production compilation step. That validates that no development token can enter a production bundle; release image builds must instead select the intended deployed profile and endpoint.
+Repository CI and generated-workspace validation explicitly select `none` for their generic production compilation step. The web container target and Dockerfile have no development-profile fallback: an omitted profile fails the production build. The release workflow accepts only `oidc`, `session`, or `none`, passes the selected profile and endpoint into the image build, and runs `tools/delivery/validate-browser-auth-build.mjs` before building. This prevents a release command from silently producing a development-profile image.
 
 The API remains configured independently:
 
@@ -78,7 +78,7 @@ Tests should cover:
 1. obtaining an access token from an existing user session
 2. renewing near expiry without exposing a refresh token
 3. deduplicating simultaneous renewal requests
-4. clearing the in-memory credential on sign-out
+4. clearing the in-memory credential on sign-out, including an in-flight renewal
 5. returning `401` when the server session is absent or expired
 6. ensuring production builds reject the development profile and missing profile configuration
 
