@@ -211,4 +211,47 @@ void client.createItem({ body: { name: 'example' } });
     );
     expect(typecheck.status, typecheck.stderr || typecheck.stdout).toBe(0);
   }, 30_000);
+
+  it('fails closed for schema-valued additionalProperties', async () => {
+    const directory = await mkdtemp(
+      path.join(tmpdir(), 'contracts-generation-'),
+    );
+    temporaryDirectories.push(directory);
+    const sourceDirectory = path.join(directory, 'openapi/source');
+    await mkdir(sourceDirectory, { recursive: true });
+    await writeFile(
+      path.join(sourceDirectory, 'openapi.json'),
+      JSON.stringify({
+        openapi: '3.1.0',
+        info: { title: 'Fixture API', version: '1.0.0' },
+        paths: {},
+        components: {
+          schemas: {
+            Labels: {
+              type: 'object',
+              additionalProperties: { type: 'string' },
+            },
+          },
+        },
+      }),
+      'utf-8',
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', scriptPath],
+      {
+        encoding: 'utf-8',
+        env: {
+          ...process.env,
+          CONTRACTS_PACKAGE_ROOT: directory,
+        },
+      },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      'component schema Labels uses unsupported schema-valued additionalProperties.',
+    );
+  }, 30_000);
 });
