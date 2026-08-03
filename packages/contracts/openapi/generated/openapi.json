@@ -85,8 +85,37 @@
           "code": {
             "type": "string"
           },
+          "fields": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "location": {
+                  "enum": ["body", "headers", "path", "query"],
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": ["location", "path", "code", "message"],
+              "type": "object"
+            },
+            "type": "array"
+          },
           "message": {
             "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "integer"
           }
         },
         "required": ["code", "message"],

@@ -21,11 +21,19 @@
       "default": "./src/generated/openapi.ts"
     },
     "./openapi.json": "./openapi/generated/openapi.json",
+    "./runtime": {
+      "types": "./src/generated/runtime.ts",
+      "import": "./src/generated/runtime.ts",
+      "default": "./src/generated/runtime.ts"
+    },
     "./server": {
       "types": "./src/generated/server.ts",
       "import": "./src/generated/server.ts",
       "default": "./src/generated/server.ts"
     }
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0"

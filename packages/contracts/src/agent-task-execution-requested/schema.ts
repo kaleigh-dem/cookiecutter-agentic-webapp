@@ -1,14 +1,16 @@
 import { z } from 'zod';
 
+import { CreateAgentTaskRequestSchema } from '../generated/runtime';
+
 const agentTaskExecutionRequestedFields = {
   taskId: z.string().uuid(),
   actorId: z.string().min(1),
-  prompt: z.string().min(1).max(4000),
+  prompt: CreateAgentTaskRequestSchema.shape.prompt,
   correlationId: z.string().min(1),
   occurredAt: z.string().datetime(),
 };
 
-export const agentTaskExecutionRequestedV1Schema = z.object({
+export const agentTaskExecutionRequestedV1Schema = z.strictObject({
   version: z.literal(1),
   ...agentTaskExecutionRequestedFields,
 });
@@ -17,7 +19,7 @@ export type AgentTaskExecutionRequestedV1 = z.infer<
   typeof agentTaskExecutionRequestedV1Schema
 >;
 
-export const agentTaskExecutionRequestedV2Schema = z.object({
+export const agentTaskExecutionRequestedV2Schema = z.strictObject({
   version: z.literal(2),
   ...agentTaskExecutionRequestedFields,
   userId: z.string().min(1),

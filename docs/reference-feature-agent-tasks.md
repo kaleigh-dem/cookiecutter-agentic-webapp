@@ -6,7 +6,7 @@ Agent Tasks is the canonical vertical example for contributors and coding agents
 
 1. The browser creates a correlation identifier and calls the generated `createAgentTask` client method with a bearer access token. Local development and the repository-local preview use the deterministic development identity; generated production applications use the configured OIDC verifier and browser credential adapter.
 2. The API authentication and authorization guards resolve the principal and require `agent-tasks:write` or `agent-tasks:read` as appropriate.
-3. `CreateAgentTask` validates and normalizes the command, creates the domain entity, and produces the generated `AgentTaskExecutionRequested` contract.
+3. The generated OpenAPI Zod contract rejects malformed, oversized, and undeclared HTTP fields before `CreateAgentTask` validates and normalizes the command, creates the domain entity, and produces the maintained `AgentTaskExecutionRequested` runtime contract.
 4. `DrizzleAgentTaskRepository` writes the task and outbox event in one transaction.
 5. The deployed worker claims the outbox row, validates the same versioned contract, and preserves the request, actor, user, trace, event, job, and correlation identifiers.
 6. The stateful handler uses the outbox row ID as the idempotency key and the receive count as a fence while conditionally transitioning the task from `queued` to `running` and then `succeeded` or `failed`.
@@ -28,6 +28,7 @@ The local preview identity is only a test adapter. It does not represent the Pha
 
 - OpenAPI request/response changes: `packages/contracts/openapi/source`
 - Runtime event changes: `packages/contracts/src/agent-task-execution-requested`
+- Generated HTTP runtime validation: `packages/contracts/src/generated/runtime.ts`
 - Invariants and use cases: `packages/backend/agent-task`
 - PostgreSQL schema and adapters: `packages/database`
 - HTTP composition: `apps/api/src/app/agent-tasks`

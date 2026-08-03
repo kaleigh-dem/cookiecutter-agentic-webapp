@@ -76,7 +76,16 @@ export type components = {
     };
     ErrorResponse: {
       code: string;
+      fields?: {
+        code: string;
+        /** @enum {string} */
+        location: 'body' | 'headers' | 'path' | 'query';
+        message: string;
+        path: string;
+      }[];
       message: string;
+      requestId?: string;
+      statusCode?: number;
     };
     HealthResponse: {
       /**

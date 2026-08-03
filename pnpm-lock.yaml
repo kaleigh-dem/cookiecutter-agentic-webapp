@@ -229,6 +229,10 @@ importers:
   packages/backend/rate-limit: {}
 
   packages/contracts:
+    dependencies:
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
     devDependencies:
       openapi-typescript:
         specifier: 7.13.0

@@ -15,6 +15,8 @@ interface OpenApiOperation {
   readonly requiresInput: boolean;
 }
 
+type ParameterLocation = 'header' | 'path' | 'query';
+
 const HTTP_METHODS = [
   'get',
   'put',
@@ -317,6 +319,293 @@ function pascalCase(value: string): string {
     .filter(Boolean)
     .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
     .join('');
+}
+
+function literalExpression(value: JsonValue, label: string): string {
+  if (
+    value === null ||
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    typeof value === 'string'
+  ) {
+    return `z.literal(${JSON.stringify(value)})`;
+  }
+  throw new Error(`${label} contains a non-primitive literal.`);
+}
+
+function jsonSchemaExpression(
+  document: JsonObject,
+  schemaValue: JsonValue,
+  label: string,
+): string {
+  const schema = asObject(schemaValue, label);
+  const reference = schema.$ref;
+  if (typeof reference === 'string') {
+    const componentMatch = /^#\/components\/schemas\/([^/]+)$/u.exec(reference);
+    if (componentMatch?.[1]) {
+      return `${pascalCase(componentMatch[1])}Schema`;
+    }
+    return jsonSchemaExpression(
+      document,
+      resolveLocalReference(document, schema, label),
+      label,
+    );
+  }
+
+  if (schema.const !== undefined) {
+    return literalExpression(schema.const, label);
+  }
+
+  if (Array.isArray(schema.enum)) {
+    if (schema.enum.length === 0) {
+      throw new Error(`${label} enum must contain at least one value.`);
+    }
+    if (schema.enum.every((value) => typeof value === 'string')) {
+      return `z.enum(${JSON.stringify(schema.enum)})`;
+    }
+    const literals = schema.enum.map((value) =>
+      literalExpression(value, label),
+    );
+    return literals.length === 1
+      ? (literals[0] as string)
+      : `z.union([${literals.join(', ')}])`;
+  }
+
+  if (Array.isArray(schema.type)) {
+    const variants = schema.type.map((type) =>
+      jsonSchemaExpression(document, { ...schema, type } as JsonObject, label),
+    );
+    return variants.length === 1
+      ? (variants[0] as string)
+      : `z.union([${variants.join(', ')}])`;
+  }
+
+  switch (schema.type) {
+    case 'object': {
+      const properties = schema.properties
+        ? asObject(schema.properties, `${label} properties`)
+        : {};
+      const required = new Set(
+        Array.isArray(schema.required)
+          ? schema.required.map((name) => {
+              if (typeof name !== 'string') {
+                throw new Error(`${label} required entries must be strings.`);
+              }
+              return name;
+            })
+          : [],
+      );
+      const fields = Object.keys(properties)
+        .sort((left, right) => left.localeCompare(right))
+        .map((name) => {
+          const expression = jsonSchemaExpression(
+            document,
+            properties[name] as JsonValue,
+            `${label}.${name}`,
+          );
+          return `${JSON.stringify(name)}: ${expression}${required.has(name) ? '' : '.optional()'}`;
+        });
+      if (
+        schema.additionalProperties !== undefined &&
+        schema.additionalProperties !== true &&
+        schema.additionalProperties !== false
+      ) {
+        throw new Error(
+          `${label} uses unsupported schema-valued additionalProperties.`,
+        );
+      }
+      const constructor =
+        schema.additionalProperties === false
+          ? 'z.strictObject'
+          : 'z.looseObject';
+      return `${constructor}({ ${fields.join(', ')} })`;
+    }
+    case 'array': {
+      if (schema.items === undefined) {
+        throw new Error(`${label} array requires items.`);
+      }
+      let expression = `z.array(${jsonSchemaExpression(document, schema.items, `${label} items`)})`;
+      if (typeof schema.minItems === 'number') {
+        expression += `.min(${schema.minItems})`;
+      }
+      if (typeof schema.maxItems === 'number') {
+        expression += `.max(${schema.maxItems})`;
+      }
+      return expression;
+    }
+    case 'string': {
+      let expression = 'z.string()';
+      if (schema.format === 'uuid') expression += '.uuid()';
+      if (schema.format === 'date-time')
+        expression += '.datetime({ offset: true })';
+      if (typeof schema.minLength === 'number') {
+        expression += `.min(${schema.minLength})`;
+      }
+      if (typeof schema.maxLength === 'number') {
+        expression += `.max(${schema.maxLength})`;
+      }
+      if (typeof schema.pattern === 'string') {
+        expression += `.regex(new RegExp(${JSON.stringify(schema.pattern)}, 'u'))`;
+      }
+      return expression;
+    }
+    case 'integer':
+      return 'z.number().int()';
+    case 'number':
+      return 'z.number()';
+    case 'boolean':
+      return 'z.boolean()';
+    case 'null':
+      return 'z.null()';
+    default:
+      throw new Error(`${label} uses unsupported JSON Schema type.`);
+  }
+}
+
+function parameterSchemaExpression(
+  document: JsonObject,
+  parameters: JsonObject[],
+  location: ParameterLocation,
+): string {
+  const fields = parameters
+    .filter((parameter) => parameter.in === location)
+    .sort((left, right) => String(left.name).localeCompare(String(right.name)))
+    .map((parameter) => {
+      const name = parameter.name;
+      if (typeof name !== 'string' || parameter.schema === undefined) {
+        throw new Error(
+          `OpenAPI ${location} parameters require name and schema.`,
+        );
+      }
+      const expression = jsonSchemaExpression(
+        document,
+        parameter.schema,
+        `${location} parameter ${name}`,
+      );
+      const required = parameter.required === true || location === 'path';
+      const runtimeName = location === 'header' ? name.toLowerCase() : name;
+      return `${JSON.stringify(runtimeName)}: ${expression}${required ? '' : '.optional()'}`;
+    });
+  const constructor =
+    location === 'header' ? 'z.looseObject' : 'z.strictObject';
+  return `${constructor}({ ${fields.join(', ')} })`;
+}
+
+function generateRuntimeSchemas(
+  document: JsonObject,
+  operations: OpenApiOperation[],
+): string {
+  const components = asObject(document.components, 'OpenAPI components');
+  const schemas = asObject(components.schemas, 'OpenAPI component schemas');
+  const paths = asObject(document.paths, 'OpenAPI paths');
+  const lines = [
+    '/* This file is generated. Run `pnpm contracts:generate` instead of editing it. */',
+    '',
+    "import { z } from 'zod';",
+    '',
+  ];
+
+  for (const [schemaName, schema] of Object.entries(schemas).sort(
+    ([left], [right]) => left.localeCompare(right),
+  )) {
+    lines.push(
+      `export const ${pascalCase(schemaName)}Schema = ${jsonSchemaExpression(document, schema, `component schema ${schemaName}`)};`,
+      '',
+    );
+  }
+
+  for (const operationSummary of operations) {
+    const pathItem = resolveLocalReference(
+      document,
+      paths[operationSummary.path] as JsonValue,
+      `Path item ${operationSummary.path}`,
+    );
+    const operation = resolveLocalReference(
+      document,
+      pathItem[operationSummary.method] as JsonValue,
+      `Operation ${operationSummary.operationId}`,
+    );
+    const parameters = collectEffectiveParameters(
+      document,
+      pathItem,
+      operation,
+      operationSummary.operationId,
+    );
+    const requestBody = operation.requestBody
+      ? resolveLocalReference(
+          document,
+          operation.requestBody,
+          `${operationSummary.operationId} request body`,
+        )
+      : undefined;
+    const requestContent = requestBody?.content
+      ? asObject(
+          requestBody.content,
+          `${operationSummary.operationId} request content`,
+        )
+      : undefined;
+    const jsonRequest = requestContent?.['application/json'];
+    const requestMedia = jsonRequest
+      ? asObject(jsonRequest, `${operationSummary.operationId} JSON request`)
+      : undefined;
+    const bodyExpression = requestMedia?.schema
+      ? jsonSchemaExpression(
+          document,
+          requestMedia.schema,
+          `${operationSummary.operationId} request body`,
+        )
+      : 'z.undefined()';
+
+    const responses = asObject(
+      operation.responses,
+      `${operationSummary.operationId} responses`,
+    );
+    const responseEntries = Object.entries(responses)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([status, responseValue]) => {
+        const response = resolveLocalReference(
+          document,
+          responseValue,
+          `${operationSummary.operationId} response ${status}`,
+        );
+        const content = response.content
+          ? asObject(
+              response.content,
+              `${operationSummary.operationId} response ${status} content`,
+            )
+          : undefined;
+        const jsonResponse = content?.['application/json'];
+        const media = jsonResponse
+          ? asObject(
+              jsonResponse,
+              `${operationSummary.operationId} response ${status} JSON`,
+            )
+          : undefined;
+        const expression = media?.schema
+          ? jsonSchemaExpression(
+              document,
+              media.schema,
+              `${operationSummary.operationId} response ${status}`,
+            )
+          : 'z.undefined()';
+        return `${JSON.stringify(status)}: ${expression}`;
+      });
+
+    lines.push(
+      `export const ${operationSummary.operationId}HttpContract = {`,
+      '  request: {',
+      `    body: ${bodyExpression},`,
+      `    headers: ${parameterSchemaExpression(document, parameters, 'header')},`,
+      `    path: ${parameterSchemaExpression(document, parameters, 'path')},`,
+      `    query: ${parameterSchemaExpression(document, parameters, 'query')},`,
+      '  },',
+      `  responses: { ${responseEntries.join(', ')} },`,
+      '} as const;',
+      '',
+    );
+  }
+
+  return lines.join('\n');
 }
 
 function generateServerTypes(
@@ -678,6 +967,11 @@ async function main(): Promise<void> {
   await writeFile(
     path.join(generatedSourceRoot, 'client.ts'),
     generateClient(operations),
+    'utf-8',
+  );
+  await writeFile(
+    path.join(generatedSourceRoot, 'runtime.ts'),
+    generateRuntimeSchemas(bundledValue, operations),
     'utf-8',
   );
 }

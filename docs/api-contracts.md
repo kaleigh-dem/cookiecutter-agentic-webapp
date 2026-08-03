@@ -10,6 +10,7 @@ Do not edit these generated files directly:
 - `packages/contracts/src/generated/openapi.ts`
 - `packages/contracts/src/generated/server.ts`
 - `packages/contracts/src/generated/client.ts`
+- `packages/contracts/src/generated/runtime.ts`
 
 ## Commands
 
@@ -19,7 +20,7 @@ pnpm contracts:check
 pnpm contracts:compat
 ```
 
-`contracts:generate` resolves repository-local JSON references, emits a deterministic bundled OpenAPI document, generates runtime-free OpenAPI TypeScript definitions, generates server aliases, and generates the browser-safe fetch client.
+`contracts:generate` resolves repository-local JSON references, emits a deterministic bundled OpenAPI document, generates OpenAPI TypeScript definitions and server aliases, generates the browser-safe fetch client, and translates supported OpenAPI 3.1 JSON Schemas into framework-free Zod request and response validators.
 
 `contracts:check` regenerates the artifacts and fails when the working tree changes. This is the drift check used by CI.
 
@@ -32,9 +33,33 @@ pnpm contracts:compat
 3. Reuse component schemas instead of defining duplicate request or response shapes.
 4. Run contract generation.
 5. Implement the NestJS presentation boundary using types from `@agentic-webapp/contracts/server`.
-6. Call the operation from browser code through `@agentic-webapp/contracts/client`.
-7. Add API, client, and compatibility tests.
-8. Update the compatibility baseline only after the new contract has been reviewed.
+6. Apply the operation contract from `@agentic-webapp/contracts/runtime` at the Nest route boundary.
+7. Call the operation from browser code through `@agentic-webapp/contracts/client`.
+8. Add positive and negative API, client, and compatibility tests.
+9. Update the compatibility baseline only after the new contract has been reviewed.
+
+## Runtime enforcement
+
+`HttpContractInterceptor` validates request bodies, headers, path parameters,
+and query parameters before a controller executes. It rejects undeclared fields
+for schemas with `additionalProperties: false` and returns normalized
+`validation_failed` responses with a location, path, code, and safe message for
+each invalid field. Successful handler results are checked against the declared
+status response and fail closed as an internal error if the implementation
+drifts from OpenAPI.
+
+HTTP headers remain open because intermediaries and infrastructure add headers;
+declared headers are still validated. Path and query objects are closed. Nest's
+JSON parser retains its transport-level payload limit, while field sizes such as
+the Agent Task 4,000-character prompt limit are enforced by the generated
+schema.
+
+Versioned event contracts remain maintained Zod schemas under
+`packages/contracts/src` because event compatibility and delivery semantics are
+separate from OpenAPI. They reuse relevant generated field schemas, and
+producers and worker dispatch import the same strict event schema. Future
+webhook adapters must likewise consume an exported contracts schema rather than
+define a transport-local validator.
 
 ## Evolution rules
 
@@ -57,7 +82,7 @@ Mark deprecated operations and fields with `deprecated: true`, document their re
 
 ## Consumer boundaries
 
-- API controllers and adapters may import `@agentic-webapp/contracts/server`.
+- API controllers and adapters may import `@agentic-webapp/contracts/server` and `@agentic-webapp/contracts/runtime`.
 - Browser features may import `@agentic-webapp/contracts/client` and universal runtime validators from `@agentic-webapp/contracts`.
 - Browser features must not declare local request or response interfaces that duplicate the OpenAPI source.
 - Contracts must not import API, web, worker, database, or framework projects.

@@ -154,6 +154,19 @@ describe('OpenAPI client generation', () => {
       'createItem(request: OperationRequest<operations["createItem"]>)',
     );
 
+    const runtime = await readFile(
+      path.join(directory, 'src/generated/runtime.ts'),
+      'utf-8',
+    );
+    expect(runtime).toContain('export const listItemsHttpContract');
+    expect(runtime).toContain(
+      'query: z.strictObject({ "limit": z.number().int() })',
+    );
+    expect(runtime).toContain('path: z.strictObject({ "itemId": z.string() })');
+    expect(runtime).toContain(
+      'body: z.looseObject({ "name": z.string().optional() })',
+    );
+
     const typecheckPath = path.join(directory, 'typecheck.ts');
     await writeFile(
       typecheckPath,
@@ -197,5 +210,48 @@ void client.createItem({ body: { name: 'example' } });
       { encoding: 'utf-8' },
     );
     expect(typecheck.status, typecheck.stderr || typecheck.stdout).toBe(0);
+  }, 30_000);
+
+  it('fails closed for schema-valued additionalProperties', async () => {
+    const directory = await mkdtemp(
+      path.join(tmpdir(), 'contracts-generation-'),
+    );
+    temporaryDirectories.push(directory);
+    const sourceDirectory = path.join(directory, 'openapi/source');
+    await mkdir(sourceDirectory, { recursive: true });
+    await writeFile(
+      path.join(sourceDirectory, 'openapi.json'),
+      JSON.stringify({
+        openapi: '3.1.0',
+        info: { title: 'Fixture API', version: '1.0.0' },
+        paths: {},
+        components: {
+          schemas: {
+            Labels: {
+              type: 'object',
+              additionalProperties: { type: 'string' },
+            },
+          },
+        },
+      }),
+      'utf-8',
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', scriptPath],
+      {
+        encoding: 'utf-8',
+        env: {
+          ...process.env,
+          CONTRACTS_PACKAGE_ROOT: directory,
+        },
+      },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain(
+      'component schema Labels uses unsupported schema-valued additionalProperties.',
+    );
   }, 30_000);
 });

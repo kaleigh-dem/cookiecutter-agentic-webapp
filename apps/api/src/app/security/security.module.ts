@@ -404,6 +404,7 @@ export class NormalizedHttpExceptionFilter implements ExceptionFilter {
           : statusCode === HttpStatus.INTERNAL_SERVER_ERROR
             ? 'An unexpected error occurred.'
             : String(exceptionResponse ?? 'Request failed.'),
+      ...(Array.isArray(details.fields) ? { fields: details.fields } : {}),
       requestId: getCorrelationContext()?.requestId,
     });
   }

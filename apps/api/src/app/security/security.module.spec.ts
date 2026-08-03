@@ -1,11 +1,16 @@
-import { UnauthorizedException } from '@nestjs/common';
-import { describe, expect, it } from 'vitest';
+import {
+  type ArgumentsHost,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   createEnvironmentAccessTokenVerifier,
   createTestPrincipal,
   extractBearerToken,
   hasRequiredPermissions,
+  NormalizedHttpExceptionFilter,
   verifyDevelopmentAccessToken,
 } from './security.module';
 
@@ -93,5 +98,36 @@ describe('security boundary', () => {
         AUTH_DEVELOPMENT_TOKEN: 'configured-token',
       }),
     ).toThrow(UnauthorizedException);
+  });
+
+  it('preserves normalized field errors in HTTP error responses', () => {
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
+    const host = {
+      switchToHttp: () => ({ getResponse: () => ({ status, json }) }),
+    } as unknown as ArgumentsHost;
+
+    new NormalizedHttpExceptionFilter().catch(
+      new BadRequestException({
+        code: 'validation_failed',
+        message: 'Request validation failed.',
+        fields: [
+          {
+            location: 'body',
+            path: 'title',
+            code: 'too_small',
+            message: 'Too small',
+          },
+        ],
+      }),
+      host,
+    );
+
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'validation_failed',
+        fields: [expect.objectContaining({ location: 'body', path: 'title' })],
+      }),
+    );
   });
 });

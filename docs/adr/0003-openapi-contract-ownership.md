@@ -22,6 +22,10 @@ The canonical HTTP contract is the OpenAPI 3.1 source under `packages/contracts/
 - Browser code imports the dependency-free fetch client from `@agentic-webapp/contracts/client`.
 - Runtime validation that is not expressible through TypeScript remains handwritten, but its type predicates narrow to generated schema types rather than declaring duplicate interfaces.
 
+ADR 0012 extends this decision by generating framework-free Zod validators for
+HTTP schemas and operations; maintained event and webhook validators remain in
+the contracts project.
+
 ## Compatibility baseline
 
 `packages/contracts/openapi/baseline/openapi.json` represents the latest reviewed compatibility boundary. CI compares the generated bundle with that baseline and rejects removal of existing paths, methods, parameters, response codes, component schemas, properties, and enum values, as well as newly required inputs.
