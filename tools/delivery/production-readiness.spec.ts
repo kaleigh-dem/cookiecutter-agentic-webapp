@@ -94,6 +94,25 @@ describe('production readiness validation', () => {
     );
   });
 
+  it('rejects localhost subdomains across production URL checks', () => {
+    const issues = validateProductionReadiness(
+      {
+        ...validProduction,
+        WEB_ORIGIN: 'https://api.localhost',
+        DATABASE_URL:
+          'postgresql://app:secret@database.localhost:5432/app?sslmode=require',
+      },
+      { nodeVersion: '24.18.0' },
+    );
+
+    expect(issues).toContain(
+      'WEB_ORIGIN must not use a local hostname in production.',
+    );
+    expect(issues).toContain(
+      'DATABASE_URL must not use a local hostname in production.',
+    );
+  });
+
   it('rejects bracketed and mapped IPv6 loopback URLs', () => {
     for (const webOrigin of ['https://[::1]', 'https://[::ffff:127.0.0.1]']) {
       expect(
@@ -182,6 +201,32 @@ describe('production readiness validation', () => {
     );
     expect(issues).toContain(
       'Node 26.0.0 does not satisfy the production engine >=24 <25.',
+    );
+  });
+
+  it('rejects duplicate TLS modes and encoded placeholder credentials', () => {
+    const duplicateTlsIssues = validateProductionReadiness(
+      {
+        ...validProduction,
+        DATABASE_URL:
+          'postgresql://app:secret@database.internal:5432/app?sslmode=require&sslmode=disable',
+      },
+      { nodeVersion: '24.18.0' },
+    );
+    expect(duplicateTlsIssues).toContain(
+      'DATABASE_URL must require TLS with sslmode=require, verify-ca, or verify-full.',
+    );
+
+    const encodedPlaceholderIssues = validateProductionReadiness(
+      {
+        ...validProduction,
+        DATABASE_URL:
+          'postgresql://app:%43HANGEME@database.internal:5432/app?sslmode=require',
+      },
+      { nodeVersion: '24.18.0' },
+    );
+    expect(encodedPlaceholderIssues).toContain(
+      'DATABASE_URL contains an example placeholder.',
     );
   });
 
