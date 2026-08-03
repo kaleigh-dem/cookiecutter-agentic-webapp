@@ -45,4 +45,31 @@ describe('agent task execution requested events', () => {
       }),
     ).toThrow();
   });
+
+  it('rejects unknown event fields at the shared worker boundary', () => {
+    expect(() =>
+      agentTaskExecutionRequestedV1Schema.parse({
+        version: 1,
+        taskId: '11111111-1111-4111-8111-111111111111',
+        actorId: 'actor-1',
+        prompt: 'Summarize the document.',
+        correlationId: 'correlation-1',
+        occurredAt: '2026-07-31T17:00:00.000Z',
+        unknown: true,
+      }),
+    ).toThrow();
+  });
+
+  it('reuses the generated HTTP prompt bound for event validation', () => {
+    expect(() =>
+      agentTaskExecutionRequestedV1Schema.parse({
+        version: 1,
+        taskId: '11111111-1111-4111-8111-111111111111',
+        actorId: 'actor-1',
+        prompt: 'x'.repeat(4_001),
+        correlationId: 'correlation-1',
+        occurredAt: '2026-07-31T17:00:00.000Z',
+      }),
+    ).toThrow();
+  });
 });

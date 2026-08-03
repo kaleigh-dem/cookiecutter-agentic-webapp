@@ -158,14 +158,14 @@ Goal: provide a production-capable security path while keeping providers replace
   - Ensure generated projects cannot silently ship the development token adapter in production.
   - Add generator options for development-only, OIDC, session, or intentionally unauthenticated profiles.
 
-- [-] **P12-03 Replace process-local production rate limiting.**
+- [x] **P12-03 Replace process-local production rate limiting.**
   - Retain the in-memory limiter for local development and unit tests.
   - Add a distributed Redis or platform-backed implementation for multi-replica deployments.
   - Define trusted-proxy and client-IP handling.
   - Add policy keys for anonymous, authenticated, route-specific, and tenant-specific limits.
   - Test consistency across multiple API instances.
 
-- [ ] **P12-04 Enforce generated HTTP contracts at runtime.**
+- [-] **P12-04 Enforce generated HTTP contracts at runtime.**
   - Generate or maintain Zod schemas for request bodies, parameters, queries, headers, and responses.
   - Add Nest pipes or interceptors that parse input and return normalized field-level errors.
   - Reject unknown fields where the contract requires a closed object.
@@ -184,7 +184,7 @@ Goal: provide a production-capable security path while keeping providers replace
 
 Exit criteria: a generated production profile authenticates real identities, enforces runtime contracts and distributed limits across replicas, and cannot pass the release gate with development-only security adapters.
 
-Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177. Phase 12 remains open because P12-03 through P12-06 and the overall phase exit criteria are not yet complete.
+Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177; P12-03 is completed and verified in reviewed PR #32 and squash commit `fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery #250, Security #321, and Generated Workspace #181. Phase 12 remains open because P12-04 through P12-06 and the overall phase exit criteria are not yet complete.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 

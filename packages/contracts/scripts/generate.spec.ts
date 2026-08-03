@@ -154,6 +154,19 @@ describe('OpenAPI client generation', () => {
       'createItem(request: OperationRequest<operations["createItem"]>)',
     );
 
+    const runtime = await readFile(
+      path.join(directory, 'src/generated/runtime.ts'),
+      'utf-8',
+    );
+    expect(runtime).toContain('export const listItemsHttpContract');
+    expect(runtime).toContain(
+      'query: z.strictObject({ "limit": z.number().int() })',
+    );
+    expect(runtime).toContain('path: z.strictObject({ "itemId": z.string() })');
+    expect(runtime).toContain(
+      'body: z.looseObject({ "name": z.string().optional() })',
+    );
+
     const typecheckPath = path.join(directory, 'typecheck.ts');
     await writeFile(
       typecheckPath,

@@ -1,7 +1,9 @@
 import type { GetHealthSuccessResponse } from '@agentic-webapp/contracts/server';
-import { Controller, Get } from '@nestjs/common';
+import { getHealthHttpContract } from '@agentic-webapp/contracts/runtime';
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
 
 import { AppService } from './app.service';
+import { HttpContractInterceptor } from './http-contract/http-contract.interceptor';
 import { Public, SkipRateLimit } from './security/security.module';
 
 @Controller('health')
@@ -11,6 +13,7 @@ export class AppController {
   @Get()
   @Public()
   @SkipRateLimit()
+  @UseInterceptors(new HttpContractInterceptor(getHealthHttpContract))
   health(): GetHealthSuccessResponse {
     return this.appService.health();
   }

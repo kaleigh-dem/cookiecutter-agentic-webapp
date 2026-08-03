@@ -13,6 +13,10 @@ import type {
   GetAgentTaskSuccessResponse,
 } from '@agentic-webapp/contracts/server';
 import {
+  createAgentTaskHttpContract,
+  getAgentTaskHttpContract,
+} from '@agentic-webapp/contracts/runtime';
+import {
   createCorrelationContext,
   getCorrelationContext,
 } from '@agentic-webapp/observability';
@@ -30,6 +34,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseInterceptors,
 } from '@nestjs/common';
 
 import {
@@ -38,6 +43,7 @@ import {
   RequirePermissions,
   SecurityAuditService,
 } from '../security/security.module';
+import { HttpContractInterceptor } from '../http-contract/http-contract.interceptor';
 
 const taskIdPipe = new ParseUUIDPipe();
 
@@ -70,6 +76,7 @@ export class AgentTasksController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('agent-tasks:write')
+  @UseInterceptors(new HttpContractInterceptor(createAgentTaskHttpContract))
   public async create(
     @Body() body: CreateAgentTaskRequest,
     @CurrentPrincipal() principal: AuthenticatedPrincipal,
@@ -122,6 +129,7 @@ export class AgentTasksController {
 
   @Get(':taskId')
   @RequirePermissions('agent-tasks:read')
+  @UseInterceptors(new HttpContractInterceptor(getAgentTaskHttpContract))
   public async get(
     @Param('taskId') rawTaskId: string,
     @CurrentPrincipal() principal: AuthenticatedPrincipal,

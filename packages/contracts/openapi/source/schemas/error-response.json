@@ -4,11 +4,40 @@
   "additionalProperties": false,
   "required": ["code", "message"],
   "properties": {
+    "statusCode": {
+      "type": "integer"
+    },
     "code": {
       "type": "string"
     },
     "message": {
       "type": "string"
+    },
+    "requestId": {
+      "type": "string"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["location", "path", "code", "message"],
+        "properties": {
+          "location": {
+            "type": "string",
+            "enum": ["body", "headers", "path", "query"]
+          },
+          "path": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }
