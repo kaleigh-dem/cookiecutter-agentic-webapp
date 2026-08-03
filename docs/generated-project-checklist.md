@@ -38,6 +38,7 @@ Use this checklist after initialization and before the repository is opened to a
 - [ ] Development authentication tokens and subjects are not present in production configuration.
 - [ ] Database and any implemented external-service credentials are unique per environment and use TLS where supported.
 - [ ] OIDC issuer, audience, client, key-rotation, session, or token-renewal settings are owned and tested for the selected authentication profile.
+- [ ] OIDC discovery and JWKS endpoints are HTTPS, reachable from API replicas, and exercised for rotation and outage behavior.
 - [ ] Public browser variables are reviewed as non-secret values and point to the correct HTTPS endpoints.
 - [ ] CORS origins, trusted proxies, callback URLs, and cookie domains match the deployed topology.
 - [ ] Telemetry credentials, endpoints, sampling, redaction, and retention are configured for each environment.

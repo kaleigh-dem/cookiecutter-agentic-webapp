@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   FixedWindowRateLimiter,
+  createEnvironmentAccessTokenVerifier,
   createRateLimitKey,
   createTestPrincipal,
   extractBearerToken,
@@ -50,6 +51,35 @@ describe('security boundary', () => {
       subject: 'actor-1',
       permissions: ['agent-tasks:read', 'operations:read'],
     });
+  });
+
+  it('keeps development verification behind the shared verifier interface', async () => {
+    const verifier = createEnvironmentAccessTokenVerifier({
+      NODE_ENV: 'test',
+      AUTH_ACCESS_TOKEN_VERIFIER: 'development',
+      AUTH_DEVELOPMENT_TOKEN: 'configured-token',
+      AUTH_DEVELOPMENT_SUBJECT: 'actor-1',
+      AUTH_DEVELOPMENT_PERMISSIONS: 'agent-tasks:read',
+    });
+
+    await expect(verifier.verify('configured-token')).resolves.toEqual({
+      subject: 'actor-1',
+      permissions: ['agent-tasks:read'],
+    });
+  });
+
+  it('defaults production to OIDC and rejects unsupported verifier modes', () => {
+    expect(() =>
+      createEnvironmentAccessTokenVerifier({ NODE_ENV: 'production' }),
+    ).toThrow('AUTH_OIDC_ISSUER is required for OIDC verification.');
+    expect(() =>
+      createEnvironmentAccessTokenVerifier({
+        NODE_ENV: 'test',
+        AUTH_ACCESS_TOKEN_VERIFIER: 'unsupported',
+      }),
+    ).toThrow(
+      'AUTH_ACCESS_TOKEN_VERIFIER must be development or oidc, received unsupported.',
+    );
   });
 
   it('rejects invalid and production development tokens', () => {

@@ -25,6 +25,14 @@ import { APP_FILTER, APP_GUARD, Reflector } from '@nestjs/core';
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+import {
+  createOidcVerifierConfig,
+  EnvironmentOidcClaimsMapper,
+  OidcAccessTokenVerifier,
+  type OidcFetch,
+  type OidcSecurityEnvironment,
+} from './oidc-access-token-verifier';
+
 const IS_PUBLIC_KEY = 'security:is-public';
 const REQUIRED_PERMISSIONS_KEY = 'security:required-permissions';
 const SKIP_RATE_LIMIT_KEY = 'security:skip-rate-limit';
@@ -42,8 +50,9 @@ export interface AccessTokenVerifier {
   verify(accessToken: string): Promise<AuthenticatedPrincipal>;
 }
 
-export interface SecurityEnvironment {
+export interface SecurityEnvironment extends OidcSecurityEnvironment {
   readonly NODE_ENV?: string;
+  readonly AUTH_ACCESS_TOKEN_VERIFIER?: string;
   readonly AUTH_DEVELOPMENT_TOKEN?: string;
   readonly AUTH_DEVELOPMENT_SUBJECT?: string;
   readonly AUTH_DEVELOPMENT_PERMISSIONS?: string;
@@ -183,12 +192,39 @@ export function verifyDevelopmentAccessToken(
   };
 }
 
+export function createEnvironmentAccessTokenVerifier(
+  environment: SecurityEnvironment,
+  fetchImplementation: OidcFetch = fetch,
+): AccessTokenVerifier {
+  const configuredVerifier = environment.AUTH_ACCESS_TOKEN_VERIFIER?.trim();
+  const verifier =
+    configuredVerifier ||
+    (environment.NODE_ENV === 'production' ? 'oidc' : 'development');
+
+  if (verifier === 'development') {
+    return {
+      verify: (accessToken) =>
+        Promise.resolve(verifyDevelopmentAccessToken(accessToken, environment)),
+    };
+  }
+  if (verifier === 'oidc') {
+    return new OidcAccessTokenVerifier(
+      createOidcVerifierConfig(environment),
+      new EnvironmentOidcClaimsMapper(environment),
+      fetchImplementation,
+    );
+  }
+  throw new Error(
+    `AUTH_ACCESS_TOKEN_VERIFIER must be development or oidc, received ${verifier}.`,
+  );
+}
+
 @Injectable()
 export class EnvironmentAccessTokenVerifier implements AccessTokenVerifier {
+  private readonly verifier = createEnvironmentAccessTokenVerifier(process.env);
+
   public verify(accessToken: string): Promise<AuthenticatedPrincipal> {
-    return Promise.resolve(
-      verifyDevelopmentAccessToken(accessToken, process.env),
-    );
+    return this.verifier.verify(accessToken);
   }
 }
 
