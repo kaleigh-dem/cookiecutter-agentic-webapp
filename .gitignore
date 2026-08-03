@@ -6,6 +6,7 @@ test-output/
 .nx/
 .env
 .env.local
+infra/environments/production.env
 *.tsbuildinfo
 .DS_Store
 .idea/
