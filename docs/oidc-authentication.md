@@ -55,6 +55,7 @@ The verifier never accepts `none`, symmetric MAC algorithms, or an algorithm tha
 ## Principal and permission mapping
 
 Claim mapping is handled by `EnvironmentOidcClaimsMapper`, which implements the replaceable `OidcClaimsMapper` boundary.
+Set `AUTH_OIDC_TENANT_CLAIM` to a string-valued claim path when tenant-aware rate-limit policy is required. The mapper copies that verified claim into the request principal; missing tenant claims omit tenant policy, while malformed configured claims reject the token.
 
 Defaults:
 

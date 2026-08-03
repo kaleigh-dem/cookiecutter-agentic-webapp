@@ -73,7 +73,7 @@ describe('database foundation', () => {
     await runMigrations({ connectionString });
 
     let status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(6);
+    expect(status.applied).toHaveLength(7);
     expect(status.pending).toEqual([]);
 
     await withTemporaryEnvironmentFile(
@@ -100,6 +100,9 @@ describe('database foundation', () => {
         expect(stdout).toContain(
           '20260802170000000_add_outbox_replay_metadata',
         );
+        expect(stdout).toContain(
+          '20260803130000000_add_distributed_rate_limits',
+        );
         expect(stdout).toContain('"pending": []');
       },
     );
@@ -114,12 +117,13 @@ describe('database foundation', () => {
       await connection.close();
     }
 
-    await runMigrations({ connectionString, direction: 'down', count: 2 });
+    await runMigrations({ connectionString, direction: 'down', count: 3 });
     status = await getMigrationStatus(connectionString);
     expect(status.applied).toHaveLength(4);
     expect(status.pending).toEqual([
       '20260802160000000_add_agent_task_execution_state',
       '20260802170000000_add_outbox_replay_metadata',
+      '20260803130000000_add_distributed_rate_limits',
     ]);
 
     const legacyConnection = createDatabase({
@@ -143,7 +147,7 @@ describe('database foundation', () => {
 
     await runMigrations({ connectionString });
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(6);
+    expect(status.applied).toHaveLength(7);
     expect(status.pending).toEqual([]);
 
     const migratedConnection = createDatabase({
@@ -207,7 +211,7 @@ describe('database foundation', () => {
 
     await resetDatabase(connectionString, 'test');
     status = await getMigrationStatus(connectionString);
-    expect(status.applied).toHaveLength(6);
+    expect(status.applied).toHaveLength(7);
     expect(status.pending).toEqual([]);
   });
 

@@ -26,7 +26,7 @@ This document defines the baseline security model for applications generated fro
 | Broken object-level authorization   | Domain ownership checks, permission guards, automated authorization tests                             |
 | Credential leakage                  | Redacted structured logs, tracked-file secret scan, private vulnerability reporting                   |
 | Cross-origin abuse                  | Explicit allowed origin, method and header lists, no credentialed CORS by default                     |
-| Brute force and resource exhaustion | Bounded request rate limiting, request-size defaults, queue isolation                                 |
+| Brute force and resource exhaustion | PostgreSQL-backed multi-replica request policies, request-size defaults, queue isolation              |
 | Injection and malformed input       | Runtime domain validation, UUID parsing, normalized errors, CodeQL and lint gates                     |
 | Dependency compromise               | Frozen lockfile, dependency review, vulnerability audit, license policy                               |
 | Sensitive-data exposure             | Security response headers, error normalization, telemetry redaction, least-privilege permissions      |

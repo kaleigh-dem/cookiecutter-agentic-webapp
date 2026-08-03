@@ -4,9 +4,20 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { rewriteModuleSpecifiers } from './prepare-node-deploy.mjs';
+import {
+  deploymentWorkspacePackages,
+  rewriteModuleSpecifiers,
+} from './prepare-node-deploy.mjs';
 
 describe('Node deployment module normalization', () => {
+  it('stages the compiled rate-limit package for every database consumer', () => {
+    for (const serviceName of ['api', 'worker']) {
+      expect(deploymentWorkspacePackages(serviceName)).toContain(
+        'packages/backend/rate-limit',
+      );
+    }
+  });
+
   it('adds resolvable extensions to emitted relative module specifiers', async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'delivery-modules-'));
     const sourceDirectory = path.join(directory, 'lib');

@@ -101,8 +101,13 @@ export function validateDeploymentEnvironment(
     'DATABASE_URL',
     'WEB_ORIGIN',
     'NEXT_PUBLIC_API_BASE_URL',
-    'API_RATE_LIMIT_MAX',
+    'API_RATE_LIMIT_STORE',
+    'API_RATE_LIMIT_ANONYMOUS_MAX',
+    'API_RATE_LIMIT_AUTHENTICATED_MAX',
+    'API_RATE_LIMIT_ROUTE_MAX',
+    'API_RATE_LIMIT_TENANT_MAX',
     'API_RATE_LIMIT_WINDOW_MS',
+    'API_TRUSTED_PROXY_HOPS',
   ];
 
   for (const key of required) {
@@ -136,17 +141,41 @@ export function validateDeploymentEnvironment(
   if (values.API_PORT && !isPositiveInteger(values.API_PORT)) {
     issues.push('API_PORT must be a positive integer.');
   }
-  if (
-    values.API_RATE_LIMIT_MAX &&
-    !isPositiveInteger(values.API_RATE_LIMIT_MAX)
-  ) {
-    issues.push('API_RATE_LIMIT_MAX must be a positive integer.');
+  for (const key of [
+    'API_RATE_LIMIT_ANONYMOUS_MAX',
+    'API_RATE_LIMIT_AUTHENTICATED_MAX',
+    'API_RATE_LIMIT_ROUTE_MAX',
+    'API_RATE_LIMIT_TENANT_MAX',
+  ]) {
+    if (values[key] && !isPositiveInteger(values[key])) {
+      issues.push(`${key} must be a positive integer.`);
+    }
   }
   if (
     values.API_RATE_LIMIT_WINDOW_MS &&
     !isPositiveInteger(values.API_RATE_LIMIT_WINDOW_MS)
   ) {
     issues.push('API_RATE_LIMIT_WINDOW_MS must be a positive integer.');
+  }
+  if (
+    values.API_TRUSTED_PROXY_HOPS &&
+    (!Number.isSafeInteger(Number(values.API_TRUSTED_PROXY_HOPS)) ||
+      Number(values.API_TRUSTED_PROXY_HOPS) < 0 ||
+      Number(values.API_TRUSTED_PROXY_HOPS) > 10)
+  ) {
+    issues.push('API_TRUSTED_PROXY_HOPS must be an integer from 0 to 10.');
+  }
+  if (
+    values.API_RATE_LIMIT_STORE &&
+    !['memory', 'postgres'].includes(values.API_RATE_LIMIT_STORE)
+  ) {
+    issues.push('API_RATE_LIMIT_STORE must be memory or postgres.');
+  }
+  if (
+    deploymentEnvironment === 'production' &&
+    values.API_RATE_LIMIT_STORE !== 'postgres'
+  ) {
+    issues.push('Production requires API_RATE_LIMIT_STORE=postgres.');
   }
 
   if (

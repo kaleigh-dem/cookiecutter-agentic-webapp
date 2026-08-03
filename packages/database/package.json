@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@agentic-webapp/backend-agent-task": "workspace:*",
+    "@agentic-webapp/backend-rate-limit": "workspace:*",
     "@agentic-webapp/contracts": "workspace:*",
     "drizzle-orm": "0.45.2",
     "pg": "8.22.0"

@@ -15,6 +15,9 @@
     },
     {
       "path": "../backend/agent-task/tsconfig.lib.json"
+    },
+    {
+      "path": "../backend/rate-limit/tsconfig.lib.json"
     }
   ]
 }

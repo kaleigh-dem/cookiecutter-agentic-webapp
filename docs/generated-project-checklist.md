@@ -41,6 +41,7 @@ Use this checklist after initialization and before the repository is opened to a
 - [ ] OIDC discovery and JWKS endpoints are HTTPS, reachable from API replicas, and exercised for rotation and outage behavior.
 - [ ] Public browser variables are reviewed as non-secret values and point to the correct HTTPS endpoints.
 - [ ] CORS origins, trusted proxies, callback URLs, and cookie domains match the deployed topology.
+- [ ] Distributed rate-limit thresholds, tenant claim mapping, PostgreSQL capacity, and trusted ingress hop count are validated under representative multi-replica traffic.
 - [ ] Telemetry credentials, endpoints, sampling, redaction, and retention are configured for each environment.
 - [ ] Secret rotation and identity-provider outage procedures are documented.
 
@@ -49,6 +50,7 @@ Use this checklist after initialization and before the repository is opened to a
 - [ ] Product, engineering, security, data, infrastructure, and incident-response owners are named.
 - [ ] Database migration approval, backup, restore testing, retention, and data-repair ownership are assigned.
 - [ ] Selected worker transport has an owner for queue or outbox capacity, retries, dead letters, replay, and shutdown behavior.
+- [ ] Rate-limit `429` policy responses and fail-closed `503 rate_limit_unavailable` responses have dashboards, alerts, and an incident owner.
 - [ ] Dashboards, alerts, service-level objectives, escalation paths, and log access are defined.
 - [ ] Domains, DNS, certificates, ingress, image registry, scaling, and deployment rollback are owned.
 - [ ] Dependency updates, template upgrades, vulnerability exceptions, and license exceptions have review cadences.

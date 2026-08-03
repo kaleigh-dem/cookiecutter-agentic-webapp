@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@agentic-webapp/backend-agent-task": "workspace:*",
+    "@agentic-webapp/backend-rate-limit": "workspace:*",
     "@agentic-webapp/contracts": "workspace:*",
     "@agentic-webapp/database": "workspace:*",
     "@agentic-webapp/observability": "workspace:*",

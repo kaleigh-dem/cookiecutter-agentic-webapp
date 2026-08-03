@@ -1,4 +1,8 @@
 import {
+  createRateLimitRules,
+  type RateLimitStore,
+} from '@agentic-webapp/backend-rate-limit';
+import {
   createStructuredLogger,
   getCorrelationContext,
 } from '@agentic-webapp/observability';
@@ -19,6 +23,7 @@ import {
   Module,
   type NestModule,
   SetMetadata,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, Reflector } from '@nestjs/core';
@@ -32,6 +37,11 @@ import {
   type OidcFetch,
   type OidcSecurityEnvironment,
 } from './oidc-access-token-verifier';
+import {
+  EnvironmentRateLimitProvider,
+  RATE_LIMIT_STORE,
+  resolveClientIp,
+} from './rate-limit-provider';
 
 const IS_PUBLIC_KEY = 'security:is-public';
 const REQUIRED_PERMISSIONS_KEY = 'security:required-permissions';
@@ -44,6 +54,7 @@ export const ACCESS_TOKEN_VERIFIER = Symbol('ACCESS_TOKEN_VERIFIER');
 export interface AuthenticatedPrincipal {
   readonly subject: string;
   readonly permissions: readonly string[];
+  readonly tenantId?: string;
 }
 
 export interface AccessTokenVerifier {
@@ -56,13 +67,14 @@ export interface SecurityEnvironment extends OidcSecurityEnvironment {
   readonly AUTH_DEVELOPMENT_TOKEN?: string;
   readonly AUTH_DEVELOPMENT_SUBJECT?: string;
   readonly AUTH_DEVELOPMENT_PERMISSIONS?: string;
-  readonly API_RATE_LIMIT_MAX?: string;
-  readonly API_RATE_LIMIT_WINDOW_MS?: string;
-  readonly API_RATE_LIMIT_MAX_BUCKETS?: string;
+  readonly AUTH_DEVELOPMENT_TENANT?: string;
 }
 
 interface AuthenticatedRequest extends IncomingMessage {
   principal?: AuthenticatedPrincipal;
+  readonly ip?: string;
+  readonly originalUrl?: string;
+  readonly route?: { readonly path?: string };
 }
 
 interface JsonResponse extends ServerResponse {
@@ -77,13 +89,6 @@ export interface SecurityAuditEvent {
   readonly resourceType: string;
   readonly resourceId?: string;
   readonly reason?: string;
-}
-
-export interface RateLimitRequestIdentity {
-  readonly principal?: Pick<AuthenticatedPrincipal, 'subject'>;
-  readonly socket: {
-    readonly remoteAddress: string | undefined;
-  };
 }
 
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -155,6 +160,7 @@ export function createTestPrincipal(
   return {
     subject: overrides.subject ?? 'test-user',
     permissions: overrides.permissions ?? [],
+    ...(overrides.tenantId ? { tenantId: overrides.tenantId } : {}),
   };
 }
 
@@ -189,6 +195,9 @@ export function verifyDevelopmentAccessToken(
       .split(',')
       .map((permission) => permission.trim())
       .filter(Boolean),
+    ...(environment.AUTH_DEVELOPMENT_TENANT?.trim()
+      ? { tenantId: environment.AUTH_DEVELOPMENT_TENANT.trim() }
+      : {}),
   };
 }
 
@@ -285,80 +294,15 @@ export class AuthorizationGuard implements CanActivate {
   }
 }
 
-interface RateLimitBucket {
-  count: number;
-  resetAt: number;
-}
-
-export function createRateLimitKey(request: RateLimitRequestIdentity): string {
-  const subject = request.principal?.subject.trim();
-  if (subject) return `subject:${subject}`;
-
-  const remoteAddress = request.socket.remoteAddress?.trim() || 'unknown';
-  return `ip:${remoteAddress}`;
-}
-
-export class FixedWindowRateLimiter {
-  private readonly buckets = new Map<string, RateLimitBucket>();
-
-  public constructor(
-    private readonly maximumRequests: number,
-    private readonly windowMs: number,
-    private readonly maximumBuckets = 10_000,
-  ) {
-    if (maximumBuckets < 1) {
-      throw new Error('maximumBuckets must be a positive integer.');
-    }
-  }
-
-  public get bucketCount(): number {
-    return this.buckets.size;
-  }
-
-  public consume(key: string, now = Date.now()): RateLimitBucket | undefined {
-    const current = this.buckets.get(key);
-    if (current && current.resetAt > now) {
-      current.count += 1;
-      return current.count > this.maximumRequests ? current : undefined;
-    }
-
-    if (!current) this.reserveBucket(now);
-    const bucket = { count: 1, resetAt: now + this.windowMs };
-    this.buckets.set(key, bucket);
-    return undefined;
-  }
-
-  private reserveBucket(now: number): void {
-    if (this.buckets.size < this.maximumBuckets) return;
-
-    for (const [bucketKey, bucket] of this.buckets) {
-      if (bucket.resetAt <= now) this.buckets.delete(bucketKey);
-    }
-    if (this.buckets.size < this.maximumBuckets) return;
-
-    const oldestBucketKey = this.buckets.keys().next().value;
-    if (typeof oldestBucketKey === 'string') {
-      this.buckets.delete(oldestBucketKey);
-    }
-  }
-}
-
-function positiveInteger(value: string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
-}
-
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  private readonly limiter = new FixedWindowRateLimiter(
-    positiveInteger(process.env.API_RATE_LIMIT_MAX, 120),
-    positiveInteger(process.env.API_RATE_LIMIT_WINDOW_MS, 60_000),
-    positiveInteger(process.env.API_RATE_LIMIT_MAX_BUCKETS, 10_000),
-  );
+  public constructor(
+    private readonly reflector: Reflector,
+    private readonly provider: EnvironmentRateLimitProvider,
+    @Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore,
+  ) {}
 
-  public constructor(private readonly reflector: Reflector) {}
-
-  public canActivate(context: ExecutionContext): boolean {
+  public async canActivate(context: ExecutionContext): Promise<boolean> {
     const skip = this.reflector.getAllAndOverride<boolean>(
       SKIP_RATE_LIMIT_KEY,
       [context.getHandler(), context.getClass()],
@@ -367,13 +311,33 @@ export class RateLimitGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const response = context.switchToHttp().getResponse<ServerResponse>();
-    const rejected = this.limiter.consume(createRateLimitKey(request));
+    let rejected;
+    try {
+      rejected = await this.store.consume(
+        createRateLimitRules(
+          {
+            clientIp: resolveClientIp(request),
+            method: request.method ?? 'UNKNOWN',
+            route:
+              request.route?.path ?? request.originalUrl ?? request.url ?? '/',
+            ...(request.principal ? { principal: request.principal } : {}),
+          },
+          this.provider.configuration,
+        ),
+      );
+    } catch {
+      throw new ServiceUnavailableException({
+        code: 'rate_limit_unavailable',
+        message: 'Request rate limiting is temporarily unavailable.',
+      });
+    }
     if (!rejected) return true;
 
     response.setHeader(
       'retry-after',
-      Math.max(1, Math.ceil((rejected.resetAt - Date.now()) / 1_000)),
+      Math.max(1, Math.ceil((rejected.resetAt.getTime() - Date.now()) / 1_000)),
     );
+    response.setHeader('x-rate-limit-policy', rejected.policy);
     throw new HttpException(
       {
         code: 'rate_limit_exceeded',
@@ -469,12 +433,18 @@ export class SecurityAuditService {
   providers: [
     SecurityAuditService,
     EnvironmentAccessTokenVerifier,
+    EnvironmentRateLimitProvider,
     {
       provide: ACCESS_TOKEN_VERIFIER,
       useExisting: EnvironmentAccessTokenVerifier,
     },
-    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: AuthenticationGuard },
+    {
+      provide: RATE_LIMIT_STORE,
+      inject: [EnvironmentRateLimitProvider],
+      useFactory: (provider: EnvironmentRateLimitProvider) => provider.store,
+    },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: AuthorizationGuard },
     { provide: APP_FILTER, useClass: NormalizedHttpExceptionFilter },
   ],

@@ -114,7 +114,7 @@ Treat the following as explicit ownership decisions before a generated applicati
 2. **Secrets and configuration:** move credentials and environment-specific values out of repository files; use protected GitHub Environments or the target platform's secret manager.
 3. **Data services:** provision production PostgreSQL with TLS, least-privilege credentials, backups, restore tests, retention, and capacity ownership. Add another durable service only when an implemented adapter or distributed control gives it a concrete responsibility.
 4. **Worker delivery:** implement the selected transport's leasing or queue semantics, at-least-once idempotency, classified retries, quarantine and replay, bounded shutdown, and operational metrics defined by `docs/adr/0010-worker-delivery.md`.
-5. **Distributed controls:** replace process-local rate limiting and any other single-process coordination used by multiple replicas.
+5. **Distributed controls:** run the PostgreSQL rate-limit adapter, configure anonymous, authenticated, route, and tenant thresholds, and verify the trusted ingress hop count for the deployment. See `docs/rate-limiting.md`.
 6. **Telemetry:** configure the production exporter, sampling, redaction, retention, dashboards, alerts, and incident ownership.
 7. **Deployment:** replace local Compose assumptions with owned image registry, domains, TLS, ingress, autoscaling, health probes, rollout, rollback, and environment policy.
 8. **Seed and sample data:** remove or restrict development identities and sample records; define migration and data-repair ownership.
