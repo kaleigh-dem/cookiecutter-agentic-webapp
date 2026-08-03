@@ -28,6 +28,7 @@ Use this checklist after initialization and before the repository is opened to a
 - [ ] Production has required reviewers, branch or tag restrictions, and an auditable approval policy.
 - [ ] Environment-scoped variables identify domains, image registries, deployment targets, and non-secret configuration.
 - [ ] Environment-scoped secrets use the minimum permissions and are not duplicated as repository variables.
+- [ ] The masked multiline `PRODUCTION_ENVIRONMENT` secret contains the reviewed production environment contract used by the release gate.
 - [ ] `GITHUB_TOKEN` permissions in workflows remain least privilege; long-lived personal tokens are not used for routine releases.
 - [ ] Cloud or platform deployments use short-lived workload identity or an equivalent federated credential when available.
 - [ ] Release tags, package publication, image publication, and deployment permissions have named owners.
@@ -49,6 +50,7 @@ Use this checklist after initialization and before the repository is opened to a
 
 - [ ] Product, engineering, security, data, infrastructure, and incident-response owners are named.
 - [ ] Database migration approval, backup, restore testing, retention, and data-repair ownership are assigned.
+- [ ] `BACKUP_OWNER` names the person or team responsible for capturing and recording the pre-migration snapshot.
 - [ ] Selected worker transport has an owner for queue or outbox capacity, retries, dead letters, replay, and shutdown behavior.
 - [ ] Rate-limit `429` policy responses and fail-closed `503 rate_limit_unavailable` responses have dashboards, alerts, and an incident owner.
 - [ ] Dashboards, alerts, service-level objectives, escalation paths, and log access are defined.
@@ -67,6 +69,7 @@ Use this checklist after initialization and before the repository is opened to a
 ## Validation before deployment
 
 - [ ] Every production replacement point in `docs/getting-started.md` has an implementation, an owner, or an explicit accepted deferral.
+- [ ] `pnpm production:check` passes against the exact production environment file used by the release workflow.
 - [ ] Production images build once from reviewed source.
 - [ ] `pnpm preview:up`, `pnpm preview:smoke`, and `pnpm performance:load` pass, followed by deterministic `pnpm preview:down`.
 - [ ] The release plan records the target environment, version, images, migrations, and smoke checks.
