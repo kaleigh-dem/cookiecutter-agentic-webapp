@@ -4,7 +4,11 @@ const usePreviewImage = process.env.PLAYWRIGHT_USE_PREVIEW_IMAGE === 'true';
 
 export default defineConfig({
   testDir: './e2e',
-  use: { baseURL: 'http://127.0.0.1:3000' },
+  use: {
+    baseURL: usePreviewImage
+      ? 'http://localhost:3000'
+      : 'http://127.0.0.1:3000',
+  },
   webServer: usePreviewImage
     ? undefined
     : {
