@@ -1,152 +1,245 @@
-# Scheduled Development Workflow
+# Automated Development and Local Review Workflow
 
-This document is the durable protocol for the automated development loop. Scheduled prompts should identify their role, cadence, safety boundaries, current counterpart IDs, and instruct the agent to read this file. GitHub and the repository are authoritative; chat history is not.
+This document is the durable protocol for the low-Codex-credit development loop. GitHub and the repository are authoritative; chat history is not. ChatGPT performs development work, deterministic CI proves broad correctness, a local Python bridge performs routing and state management, and Codex is invoked only for a focused exact-head local review.
 
 ## Source of truth
 
 Use current data in this order:
 
-1. GitHub pull-request metadata, exact head SHA, review threads, comments, and checks.
+1. GitHub pull-request metadata, exact head SHA, review threads, comments, labels, and workflow results.
 2. `docs/TODO.md`, applicable `AGENTS.md` files, ADRs, and repository code.
-3. Current scheduled-task status and only the latest compact handoff.
+3. The local bridge SQLite state and only the latest compact handoff.
+4. Chat history only as advisory context.
 
-Never copy old chat history forward. Ignore superseded PR heads, resolved findings, and handoffs whose `PR + HEAD + ACTION` key has already been handled.
+Never copy old chat history forward. Ignore superseded PR heads, resolved findings, and handoffs whose `SOURCE + HEAD + ACTION` key has already been consumed in GitHub or the bridge state store.
 
 ## Roles
 
-### Scheduled Developer
+### ChatGPT Scheduled Developer
 
-- Runs in ChatGPT using GPT-5.6 Sol with High reasoning and the GitHub plugin when practical.
-- Implements one active TODO or fixes one existing PR. It never reviews, approves, or merges its own work.
+- Runs in ChatGPT using the strongest practical reasoning level and the authorized GitHub connector.
+- Implements one active TODO task or fixes one existing PR. It never reviews, approves, or merges its own work.
 - Does not begin another TODO while a PR or requested fix is active.
-- After pushing a ready PR or fix head, wakes the current reviewer immediately. Its Daily schedule is only a fallback.
-- In ChatGPT, publish through the authorized GitHub plugin/connector. A missing local `gh` binary or local `gh` authentication is not a blocker because the Mac and ChatGPT environments are separate. Block only after the connector itself fails for a required permission or unsupported operation.
-- When Docker or an OS-level runner feature is unavailable, preserve all completed validation, document the unavailable gate in the PR, and rely on exact-head CI for that gate instead of withholding publication.
+- Reads `AGENTS.md`, `docs/TODO.md`, relevant ADRs, the active PR, review threads, and exact-head workflow results before changing code.
+- Publishes through the GitHub connector. Missing Mac-local `gh` or Codex authentication is not a blocker for the ChatGPT environment.
+- When Docker or another OS-level feature is unavailable, preserves completed validation, documents the unavailable gate in the PR, and relies on exact-head CI for that gate.
+- After a ready head or fix is pushed and all required workflows pass, posts one valid `[reviewer-handoff]` comment.
+- An hourly scheduled run may monitor for new `CHANGES_REQUIRED` results or the next eligible TODO. Direct chat wakes are optional acceleration only.
 
-### Scheduled PR Reviewer
+### Local Python Review Bridge
 
-- Runs in local Codex using GPT-5.6 Luna with Extra High reasoning and the real repository checkout.
-- Reviews the exact handed-off head, runs proportionate local validation, comments on blockers, verifies fixes, resolves addressed threads, merges clear PRs, and cleans up merged branches.
-- Never implements product fixes. Because the authenticated reviewer can also be the PR author, use inline or top-level comments rather than `REQUEST_CHANGES` when GitHub rejects that review state.
-- After blockers or a merge, wakes the current developer immediately. Its two-hour schedule is only a fallback.
+- Runs on the trusted local development machine continuously or on demand.
+- Polls GitHub or receives a future webhook; it does not use a model for monitoring, deduplication, scheduling, or state reconstruction.
+- Consumes only the newest valid unconsumed `[reviewer-handoff]` for each PR.
+- Deduplicates by `SOURCE + HEAD + ACTION` in GitHub and SQLite.
+- Verifies that the PR is open, non-draft, targets `main`, is conflict-free, and still points to the full handed-off SHA.
+- Verifies that configured required workflows passed for that exact SHA.
+- Accepts only named verification profiles from local configuration. A PR comment can never provide a shell command.
+- Creates a disposable detached Git worktree at the exact SHA.
+- Runs allowlisted deterministic commands as argument arrays without a shell.
+- Invokes Codex only after deterministic local validation passes.
+- Posts structured PASS, CHANGES_REQUIRED, or REVIEW_ERROR results to GitHub.
+- Removes the worktree after success or failure and retains only compact local state and logs.
+- Does not implement product fixes.
+- Does not merge unless automatic merging is explicitly enabled and every exact-head merge gate passes.
 
-### Scheduled Activity Supervisor
+### Local Codex Reviewer
 
-- Runs as a standalone local Codex scheduled task every 30 minutes using GPT-5.6 Luna with High reasoning.
-- Reconstructs state from GitHub, this document, `docs/TODO.md`, and task status on every run.
-- Never develops, reviews code, approves, or merges.
-- Repairs missing handoffs, failed or drifted schedules, terminal conversations, duplicate schedules, and stalled state transitions. It must not interrupt an agent that is genuinely using tools or generating output.
-- Remains completely silent when the workflow is healthy and unchanged.
+- Is invoked on demand by the Python bridge through non-interactive `codex exec`; it has no polling heartbeat or supervisor schedule.
+- Uses the real local worktree and reviews only the handed-off exact head.
+- Runs proportionate additional functional checks rather than repeating the complete CI suite.
+- Never implements fixes, broadens scope, or makes style-only recommendations.
+- Returns schema-constrained PASS or FAIL output with reproducible findings.
+- Leaves tracked files unchanged. A tracked-file modification converts the result to failure.
+
+### Human Operator
+
+- Authenticates `gh` and Codex on the trusted machine and maintains the local bridge configuration.
+- Intervenes for credentials, product decisions, destructive actions, unsupported tooling, or failed bridge recovery.
+- Keeps automatic merge disabled until several one-shot review cycles have behaved correctly.
 
 ## State flow
 
-`developer work -> ready PR/fix head -> reviewer -> blockers or merge -> developer`
+`ChatGPT development -> exact-head CI -> reviewer handoff -> Python validation -> local Codex review -> PASS or CHANGES_REQUIRED -> merge or ChatGPT fix`
 
-GitHub is the durable handoff queue. Direct reciprocal messages are an acceleration only; failure to deliver a direct wake never invalidates a matching GitHub handoff. Fixed schedules are independent safety nets and must not be dynamically changed during a review cycle.
+GitHub is the durable handoff queue. A direct chat message is never required for correctness. The only recurring AI task should be the optional ChatGPT developer monitor; Python replaces reviewer heartbeats and the former AI supervisor.
 
-## Compact handoffs
+## Compact reviewer handoffs
 
-Every handoff is at most 12 lines and 900 characters. Fetch all detail from GitHub; never paste full comment bodies, diffs, logs, TODO sections, or blocker explanations when IDs and locations are enough.
+Every handoff is at most 12 lines and 900 characters. Fetch detail from GitHub; never paste diffs, logs, TODO sections, or full blocker explanations when IDs and locations are enough.
 
-Ready or re-review is always posted as one top-level PR comment:
+First review:
+
+```text
+[reviewer-handoff]
+TYPE: REVIEW_READY
+TASK: P12-05
+PR: 36
+HEAD: <full 40-character lowercase SHA>
+VERIFY: delivery
+CHECKS: GREEN
+ACTION: REVIEW_EXACT_HEAD
+```
+
+Re-review after fixes:
 
 ```text
 [reviewer-handoff]
 TYPE: RE_REVIEW
-PR: 27
-HEAD: abc123
-CHECKS: GREEN; targeted command names only
+TASK: P12-05
+PR: 36
+HEAD: <full 40-character lowercase SHA>
+VERIFY: delivery
+SOURCE: <prior review or blocker ID>
+CHECKS: GREEN
 ACTION: REVIEW_EXACT_HEAD
 ```
 
-Use `TYPE: REVIEW_READY` for the first review of a new PR and `TYPE: RE_REVIEW` after fixes. These are the only valid developer-to-reviewer types, and `REVIEW_EXACT_HEAD` is the only valid action. After posting, a direct wake may include the PR number, exact head, and source comment ID, but the GitHub comment remains authoritative.
+Rules:
 
-Fix required:
+- `REVIEW_READY` and `RE_REVIEW` are the only valid types.
+- `REVIEW_EXACT_HEAD` is the only valid action.
+- `TASK` uses the stable TODO task ID.
+- `VERIFY` names a locally configured allowlisted profile such as `affected`, `delivery`, `security`, or `contracts`.
+- `HEAD` must be the current full PR head SHA.
+- A new SHA is a new review state.
+- The bridge ignores old or already consumed handoffs and processes only the newest unconsumed valid handoff per PR.
 
-```text
-TYPE: FIX_REQUIRED
-PR: 27
-HEAD: abc123
-REVIEW: 4840251348
-COMMENTS: 3703371561 file:line; 3703371569 file:line
-CHECKS: relevant status only
-ACTION: fetch comments, fix this PR, validate, push, wake reviewer
-```
+## Handoff consumption
 
-Merged:
-
-```text
-TYPE: MERGED
-PR: 27
-HEAD: abc123
-MERGE: def456
-EVIDENCE: docs/TODO.md phase/task record
-ACTION: take next eligible TODO
-```
-
-Include only pass/fail, command names, and the relevant failure location for validation. A new head SHA is a new state. Before sending, inspect the recipient's latest messages and do nothing if the same `PR + HEAD + ACTION` was already delivered.
-
-### Handoff consumption
-
-On every direct wake and reviewer heartbeat, scan open non-draft PR comments for the newest unconsumed `[reviewer-handoff]`. A handoff is actionable when its type and action are allowed, its PR is open and targets `main`, and its full `HEAD` equals the current PR head. A direct chat message is not required.
-
-Before deep review, acknowledge the source comment with one top-level PR comment:
+Before local work, the bridge posts:
 
 ```text
 [handoff-accepted]
-SOURCE: 5165863418
-HEAD: abc123
+SOURCE: <handoff comment ID>
+HEAD: <full SHA>
 ACTION: REVIEW_STARTED
 ```
 
-Deduplicate consumption by `SOURCE + HEAD + ACTION`. An acknowledgement for an older head does not consume a newer handoff. If a handoff has an unknown type or action, do not silently ignore it: report the invalid field compactly so the developer or supervisor can correct the existing comment.
+A source is considered consumed when GitHub contains a matching `[handoff-accepted]`, `[handoff-duplicate]`, or `[reviewer-result]` comment, or when SQLite already contains the same `SOURCE + HEAD + ACTION` key.
 
-The supervisor checks for any valid `[reviewer-handoff]` older than 10 minutes without a matching `[handoff-accepted]` or exact-head review action. It immediately wakes the idle reviewer with the source comment ID. If no acknowledgement or review exists after two supervisor intervals, it repairs the reviewer prompt and notifies the user.
+The bridge must re-check the PR head and required workflows after reading the handoff and again immediately before an automatic merge. An older acknowledgement never consumes a newer head.
+
+Unknown types, actions, task IDs, SHA formats, or verification profiles fail closed. They do not invoke Codex.
+
+## Verification profiles
+
+Verification profiles live only in the trusted local bridge configuration. Each profile contains:
+
+- a Codex profile name;
+- a fixed ordered list of command argument arrays;
+- optional `{BASE}` and `{HEAD}` placeholders replaced by the bridge;
+- no shell interpolation, `eval`, or command text from GitHub.
+
+Recommended initial profiles:
+
+- `affected`: frozen install plus Nx affected lint, typecheck, test, and build;
+- `delivery`: frozen install plus focused delivery tests;
+- `security`: secret and license checks plus affected tests;
+- `contracts`: contract generation and compatibility checks plus affected tests.
+
+Broad exact-head GitHub workflows remain authoritative for full CI. The local profile should target the behavior that requires a real machine or independent execution.
+
+## Reviewer results
+
+Pass:
+
+```text
+[reviewer-result]
+TYPE: PASS
+TASK: P12-05
+PR: 36
+HEAD: <full SHA>
+SOURCE: <handoff comment ID>
+LOCAL_CHECKS: PASS
+SUMMARY: <compact verification summary>
+ACTION: MERGE_EXACT_HEAD
+```
+
+Changes required:
+
+```text
+[reviewer-result]
+TYPE: CHANGES_REQUIRED
+TASK: P12-05
+PR: 36
+HEAD: <full SHA>
+SOURCE: <handoff comment ID>
+ACTION: DEVELOPER_FIX_EXISTING_PR
+
+FINDINGS:
+- P1: concise title
+  Reproduction: command or concrete steps
+  Expected: expected behavior
+  Actual: actual behavior
+  File: relevant path
+```
+
+Bridge or environment failure:
+
+```text
+[reviewer-result]
+TYPE: REVIEW_ERROR
+TASK: P12-05
+PR: 36
+HEAD: <full SHA>
+SOURCE: <handoff comment ID>
+ERROR: concise operational failure
+ACTION: USER_INSPECT_REVIEWER
+```
+
+A deterministic command failure is a review error and must not invoke Codex. The developer posts a new handoff only after repairing the branch or the operator repairs the local environment.
 
 ## Review and development gates
 
-- The reviewer works only on an open, non-draft PR targeting `main` and the exact handed-off SHA; the developer may start one new branch only after a merge handoff authorizes the next eligible TODO.
-- Never merge a draft, conflicted PR, changed SHA, unresolved blocker, or failing/pending required check.
-- Mark a TODO item complete only after implementation, tests, documentation, and applicable CI pass.
+- Review only an open, non-draft PR targeting `main` at the exact handed-off SHA.
+- Never merge a draft, conflicted PR, changed SHA, unresolved blocker, or failing or pending required workflow.
+- Never carry findings from an older head into a new result without verifying they still apply.
+- Mark a TODO task complete only after implementation, tests, documentation, applicable CI, and required local review pass.
 - A phase is complete only after its goal and every exit criterion have explicit validation, documentation, and merged-main evidence.
-- Never carry findings from an older head into a new review without verifying that they still apply.
+- The ChatGPT developer starts the next task only after the active PR is merged or explicitly abandoned.
 
-## Phase record and paired rotation
+## Automatic merge
 
-When the last task in a phase merges, add one concise phase gate record to `docs/TODO.md`. It must contain the phase, date, goal result, exit-criteria result, validation references, documentation status, and merged PR/commit evidence. Do not carry prior task-level detail into the next phase.
+Automatic merge is disabled by default. Enable it only after at least three successful one-shot local review cycles.
 
-Then emit this compact checkpoint:
+Even when enabled, the bridge may merge only when:
 
-```text
-TYPE: PHASE_COMPLETE
-PHASE: P12
-GOAL: pass
-EXIT_CRITERIA: pass
-EVIDENCE: docs/TODO.md; PR/merge SHA
-ACTION: ROTATE_BOTH
-```
+1. Codex returned PASS for the exact current head.
+2. Required workflows remain green for that head.
+3. The PR remains open, non-draft, conflict-free, and mergeable.
+4. The configured authorization label, for example `automation:merge`, is present.
+5. GitHub accepts a squash merge with the reviewed SHA supplied as the expected head.
 
-The supervisor rotates the developer and reviewer together before the next phase:
+Keep final human merge approval for authentication, authorization, database migrations, secrets, destructive operations, production infrastructure, payments, financial logic, data deletion, and dependency trust-policy changes.
 
-1. Capture only phase/task, open PR, exact SHA, unresolved review IDs, checks, and next action.
-2. Create one fresh ChatGPT developer chat named `Scheduled Developer - Phase <N>`, GPT-5.6 Sol/High, with one Daily fallback task.
-3. Create one fresh local Codex reviewer task named `Scheduled PR Reviewer - Phase <N>`, GPT-5.6 Luna/Extra High, with one two-hour fallback heartbeat.
-4. Update the supervisor and both role prompts with the new counterpart IDs before sending the checkpoint.
-5. Verify both replacements accept the checkpoint, then disable/delete the old schedules and rename/archive the old chats.
-6. Verify exactly one active developer schedule, one reviewer schedule, and one standalone supervisor remain.
+## Developer monitoring fallback
 
-If a conversation reports a maximum-length warning, `ROTATION_REQUIRED`, or cannot accept a prompt, treat it as terminal and perform the same paired rotation immediately. Do not retry the terminal chat. If any rotation step fails, stop retries and notify the user with the exact failed step.
+The optional hourly ChatGPT developer task reconstructs state from GitHub on every run. In priority order it:
+
+1. fixes a new unconsumed `CHANGES_REQUIRED` result for the current head;
+2. continues the single active unfinished development PR;
+3. starts the next eligible TODO only when no development PR is active;
+4. remains silent when no action is required.
+
+It never depends on a direct message from Python and never treats chat history as authoritative.
+
+## Phase records and chat rotation
+
+When the last task in a phase merges, add one concise phase gate record to `docs/TODO.md` containing the phase, date, goal result, exit-criteria result, validation references, documentation status, and merged PR or commit evidence.
+
+A developer chat may be rotated when it becomes long or terminal. The replacement starts by reading `AGENTS.md`, this document, `docs/TODO.md`, the active PR, and current GitHub handoffs. Reviewer continuity does not require a persistent Codex conversation because each review is an ephemeral exact-head run.
 
 ## Blocker routing and recovery
 
-GitHub issue #33, `Automation control queue`, is the durable queue for blockers, including blockers that occur before a PR exists. Direct messages to Project Scheduler only accelerate delivery.
+GitHub issue #33, `Automation control queue`, remains the durable queue for blockers that occur before a PR or cannot be represented as a PR review result.
 
-When Scheduled Developer cannot make meaningful progress after exhausting safe in-scope alternatives, it posts one comment to issue #33:
+Developer blocker:
 
 ```text
 [scheduler-blocked]
 TYPE: BLOCKED
-TASK: P12-03
+TASK: P12-06
 BASE: <full SHA>
 PR: number or none
 BRANCH: branch or none
@@ -155,44 +248,15 @@ BLOCKER: concise blocker
 ACTION: UNBLOCK_AND_RESUME
 ```
 
-Deduplicate by `TASK + BASE + PR + BRANCH + BLOCKER`. After posting, attempt a direct wake to Project Scheduler with the source comment ID. Do not remain falsely active and do not begin other development.
+Deduplicate by `TASK + BASE + PR + BRANCH + BLOCKER`. Tooling, access, and environment recovery may repair configuration or identify a safe alternate path but must not take over product implementation. Credentials, product decisions, destructive actions, and broader authority require the human operator.
 
-Project Scheduler acknowledges before repair:
-
-```text
-[blocker-accepted]
-SOURCE: <blocker comment ID>
-TASK: P12-03
-ACTION: INVESTIGATING
-```
-
-Project Scheduler handles tooling, access, environment, and orchestration recovery without taking over product implementation. It may update automation configuration, repair handoffs, establish supported tooling, or identify a safe alternate path. If recovery requires user credentials, a product decision, destructive action, or broader authority, it asks the user instead of assuming permission.
-
-After recovery, Project Scheduler posts:
-
-```text
-[blocker-resolved]
-SOURCE: <blocker comment ID>
-TASK: P12-03
-RESOLUTION: concise result
-ACTION: RESUME_SENT
-```
-
-It then sends Scheduled Developer one compact `TYPE: RESUME` handoff containing the exact task, base, branch/PR, resolution, preserved checks, and next action. Scheduled Developer resumes the existing work instead of reimplementing it.
-
-The supervisor scans issue #33 every run. For each unaccepted blocker, it immediately wakes Project Scheduler with the source ID. If Project Scheduler is terminal or cannot accept the wake, the supervisor notifies the user. If a resolved blocker lacks a matching developer resume, it sends the resume once. Healthy or already-resolved blockers remain silent.
-
-## Supervisor repair rules
-
-- Determine the expected owner from the open PR, exact SHA, unresolved review state, and latest deduplicated handoff.
-- Wake an idle reviewer when a ready/fix head lacks exact-head review action.
-- Wake an idle developer when current blockers or a merge lack a delivered handoff.
-- If an agent only acknowledges, adjusts scheduling, or stops before its required role result, send one compact corrective wake.
-- Treat an unchanged state as stalled only after two supervisor intervals and only after confirming the expected owner is not genuinely active.
-- Correct prompt or schedule drift without replacing healthy tasks. Never create duplicate active schedules.
-- When the ChatGPT developer reports missing `gh`, redirect it to the authorized GitHub connector immediately; do not ask to install or authenticate a Mac-local CLI for a cloud environment.
-- Notify the user only when intervention occurred, repair failed, or the workflow remains stalled.
+The Python bridge reports its own operational failures as `REVIEW_ERROR`; it does not repeatedly spend Codex credits retrying the same source. After repair, create a new handoff comment or explicitly clear the failed local state.
 
 ## Completion
 
-When every TODO and phase gate is complete and no related PR remains open, stop all three scheduled tasks. If a platform limitation prevents stopping one, reduce it to monthly verification and prohibit new work unless `docs/TODO.md` receives an explicitly added task.
+When every TODO and phase gate is complete and no related PR remains open:
+
+- disable the ChatGPT developer monitoring task;
+- stop the local Python bridge;
+- retain the protocol, local configuration template, and state backup for future roadmap additions;
+- do not create new work unless `docs/TODO.md` receives an explicit task.
