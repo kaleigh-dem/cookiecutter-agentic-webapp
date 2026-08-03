@@ -34,11 +34,14 @@ function parseUrl(value) {
 
 function isPlaceholderOwner(value) {
   const normalized = value.trim().toLowerCase();
+  const usesExampleDomain =
+    normalized === 'example.com' ||
+    /^[^@\s]+@example\.com$/u.test(normalized);
   return (
     normalized.length === 0 ||
     normalized.includes('changeme') ||
     normalized.includes('replace-me') ||
-    normalized.includes('example.com') ||
+    usesExampleDomain ||
     normalized.includes('<') ||
     normalized.includes('>')
   );
