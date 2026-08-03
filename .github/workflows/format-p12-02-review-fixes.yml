@@ -1,0 +1,35 @@
+name: Format P12-02 review fixes
+
+on:
+  push:
+    branches:
+      - agent/p12-02-browser-authentication-adapter
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p12-02-browser-authentication-adapter
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write packages/web/features/agent-tasks/src/lib/authentication.spec.ts
+      - run: rm .github/workflows/format-p12-02-review-fixes.yml
+      - name: Commit formatted file
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add packages/web/features/agent-tasks/src/lib/authentication.spec.ts .github/workflows/format-p12-02-review-fixes.yml
+          git commit -m "chore: format P12-02 review fixes"
+          git push
