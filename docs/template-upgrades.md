@@ -4,11 +4,12 @@ Generated repositories record their originating release in `workspace.template.j
 
 ## Preview an upgrade
 
-Download the workspace-plugin tarball attached to the target template release and install it temporarily:
+Download the workspace-plugin tarball attached to the target template release, replace the example version, and install it temporarily:
 
 ```bash
-pnpm add --save-dev ./downloaded-workspace-plugin-<version>.tgz
-pnpm exec agentic-webapp-upgrade --to <version> --dry-run
+TARGET_VERSION=0.2.0
+pnpm add --save-dev "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm exec agentic-webapp-upgrade --to "$TARGET_VERSION" --dry-run
 ```
 
 The command defaults to dry-run mode. Review the migration list, ownership class, action, and any conflicts in the JSON report.
@@ -18,7 +19,7 @@ The command defaults to dry-run mode. Review the migration list, ownership class
 Commit or stash current work, then run:
 
 ```bash
-pnpm exec agentic-webapp-upgrade --to <version> --apply
+pnpm exec agentic-webapp-upgrade --to "$TARGET_VERSION" --apply
 pnpm check
 ```
 
