@@ -202,7 +202,7 @@ The generated production profile now has reference OIDC identity, explicit brows
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-- [ ] **P13-01 Add image and dependency supply-chain artifacts.**
+- [-] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
   - Scan images and fail according to an explicit severity and exception policy.
   - Produce build provenance or attestations.

@@ -40,6 +40,8 @@ Preview orchestration validates `infra/environments/preview.local.env` through t
 
 See `docs/production-readiness.md` for the complete release-workflow contract.
 
-## Runtime ownership
+## Runtime and artifact ownership
 
-Images do not contain production secrets. The deployment platform must inject database credentials, telemetry endpoints, and provider-specific identity configuration at runtime. TLS termination, image signing and attestation, secret rotation, network policy, managed backups, and environment approval remain platform responsibilities.
+Images do not contain production secrets. The deployment platform must inject database credentials, telemetry endpoints, and provider-specific identity configuration at runtime.
+
+The repository release workflow generates image SBOMs, enforces the vulnerability policy, signs published digests, and publishes build-provenance and SBOM attestations. See [Image supply-chain artifacts](image-supply-chain.md). The deployment platform remains responsible for TLS termination, admission enforcement, OCI referrer retention, secret rotation, network policy, managed backups, and environment approval.
