@@ -11,9 +11,10 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 ## Included now
 
 - Next.js App Router web application
-- NestJS API with replaceable development and OIDC access-token verification
-- Node.js worker
-- shared UI, contracts, and server environment packages
+- NestJS API with generated runtime contract enforcement and replaceable development or OIDC access-token verification
+- Node.js worker with PostgreSQL outbox polling, lease fencing, retries, dead-letter inspection, and bounded shutdown
+- framework-free Agent Task and rate-limit backend libraries
+- shared UI, contracts, database, environment, observability, and web-feature packages
 - pnpm workspaces
 - enforced scope, runtime, and project-type boundaries
 - Nx project graph, caching, affected commands, and local generators
@@ -21,14 +22,14 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - Nx MCP configuration and agent instructions
 - PostgreSQL development service and optional OpenTelemetry collector
 - PostgreSQL-backed distributed API rate limiting with explicit proxy trust
-- production OCI images, preview orchestration, release plans, and performance budgets
-- GitHub Actions using standalone, affected, and generated-workspace validation
+- production OCI images, preview orchestration, release plans, production-readiness checks, and performance budgets
+- GitHub Actions using standalone, affected, security, delivery, release, and generated-workspace validation
 - generated-repository onboarding and governance checklists
 
 ## Create a workspace
 
 ```bash
-npx create-nx-workspace@23.1.0 my-workspace \
+npx create-nx-workspace@23.1.1 my-workspace \
   --template kaleigh-dem/nx-fullstack-platform
 ```
 
@@ -55,11 +56,12 @@ See `docs/template-releases.md` for versioning and publishing, `docs/template-va
 
 ## Upgrade a generated workspace
 
-Install the target release artifact temporarily and preview its ordered migration plan:
+Install the target release artifact temporarily and preview its ordered migration plan. Replace the example version with the release you downloaded:
 
 ```bash
-pnpm add --save-dev ./downloaded-workspace-plugin-0.2.0.tgz
-pnpm exec agentic-webapp-upgrade --to 0.2.0 --dry-run
+TARGET_VERSION=0.2.0
+pnpm add --save-dev "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm exec agentic-webapp-upgrade --to "$TARGET_VERSION" --dry-run
 ```
 
 After reviewing ownership classes and conflicts, rerun with `--apply`, execute `pnpm check`, and commit the upgrade separately from application changes. Applied migrations synchronize the repository-local `pnpm template:upgrade` command.
@@ -84,9 +86,9 @@ pnpm dev
 
 The complete first-run and shutdown sequence is documented in `docs/getting-started.md`.
 
-## Authentication
+## Authentication and distributed controls
 
-Local development uses deterministic browser and API development adapters. Production web builds must explicitly select OIDC, session, or intentionally unauthenticated behavior; OIDC and session profiles obtain and renew short-lived bearer credentials through a same-origin secure-session endpoint. See `docs/browser-authentication.md` for browser storage, renewal, endpoint, and generator behavior. See `docs/oidc-authentication.md` for API discovery, JWKS, claim validation, rotation, and outage behavior.
+Local development uses deterministic browser and API development adapters. Production web builds must explicitly select OIDC, session, or intentionally unauthenticated behavior; OIDC and session profiles obtain and renew short-lived bearer credentials through a same-origin secure-session endpoint. See `docs/browser-authentication.md` for browser storage, renewal, endpoint, and generator behavior. See `docs/oidc-authentication.md` and `docs/security/identity-operations.md` for API discovery, JWKS, claim validation, rotation, and outage behavior.
 
 Production API replicas share anonymous, authenticated, route, and tenant rate-limit policies through PostgreSQL. See `docs/rate-limiting.md` for thresholds, trusted-proxy configuration, failure behavior, and operations.
 
@@ -96,13 +98,14 @@ Production API replicas share anonymous, authenticated, route, and tenant rate-l
 pnpm check
 ```
 
-The validation contract includes workspace synchronization, generated contracts, formatting, security policy, delivery configuration, performance budgets, linting, typechecking, tests, and production builds. A production build must leave the Git working tree clean.
+The validation contract includes workspace synchronization, generated contracts, formatting, security policy, delivery configuration, performance budgets, linting, type checking, tests, and production builds. A production build must leave the Git working tree clean.
 
 ## Build and validate release artifacts
 
 ```bash
 pnpm containers:build
 pnpm preview:up
+pnpm preview:smoke
 pnpm performance:load
 pnpm preview:down
 ```
@@ -121,6 +124,14 @@ See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/di
 ## Production readiness
 
 A generated repository is not production-ready solely because its local and preview paths pass. Complete `docs/generated-project-checklist.md` to configure repository access, CODEOWNERS, required checks, branch protection, environments, secrets, release permissions, operational ownership, and deployment evidence. The production replacement points are listed in `docs/getting-started.md`.
+
+Validate the exact production environment contract before building release images:
+
+```bash
+pnpm production:check -- infra/environments/production.env
+```
+
+See `docs/production-readiness.md` for every enforced property and the release-workflow contract.
 
 ## Generate approved structure
 

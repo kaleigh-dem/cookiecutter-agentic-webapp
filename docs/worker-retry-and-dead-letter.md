@@ -44,12 +44,24 @@ Replay preserves the original outbox ID, previous safe failure evidence, and cum
 
 After replay, confirm that the row leaves the failed list and reaches `processed`, or returns to failed with a new error and incremented replay audit count.
 
-## Alert thresholds
+## Monitoring and alert thresholds
 
-Until P11-06 publishes queue metrics, poll the failed-message query and database age/count queries with the same operational monitoring used for PostgreSQL.
+The worker publishes these signals through OpenTelemetry and its internal `/metrics` snapshot:
 
-- **Warning:** any new failed row, three or more retry schedules for the same error code within 10 minutes, or an eligible pending row older than 2 minutes for 10 minutes.
-- **Critical:** five or more new failed rows within 5 minutes, three failed rows with the same event kind and error code within 5 minutes, or an eligible pending row older than 10 minutes.
+- `worker_queue_depth`
+- `worker_oldest_message_age_ms`
+- `worker_message_processing_duration_ms`
+- `worker_retries_total`
+- `worker_failures_total`
+
+Readiness at `/health/ready` separately reports whether the worker is accepting claims and PostgreSQL is reachable. See `docs/worker-operations.md` for endpoint and shutdown behavior.
+
+Initial alert guidance:
+
+- **Warning:** any increase in `worker_failures_total`, three or more retry schedules for the same error code within 10 minutes, or `worker_oldest_message_age_ms` above 120,000 for 10 minutes.
+- **Critical:** five or more new terminal failures within 5 minutes, three failed rows with the same event kind and error code within 5 minutes, worker readiness unavailable while the process is live, or `worker_oldest_message_age_ms` above 600,000.
 - **Immediate investigation:** `invalid_contract`, `unsupported_event_version`, `unsupported_event_type`, `idempotency_identity_mismatch`, or `execution_state_conflict`, because repeated replay will not repair these conditions by itself.
 
-For a warning, inspect the safe metadata, correlate the message and task IDs with application traces, and check dependency health. For a critical alert, stop automated replay, preserve the failed rows, identify whether the failure is producer-wide or dependency-wide, and escalate through the service incident process. Replay only a bounded sample after the correction, then watch it reach terminal success before replaying additional rows.
+For a warning, inspect the safe metadata, correlate message and task IDs with traces, and check dependency health. For a critical alert, stop automated replay, preserve the failed rows, identify whether the failure is producer-wide or dependency-wide, and escalate through the service incident process. Replay only a bounded sample after the correction, then watch it reach terminal success before replaying additional rows.
+
+Deploying teams should tune these thresholds from observed traffic and service objectives rather than weakening them solely to suppress alerts.
