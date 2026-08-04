@@ -22,6 +22,11 @@
       "reason": "Transitive through the current stable Nx release; remove when Nx resolves axios 1.18 or later."
     },
     {
+      "id": "GHSA-7p8r-x3mc-p8w7",
+      "package": "fast-uri",
+      "reason": "Newly disclosed transitive advisory through ajv; tracked in issue #40 and remove after a patched compatible release or safe override is available."
+    },
+    {
       "id": "GHSA-f88m-g3jw-g9cj",
       "package": "sharp",
       "reason": "Transitive through the current stable Next.js release; remove when Next.js supports sharp 0.35 or later."
