@@ -64,4 +64,4 @@ If the outage exceeds the accepted recovery objective, use only pre-approved bus
 - Trusted-proxy configuration matches the deployed ingress topology.
 - Worker replay cannot change the initiating actor, tenant, or authorization decision recorded with the durable event.
 
-The repository HTTP integration suite exercises the identity, rotation, authorization, and subject-scoped rate-limit checks above through the real Nest guard pipeline.
+The repository security integration suite composes the production OIDC verifier, authentication and authorization guards, reflector metadata, and rate-limit store to exercise identity, rotation, permission, and subject-scoped limit behavior together.
