@@ -10,12 +10,15 @@ pnpm initialize:workspace customer-portal \
   --repositoryOwner=acme-platform
 pnpm install --frozen-lockfile
 pnpm template:identity:check
-pnpm template:upgrade -- --to <target-version> --dry-run
+TARGET_VERSION=0.2.0
+pnpm template:upgrade -- --to "$TARGET_VERSION" --dry-run
 pnpm generate:domain billing
 pnpm generate:feature account-settings
 pnpm generate:job refresh-search-index --queue=search
 pnpm generate:contract project-created
 ```
+
+Replace the example target version with the release being evaluated.
 
 The equivalent Nx form is:
 
