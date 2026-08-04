@@ -15,7 +15,7 @@ The workspace has application, data, observability, and security foundations, bu
    - Images carry version and revision OCI labels.
 2. Keep deployment configuration outside images.
    - Checked-in environment examples describe required keys.
-   - `tools/delivery/validate-environment.mjs` rejects missing, malformed, insecure, placeholder, or development-only production configuration.
+   - `pnpm production:check` invokes `tools/delivery/production-check.mjs` and rejects missing, malformed, insecure, placeholder, local, or development-only production configuration.
    - Public browser values are intentionally build-time inputs; secrets are never build arguments.
 3. Use immutable semantic versions for release images. A release plan orders work as:
    - validate configuration;
