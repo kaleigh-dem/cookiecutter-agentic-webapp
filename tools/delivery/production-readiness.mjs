@@ -10,6 +10,12 @@ const releaseEnvironmentKeys = [
   'NEXT_PUBLIC_AUTHENTICATION_PROFILE',
   'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT',
 ];
+const telemetryEndpointKeys = [
+  'OTEL_EXPORTER_OTLP_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT',
+];
 
 function normalizeHostname(hostname) {
   const normalized = hostname.toLowerCase().replace(/\.$/u, '');
@@ -234,13 +240,18 @@ export function validateProductionReadiness(
   ) {
     issues.push('OTEL_SERVICE_VERSION must match APP_VERSION.');
   }
+  if (values.OTEL_SDK_DISABLED?.trim().toLowerCase() === 'true') {
+    issues.push('OTEL_SDK_DISABLED must not disable telemetry in production.');
+  }
 
   requireProductionHttpsUrl(values, 'WEB_ORIGIN', issues, {
     originOnly: true,
   });
   requireProductionHttpsUrl(values, 'NEXT_PUBLIC_API_BASE_URL', issues);
   requireProductionHttpsUrl(values, 'AUTH_OIDC_ISSUER', issues);
-  requireProductionHttpsUrl(values, 'OTEL_EXPORTER_OTLP_ENDPOINT', issues);
+  for (const key of telemetryEndpointKeys) {
+    requireProductionHttpsUrl(values, key, issues);
+  }
   validateDatabase(values, issues);
 
   if (values.API_RATE_LIMIT_STORE !== 'postgres') {
