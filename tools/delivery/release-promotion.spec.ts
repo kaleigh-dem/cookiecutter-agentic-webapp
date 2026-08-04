@@ -11,6 +11,12 @@ describe('immutable release promotion', () => {
     const workflow = await repositoryFile('.github/workflows/release.yml');
 
     expect(workflow).toContain('environment:\n      name: preview');
+    expect(workflow).toContain(
+      'concurrency:\n  group: release-images-${{ inputs.version }}\n  cancel-in-progress: false',
+    );
+    expect(workflow.indexOf('concurrency:')).toBeLessThan(
+      workflow.indexOf('jobs:'),
+    );
     expect(workflow).toContain('refs/heads/main');
     expect(workflow).toContain('Refuse to overwrite a published version');
     expect(workflow).toContain('docker manifest inspect');
@@ -35,6 +41,18 @@ describe('immutable release promotion', () => {
   it('promotes only a successful main-branch release manifest', async () => {
     const workflow = await repositoryFile('.github/workflows/promote.yml');
 
+    expect(workflow).toContain('  authorize:\n');
+    expect(workflow).toContain(
+      "if [ \"$GITHUB_REF\" != 'refs/heads/main' ]; then",
+    );
+    expect(workflow).toContain('needs: authorize');
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('actions/checkout@v7'),
+    );
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('environment:\n      name: production'),
+    );
     expect(workflow).toContain('environment:\n      name: production');
     expect(workflow).toContain('actions: read');
     expect(workflow).toContain('attestations: read');
@@ -86,5 +104,11 @@ describe('immutable release promotion', () => {
     expect(documentation).toContain('required reviewers');
     expect(documentation).toContain('source workflow run ID');
     expect(documentation).toContain('does not build, retag, or push');
+    expect(documentation).toContain(
+      'serializes dispatches for the same semantic version',
+    );
+    expect(documentation).toContain(
+      'Before checkout or production Environment access',
+    );
   });
 });
