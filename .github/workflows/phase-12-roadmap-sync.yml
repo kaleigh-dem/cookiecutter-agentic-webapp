@@ -1,0 +1,68 @@
+name: Phase 12 roadmap sync
+
+on:
+  push:
+    branches:
+      - agent/close-phase-12-exit-criteria
+    paths:
+      - .github/workflows/phase-12-roadmap-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/close-phase-12-exit-criteria
+      - name: Update Phase 12 roadmap evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/TODO.md')
+          content = path.read_text()
+          content = content.replace(
+              '- [-] **P12-06 Expand security verification.**',
+              '- [x] **P12-06 Expand security verification.**',
+              1,
+          )
+          start = content.index('Phase gate record (2026-08-03):')
+          end = content.index('\n\n## Phase 13', start)
+          record = (
+              'Phase gate record (2026-08-03): P12-01 is completed and verified in '
+              '`512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified '
+              'in reviewed PR #27 and squash commit '
+              '`c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery '
+              '#241, Security #308, and Generated Workspace #177; P12-03 is completed and '
+              'verified in reviewed PR #32 and squash commit '
+              '`fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery '
+              '#250, Security #321, and Generated Workspace #181; P12-04 is completed and '
+              'verified in reviewed PR #35 and squash commit '
+              '`4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`, including CI #501, Delivery '
+              '#254, Security #325, and Generated Workspace #185; P12-05 is completed and '
+              'verified in reviewed PR #36 and squash commit '
+              '`49f0f38e9da6fe35a335ac5c7def49e977990a09`, after reviewer PASS for exact '
+              'head `5959c12abccb744a8ea35d9bd4e700554ad787b2` and CI #532, Delivery #282, '
+              'Security #356, and Generated Workspace #214; P12-06 is completed and verified '
+              'in reviewed PR #48 and squash commit '
+              '`4e7f6d1c1365eae2d6c13995be0af76383c12d64`, after reviewer PASS for exact '
+              'head `eef707030364fe09d75d25f1b391f766dd06fb41` and CI #565, Delivery #308, '
+              'Security #389, and Generated Workspace #245. PR #49 adds an explicit generated '
+              'OIDC/container/PostgreSQL phase gate, keeps signed-identity, runtime-contract, '
+              'and cross-replica limit proofs in the generated validation contract, and proves '
+              'that development authentication and in-memory limits cannot pass production '
+              'readiness. Phase 12 is complete when PR #49 merges with exact-head validation.'
+          )
+          path.write_text(content[:start] + record + content[end:])
+          PY
+      - name: Commit roadmap update and remove helper
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/TODO.md
+          git rm .github/workflows/phase-12-roadmap-sync.yml
+          git commit -m "docs: record Phase 12 completion evidence"
+          git push
