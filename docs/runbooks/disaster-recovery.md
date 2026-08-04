@@ -27,11 +27,11 @@ The baseline PostgreSQL outbox transport has no separate queue service to restor
 1. Declare the incident, assign an incident commander, and stop writes when they can worsen loss.
 2. Identify the last known-good application version, database backup, migration state, and configuration version.
 3. Create an isolated recovery environment. Never test a restore over the damaged production database.
-4. Restore PostgreSQL and verify migration history, row counts, critical invariants, application ownership data, and outbox delivery state.
+4. Restore PostgreSQL and verify migration history, row counts, critical invariants, application ownership data, outbox delivery state, and distributed rate-limit schema.
 5. If the deployment implements an external queue adapter, restore or recreate it from its documented durable sources and reconcile it with PostgreSQL before processing resumes. Treat ephemeral cache data as disposable.
-6. Validate deployment configuration with `tools/delivery/validate-environment.mjs`.
+6. Validate the recovered production configuration with `pnpm production:check -- <environment-file>`.
 7. Deploy the compatible immutable application images.
-8. Run smoke tests, authorization checks, and the baseline performance scenarios.
+8. Run the release smoke profile, authorization checks, and the baseline performance scenarios.
 9. Compare recovered data to the declared recovery point and obtain incident-commander approval before switching traffic.
 10. Re-enable writes gradually and observe service indicators through the recovery window.
 
@@ -41,4 +41,4 @@ Run a restore exercise at least quarterly and after changing the database provid
 
 ## Post-incident
 
-Preserve the timeline, backup identifiers, restored version, validation output, and any data reconciliation. Track corrective work with owners and deadlines. Never declare recovery complete solely because containers are healthy; confirm business data and authorization boundaries.
+Preserve the timeline, backup identifiers, restored version, production-readiness output, smoke and performance results, and any data reconciliation. Track corrective work with owners and deadlines. Never declare recovery complete solely because containers are healthy; confirm business data, identity verification, authorization boundaries, outbox recovery, and distributed controls.
