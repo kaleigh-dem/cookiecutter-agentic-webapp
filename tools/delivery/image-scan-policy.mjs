@@ -123,7 +123,11 @@ function collectVulnerabilities(report) {
   });
 }
 
-export function evaluateImageScanReports({ policy, reports, now = new Date() }) {
+export function evaluateImageScanReports({
+  policy,
+  reports,
+  now = new Date(),
+}) {
   const normalizedPolicy = normalizeImageScanPolicy(policy);
   const today = now.toISOString().slice(0, 10);
   const expiredExceptions = normalizedPolicy.exceptions.filter(
