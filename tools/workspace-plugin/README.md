@@ -10,7 +10,7 @@ pnpm initialize:workspace customer-portal \
   --repositoryOwner=acme-platform
 pnpm install --frozen-lockfile
 pnpm template:identity:check
-pnpm template:upgrade -- --to 0.2.0 --dry-run
+pnpm template:upgrade -- --to <target-version> --dry-run
 pnpm generate:domain billing
 pnpm generate:feature account-settings
 pnpm generate:job refresh-search-index --queue=search
@@ -47,4 +47,5 @@ The initialization contract and compatibility rules are documented in `docs/temp
 3. Use `normalizeGeneratorName`, overwrite protection, and `formatGeneratorFiles` from `shared.ts` where the generator creates named structural slices.
 4. Assign scope, type, and runtime tags to every generated project.
 5. Add the command and output contract to this README.
-6. Update `docs/TODO.md` and run `pnpm check`.
+6. Update `docs/TODO.md` when the generator changes roadmap status, sequencing, scope, or exit criteria.
+7. Run `pnpm check`.
