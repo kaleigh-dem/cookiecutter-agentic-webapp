@@ -3,7 +3,7 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-import initGenerator from '../workspace-plugin/src/generators/init/generator';
+import initGenerator from '@agentic-webapp/workspace-plugin/src/generators/init/generator';
 import { parseEnvironmentFile } from './environment.mjs';
 import { validateProductionReadiness } from './production-readiness.mjs';
 
