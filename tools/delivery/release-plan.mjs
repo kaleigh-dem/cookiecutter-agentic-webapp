@@ -1,4 +1,9 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+
+import {
+  RELEASE_SERVICES,
+  validateReleaseManifest,
+} from './release-manifest.mjs';
 
 function parseArguments(arguments_) {
   const values = {};
@@ -23,7 +28,9 @@ export function isSemanticVersion(value) {
     !parts.every(
       (part) =>
         part.length > 0 &&
-        [...part].every((character) => character >= '0' && character <= '9') &&
+        [...part].every(
+          (character) => character >= '0' && character <= '9',
+        ) &&
         (part === '0' || !part.startsWith('0')),
     )
   ) {
@@ -33,10 +40,7 @@ export function isSemanticVersion(value) {
   return prerelease === undefined || prerelease.length > 0;
 }
 
-export function createReleasePlan({ environment, imagePrefix, version }) {
-  if (!['preview', 'production'].includes(environment)) {
-    throw new Error('Release environment must be preview or production.');
-  }
+function legacyRelease({ imagePrefix, version }) {
   if (!isSemanticVersion(version)) {
     throw new Error('Release version must be valid semantic versioning.');
   }
@@ -44,26 +48,87 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
     throw new Error('An image prefix is required.');
   }
 
+  return {
+    immutable: false,
+    version,
+    images: Object.fromEntries(
+      RELEASE_SERVICES.map((service) => [
+        service,
+        `${imagePrefix}/${service}:${version}`,
+      ]),
+    ),
+    source: null,
+  };
+}
+
+function manifestRelease(manifest) {
+  const normalized = validateReleaseManifest(manifest);
+  return {
+    immutable: true,
+    version: normalized.version,
+    images: Object.fromEntries(
+      RELEASE_SERVICES.map((service) => [
+        service,
+        normalized.images[service].reference,
+      ]),
+    ),
+    source: {
+      environment: normalized.source.environment,
+      repository: normalized.source.repository,
+      workflow: normalized.source.workflow,
+      runId: normalized.source.runId,
+      commitSha: normalized.source.commitSha,
+      ref: normalized.source.ref,
+    },
+  };
+}
+
+export function createReleasePlan({
+  environment,
+  imagePrefix,
+  version,
+  manifest,
+  imageEnvironmentFile = 'release-images.env',
+}) {
+  if (!['preview', 'production'].includes(environment)) {
+    throw new Error('Release environment must be preview or production.');
+  }
+
+  const release = manifest
+    ? manifestRelease(manifest)
+    : legacyRelease({ imagePrefix, version });
   const environmentFile = `infra/environments/${environment}.env`;
   const composeFile = `infra/deploy/compose.${environment}.yaml`;
-  const images = Object.fromEntries(
-    ['api', 'worker', 'web'].map((service) => [
-      service,
-      `${imagePrefix}/${service}:${version}`,
-    ]),
-  );
   const validationCommand =
     environment === 'production'
       ? `pnpm production:check -- ${environmentFile}`
       : `node tools/delivery/validate-environment.mjs ${environmentFile}`;
+  const deployCommand = release.immutable
+    ? `set -a && . ${environmentFile} && . ${imageEnvironmentFile} && set +a && docker compose --env-file ${environmentFile} -f ${composeFile} up -d --wait`
+    : `docker compose --env-file ${environmentFile} -f ${composeFile} up -d --wait`;
 
   return {
-    schemaVersion: 1,
+    schemaVersion: release.immutable ? 2 : 1,
     environment,
-    version,
-    images,
-    rollbackTag: `${imagePrefix}/{service}:previous`,
+    version: release.version,
+    immutableImages: release.immutable,
+    images: release.images,
+    source: release.source,
+    rollbackStrategy: release.immutable
+      ? 'Select a previously approved release manifest and its exact digest references.'
+      : undefined,
+    rollbackTag: release.immutable
+      ? undefined
+      : `${imagePrefix}/{service}:previous`,
     orderedSteps: [
+      ...(release.immutable
+        ? [
+            {
+              id: 'verify-release-manifest',
+              command: `node tools/delivery/release-manifest.mjs validate --manifest release-manifest.json --expected-version ${release.version}`,
+            },
+          ]
+        : []),
       {
         id: 'validate-configuration',
         command: validationCommand,
@@ -83,7 +148,7 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
       },
       {
         id: 'deploy-services',
-        command: `docker compose --env-file ${environmentFile} -f ${composeFile} up -d --wait`,
+        command: deployCommand,
       },
       {
         id: 'smoke-test',
@@ -100,10 +165,16 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
 
 async function main() {
   const arguments_ = parseArguments(process.argv.slice(2));
+  const manifest = arguments_.manifest
+    ? JSON.parse(await readFile(arguments_.manifest, 'utf8'))
+    : undefined;
   const plan = createReleasePlan({
     environment: arguments_.environment,
     imagePrefix: arguments_['image-prefix'],
     version: arguments_.version,
+    manifest,
+    imageEnvironmentFile:
+      arguments_['image-environment-file'] ?? 'release-images.env',
   });
   const output = `${JSON.stringify(plan, null, 2)}\n`;
 
