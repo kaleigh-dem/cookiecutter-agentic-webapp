@@ -184,18 +184,7 @@ Goal: provide a production-capable security path while keeping providers replace
 
 Exit criteria: a generated production profile authenticates real identities, enforces runtime contracts and distributed limits across replicas, and cannot pass the release gate with development-only security adapters.
 
-### Phase 12 gate record — 2026-08-03
-
-Phase 12 is complete. Evidence:
-
-- P12-01: commit `512ba1d9799c74a1f0a60697776c93ccc29ed723`
-- P12-02: PR #27 and commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`
-- P12-03: PR #32 and commit `fb2c675b02d443952f018c3df11f65bff970e7dd`
-- P12-04: PR #35 and commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`
-- P12-05: PR #36 and commit `49f0f38e9da6fe35a335ac5c7def49e977990a09`
-- P12-06: PR #48 and commit `4e7f6d1c1365eae2d6c13995be0af76383c12d64`, with reviewer PASS on exact head `eef707030364fe09d75d25f1b391f766dd06fb41` and successful CI #565, Delivery #308, Security #389, and Generated Workspace #245
-
-The generated production profile now has reference OIDC identity, explicit browser authentication, runtime HTTP contract enforcement, PostgreSQL-backed distributed limits, a fail-closed release gate, integrated security verification, and documented identity operations.
+Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177; P12-03 is completed and verified in reviewed PR #32 and squash commit `fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery #250, Security #321, and Generated Workspace #181; P12-04 is completed and verified in reviewed PR #35 and squash commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`, including CI #501, Delivery #254, Security #325, and Generated Workspace #185; P12-05 is completed and verified in reviewed PR #36 and squash commit `49f0f38e9da6fe35a335ac5c7def49e977990a09`, after reviewer PASS for exact head `5959c12abccb744a8ea35d9bd4e700554ad787b2` and CI #532, Delivery #282, Security #356, and Generated Workspace #214; P12-06 is completed and verified in reviewed PR #48 and squash commit `4e7f6d1c1365eae2d6c13995be0af76383c12d64`, after reviewer PASS for exact head `eef707030364fe09d75d25f1b391f766dd06fb41` and CI #565, Delivery #308, Security #389, and Generated Workspace #245. PR #49 adds an explicit generated OIDC/container/PostgreSQL phase gate, keeps signed-identity, runtime-contract, and cross-replica limit proofs in the generated validation contract, and proves that development authentication and in-memory limits cannot pass production readiness. Phase 12 is complete when PR #49 merges with exact-head validation.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
