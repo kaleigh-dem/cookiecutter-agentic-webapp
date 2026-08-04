@@ -51,14 +51,28 @@ interface ProviderState {
   readonly keyRequests: () => number;
 }
 
-@Controller('security-verification')
 class SecurityVerificationController {
-  @Get('read')
-  @RequirePermissions('agent-tasks:read')
   public read(): { readonly ok: true } {
     return { ok: true };
   }
 }
+
+Controller('security-verification')(SecurityVerificationController);
+const readDescriptor = Object.getOwnPropertyDescriptor(
+  SecurityVerificationController.prototype,
+  'read',
+);
+if (!readDescriptor) throw new Error('Security verification route is missing.');
+Get('read')(
+  SecurityVerificationController.prototype,
+  'read',
+  readDescriptor,
+);
+RequirePermissions('agent-tasks:read')(
+  SecurityVerificationController.prototype,
+  'read',
+  readDescriptor,
+);
 
 function createSigningKey(kid: string): SigningKey {
   const { privateKey, publicKey } = generateKeyPairSync('rsa', {
