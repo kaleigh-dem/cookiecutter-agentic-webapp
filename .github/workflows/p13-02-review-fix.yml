@@ -144,8 +144,8 @@ jobs:
           pnpm delivery:check
           pnpm nx test delivery --skip-nx-cache
           pnpm nx lint delivery --skip-nx-cache
-          rm .github/workflows/p13-02-review-fix.yml
-          rm .github/workflows/p13-02-review-fix-v2.yml
+          rm -f .github/workflows/p13-02-review-fix.yml
+          rm -f .github/workflows/p13-02-review-fix-v2.yml
           git branch --force main origin/main
           pnpm format:check
 
