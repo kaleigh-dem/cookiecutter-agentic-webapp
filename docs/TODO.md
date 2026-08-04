@@ -2,24 +2,22 @@
 
 Last updated: 2026-08-03
 
-This file tracks active work required to evolve the repository as a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as a separate historical roadmap.
+This file tracks active work required to turn the repository from a validated reference application into a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as checked-off tasks here.
 
 ## Completed baseline
 
-Phases 2–12 established the current foundation:
+Phases 2–9 established the current foundation:
 
 - Nx workspace migration and enforceable project boundaries
 - architecture-aware domain, feature, job, and contract generators
-- deterministic template initialization, releases, generated-workspace validation, and downstream upgrades
-- PostgreSQL migrations, integration tests, repositories, transactional outbox delivery, and distributed rate limits
-- deterministic OpenAPI generation, browser clients, and runtime HTTP contract enforcement
-- a complete asynchronous Agent Tasks reference feature
-- structured logging, OpenTelemetry, health checks, worker metrics, and runbooks
-- development and production browser authentication profiles plus OIDC access-token verification
-- production images, preview validation, production-readiness checks, release planning, and performance budgets
-- security verification for token expiry, issuer and audience mismatch, signing-key rotation, permission denial, and rate-limit behavior
+- PostgreSQL migrations, integration tests, repositories, and transactional outbox storage
+- deterministic OpenAPI generation and browser client generation
+- a vertical Agent Tasks reference feature
+- structured logging, OpenTelemetry, health checks, and runbooks
+- authentication and authorization boundaries plus security CI
+- production images, preview validation, release planning, and performance budgets
 
-Relevant merged work is recorded in PRs #2–#48 and `docs/adr/`.
+Relevant merged work is recorded in PRs #2–#10 and `docs/adr/`.
 
 ## Status conventions
 
@@ -39,9 +37,11 @@ Relevant merged work is recorded in PRs #2–#48 and `docs/adr/`.
 
 ## Execution order
 
-1. Phases 10–12 are complete.
-2. Phase 13 is the next active phase; begin with P13-01 unless an explicit dependency or incident changes the sequence.
-3. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
+1. Complete Phase 10 before generating production projects from the template.
+2. Complete Phase 11 before calling Agent Tasks a complete asynchronous reference workflow.
+3. Complete Phase 12 before production deployment of a generated application.
+4. Phase 13 can proceed in parallel after Phase 10 establishes the template release lifecycle.
+5. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
 
 ## Phase 10 — Template productization
 
@@ -160,7 +160,7 @@ Goal: provide a production-capable security path while keeping providers replace
 
 - [x] **P12-03 Replace process-local production rate limiting.**
   - Retain the in-memory limiter for local development and unit tests.
-  - Add a distributed or platform-backed implementation for multi-replica deployments.
+  - Add a distributed Redis or platform-backed implementation for multi-replica deployments.
   - Define trusted-proxy and client-IP handling.
   - Add policy keys for anonymous, authenticated, route-specific, and tenant-specific limits.
   - Test consistency across multiple API instances.
