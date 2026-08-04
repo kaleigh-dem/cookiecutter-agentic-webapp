@@ -7,7 +7,7 @@ on:
       - tools/delivery/image-scan-policy.mjs
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
@@ -15,13 +15,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Print exact Prettier output
+      - name: Apply exact Prettier output
         run: |
           npx --yes prettier@3.9.6 --write tools/delivery/image-scan-policy.mjs
-          echo 'FORMATTED_BEGIN'
-          base64 -w0 tools/delivery/image-scan-policy.mjs
-          echo
-          echo 'FORMATTED_END'
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tools/delivery/image-scan-policy.mjs
+          if ! git diff --cached --quiet; then
+            git commit -m "style(delivery): format image scan policy"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          fi
