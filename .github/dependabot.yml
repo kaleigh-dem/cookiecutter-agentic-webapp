@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
       timezone: America/New_York
     open-pull-requests-limit: 5
     versioning-strategy: increase-if-necessary
@@ -29,7 +29,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:30"
+      time: '09:30'
       timezone: America/New_York
     open-pull-requests-limit: 5
     groups:
