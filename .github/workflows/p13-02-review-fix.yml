@@ -37,13 +37,15 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
+          input_expression = '$' + '{{ inputs.version }}'
+
           release_path = Path('.github/workflows/release.yml')
           release = release_path.read_text()
           marker = "permissions:\n  contents: read\n\njobs:\n"
           replacement = (
               "permissions:\n  contents: read\n\n"
               "concurrency:\n"
-              "  group: release-images-${{ inputs.version }}\n"
+              "  group: release-images-" + input_expression + "\n"
               "  cancel-in-progress: false\n\n"
               "jobs:\n"
           )
@@ -55,23 +57,22 @@ jobs:
           promote = promote_path.read_text()
           marker = "jobs:\n  promote:\n    environment:\n"
           replacement = """jobs:
-            authorize:
-              runs-on: ubuntu-latest
-              timeout-minutes: 5
-              steps:
-                - name: Require the default branch
-                  run: |
-                    if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
-                      echo 'Promote release digests must be dispatched from refs/heads/main.' >&2
-                      exit 1
-                    fi
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the default branch
+        run: |
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo 'Promote release digests must be dispatched from refs/heads/main.' >&2
+            exit 1
+          fi
 
-            promote:
-              needs: authorize
-              if: github.ref == 'refs/heads/main'
-              environment:
-          """
-          replacement = '\n'.join(line[10:] if line.startswith('          ') else line for line in replacement.splitlines()) + '\n'
+  promote:
+    needs: authorize
+    if: github.ref == 'refs/heads/main'
+    environment:
+"""
           if marker not in promote:
               raise SystemExit('promotion jobs marker not found')
           promote_path.write_text(promote.replace(marker, replacement, 1))
@@ -79,33 +80,32 @@ jobs:
           spec_path = Path('tools/delivery/release-promotion.spec.ts')
           spec = spec_path.read_text()
           marker = "    expect(workflow).toContain('environment:\\n      name: preview');\n"
-          replacement = marker + """    expect(workflow).toContain(
-              'concurrency:\\n  group: release-images-${{ inputs.version }}',
-            );
-            expect(workflow.indexOf('concurrency:')).toBeLessThan(
-              workflow.indexOf('jobs:'),
-            );
-          """
-          replacement = '\n'.join(line[10:] if line.startswith('          ') else line for line in replacement.splitlines()) + '\n'
+          replacement = marker + (
+              "    expect(workflow).toContain(\n"
+              "      'concurrency:\\n  group: release-images-" + input_expression + "',\n"
+              "    );\n"
+              "    expect(workflow.indexOf('concurrency:')).toBeLessThan(\n"
+              "      workflow.indexOf('jobs:'),\n"
+              "    );\n"
+          )
           if marker not in spec:
               raise SystemExit('release promotion test marker not found')
           spec = spec.replace(marker, replacement, 1)
 
           marker = "    expect(workflow).toContain('environment:\\n      name: production');\n"
           replacement = marker + """    expect(workflow).toContain('  authorize:\\n');
-            expect(workflow).toContain(
-              \"if [ \\\"$GITHUB_REF\\\" != 'refs/heads/main' ]; then\",
-            );
-            expect(workflow).toContain('needs: authorize');
-            expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
-            expect(workflow.indexOf('Require the default branch')).toBeLessThan(
-              workflow.indexOf('actions/checkout@v7'),
-            );
-            expect(workflow.indexOf('Require the default branch')).toBeLessThan(
-              workflow.indexOf('environment:\\n      name: production'),
-            );
-          """
-          replacement = '\n'.join(line[10:] if line.startswith('          ') else line for line in replacement.splitlines()) + '\n'
+    expect(workflow).toContain(
+      \"if [ \\\"$GITHUB_REF\\\" != 'refs/heads/main' ]; then\",
+    );
+    expect(workflow).toContain('needs: authorize');
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('actions/checkout@v7'),
+    );
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('environment:\\n      name: production'),
+    );
+"""
           if marker not in spec:
               raise SystemExit('promotion environment test marker not found')
           spec_path.write_text(spec.replace(marker, replacement, 1))
