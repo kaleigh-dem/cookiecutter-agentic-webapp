@@ -14,7 +14,9 @@ node tools/delivery/release-plan.mjs \
 
 The plan is a review artifact. It requires configuration validation and a recorded database snapshot before migrations. Migrations run once, from a controlled release runner, before application services are updated. Never run migrations independently from every replica.
 
-The **Release images** workflow accepts a semantic version, target environment, and public API URL. It generates the plan, builds all three versioned images, and can push them to GHCR. Image publication is not deployment approval; the environment owner must review the plan and backup identifier before applying it.
+The **Release images** workflow accepts a semantic version, target environment, and public API URL. It generates the plan, builds all three versioned images, creates an SPDX SBOM and vulnerability report for each image, and enforces the repository-owned severity and exception policy before publication. When image publication is enabled, the workflow pushes each validated image once, resolves its immutable digest, signs the digest, and publishes build-provenance and SBOM attestations. See [Image supply-chain artifacts](image-supply-chain.md) for the policy and verification commands.
+
+Image publication is not deployment approval. The environment owner must review the plan, backup identifier, scan evidence, and published digest references before applying it. Digest promotion between environments remains a separate release decision.
 
 ## Preview validation
 
