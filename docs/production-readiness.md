@@ -27,21 +27,21 @@ The gate combines the shared deployment validator with production-only checks:
 
 The gate validates configuration, not provider reachability. Release smoke tests, migration inspection, backup evidence, and platform health checks remain separate ordered release-plan steps.
 
-## Release workflow
+## Promotion workflow
 
-Production runs of `.github/workflows/release.yml` require a masked multiline repository or organization secret named `PRODUCTION_ENVIRONMENT`. Store the complete production environment file in that secret. The workflow writes it to a permission-restricted temporary file, runs the gate before image builds, and deletes it with the runner workspace.
+Production promotion runs through `.github/workflows/promote.yml` and the protected `production` GitHub Environment. Store the complete production environment file in that Environment's masked multiline `PRODUCTION_ENVIRONMENT` secret. Configure required reviewers and allow deployments only from `main`.
 
-The workflow also compares these validated values with the settings used for the release image build:
+The workflow downloads `release-manifest.json` from one successful **Release images** run on `main`, exports its validated build values, and compares them with the protected production contract:
 
 - `APP_VERSION`
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_AUTHENTICATION_PROFILE`
 - `NEXT_PUBLIC_AUTH_SESSION_ENDPOINT`
 
-A mismatch fails the release. This prevents validating one configuration while compiling another into the web image.
+A mismatch fails promotion. This prevents approving one production configuration while deploying a web image compiled with another.
 
-Preview releases continue to use the ordinary preview environment validation. The generated production release plan invokes `pnpm production:check -- infra/environments/production.env` before backup capture, migration inspection, or deployment.
+The promotion workflow writes the secret to a permission-restricted temporary file, runs the gate, verifies the image signatures and attestations, and generates the production release plan. It does not rebuild, retag, or push images.
 
 ## Secret handling
 
-Do not commit `infra/environments/production.env`. Keep the workflow secret limited to release maintainers, rotate it whenever contained credentials change, and review workflow logs to ensure future changes do not print the file. Prefer platform workload identity or secret references over long-lived embedded credentials when the deployment platform supports them.
+Do not commit `infra/environments/production.env`. Keep the Environment secret limited to production approvers, rotate it whenever contained credentials change, and review workflow logs to ensure future changes do not print the file. Prefer platform workload identity or secret references over long-lived embedded credentials when the deployment platform supports them.
