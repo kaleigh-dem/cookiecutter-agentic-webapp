@@ -15,13 +15,14 @@ Every public release uses the `template-v<version>` tag format and includes a ma
 
 ## Preparing a release
 
-Run the preparation command on a branch:
+Choose the target version once and use it for every preparation and verification step:
 
 ```bash
-pnpm template:release:prepare -- --version 0.2.0
+version=<target-version>
+pnpm template:release:prepare -- --version "$version"
 pnpm install --lockfile-only
 pnpm format
-pnpm template:release:verify -- --version 0.2.0
+pnpm template:release:verify -- --version "$version"
 ```
 
 The preparation command updates the root package version, workspace-plugin package version, generator version source, and changelog. Review the generated changelog entries before merging the release preparation PR. A release that changes downstream behavior must also include an ordered migration from the previous public template version or document why no migration is required.
@@ -47,7 +48,8 @@ A failed artifact smoke test, upgrade fixture, or generated-workspace lifecycle 
 Download the tarball attached to the desired `template-v<version>` GitHub Release and install it as a development dependency. Then invoke the preset:
 
 ```bash
-pnpm add -D ./agentic-webapp-workspace-plugin-0.2.0.tgz
+version=<target-version>
+pnpm add -D "./agentic-webapp-workspace-plugin-${version}.tgz"
 pnpm nx g @agentic-webapp/workspace-plugin:preset my-application \
   --packageScope=@my-org \
   --repositoryOwner=my-org
