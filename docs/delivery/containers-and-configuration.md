@@ -38,6 +38,8 @@ Validation requires semantic application versions, a PostgreSQL URL, positive nu
 
 `--allow-placeholders` exists only to validate the shape of checked-in examples. `--allow-local` exists only for loopback preview validation. Neither option belongs in a real production release.
 
-## Runtime ownership
+## Runtime and artifact ownership
 
-Images do not contain production secrets. The deployment platform must inject database credentials, telemetry endpoints, and provider-specific identity configuration at runtime. TLS termination, image signing/attestation, secret rotation, and network policy remain platform responsibilities.
+Images do not contain production secrets. The deployment platform must inject database credentials, telemetry endpoints, and provider-specific identity configuration at runtime.
+
+The repository release workflow generates image SBOMs, enforces the vulnerability policy, signs published digests, and publishes build-provenance and SBOM attestations. See [Image supply-chain artifacts](image-supply-chain.md). The deployment platform remains responsible for TLS termination, admission enforcement, OCI referrer retention, secret rotation, and network policy.
