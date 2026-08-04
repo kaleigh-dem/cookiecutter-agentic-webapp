@@ -2,6 +2,8 @@
 
 This guide covers the first decisions and commands for a repository created from the released template. It is intentionally written for generated application owners rather than upstream template maintainers.
 
+The generated repository is designed for products that may be built substantially by humans and AI agents. Initialization retains layered `AGENTS.md` guidance, Nx project and MCP context, local generators, executable boundaries, validation commands, and upgrade tooling. See `docs/agentic-development.md` before establishing an agent-led workflow.
+
 ## Required local tooling
 
 Install these tools before initializing or running a workspace:
@@ -11,6 +13,7 @@ Install these tools before initializing or running a workspace:
 - Corepack with pnpm 10.13.1
 - Docker Engine with Docker Compose v2 for PostgreSQL, images, and preview validation
 - a GitHub account with permission to create the target repository and configure its settings
+- optionally, an agent client that supports Model Context Protocol when using the checked-in Nx MCP configuration
 
 Confirm the runtime before installing dependencies:
 
@@ -46,18 +49,39 @@ pnpm template:identity:check
 
 Use the tagged template release and matching workspace-plugin artifact when reproducibility across multiple repositories matters. The generated `workspace.template.json` records the originating release, selected applications, ports, database name, repository ownership, and profile choices.
 
+## Establish the agentic development baseline
+
+Before assigning implementation work to an agent, inspect and customize the repository context:
+
+```bash
+cat AGENTS.md
+find apps packages tools -name AGENTS.md -print
+pnpm nx show projects
+pnpm nx show project web
+cat .mcp.json
+```
+
+- Keep the root `AGENTS.md` focused on repository-wide rules.
+- Update nested instruction files when a subsystem gains application-specific constraints.
+- Use the Nx graph and project metadata to identify ownership and dependencies.
+- Compatible agent clients can start the checked-in Nx MCP server with `pnpm nx mcp`.
+- Keep product decisions in maintained documentation or ADRs rather than relying on a prior agent conversation.
+- Use local generators for repeated structures rather than manually copying directories.
+
+The MCP integration is optional and does not replace repository instructions or validation.
+
 ## Supported profiles
 
 Profile choices are recorded in `workspace.template.json`. Some choices configure a complete local path; others declare the production integration that the generated repository must supply.
 
-| Setting          | Supported values                         | Default                                                | Current behavior and production note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------- | ---------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Applications     | `web`, `api`, `worker`                   | all three                                              | Unselected applications are removed. Authentication requires `api`; session authentication also requires `web`; a selected worker requires a transport.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Setting          | Supported values                         | Default                                                | Current behavior and production note |
+| ---------------- | ---------------------------------------- | ------------------------------------------------------ | ------------------------------------ |
+| Applications     | `web`, `api`, `worker`                   | all three                                              | Unselected applications are removed. Authentication requires `api`; session authentication also requires `web`; a selected worker requires a transport. |
 | Authentication   | `development`, `none`, `oidc`, `session` | `development` when `api` is selected, otherwise `none` | `development` supplies the fixed local token path and rejects production use. `oidc` uses the reference discovery/JWKS access-token verifier documented in `docs/oidc-authentication.md`; generated owners must configure issuer, audience, algorithms, and claim mapping. `oidc` and `session` use the reference in-memory browser credential adapter documented in `docs/browser-authentication.md`. Adopters still own provider login/callback/logout handling and the secure server-session route that returns short-lived access tokens. |
-| Worker transport | `none`, `postgres`, `redis`              | `postgres` when `worker` is selected, otherwise `none` | PostgreSQL outbox polling is the only baseline implementation and follows `docs/adr/0010-worker-delivery.md`. `redis` records a future adapter direction only; it does not provision Redis or make that transport runnable. Any non-baseline adapter must supply equivalent delivery semantics, infrastructure, tests, and operations.                                                                                                                                                                                                        |
-| Telemetry        | `true`, `false`                          | `false`                                                | `true` enables local OTLP defaults. Production still requires an owned collector or observability backend, credentials, retention, sampling, and alerting.                                                                                                                                                                                                                                                                                                                                                                                    |
-| Deployment       | `containers`, `kubernetes`, `local`      | `containers`                                           | `containers` supports the repository preview lifecycle. `kubernetes` records the target but does not replace platform-specific manifests, ingress, secrets, autoscaling, or policy. `local` is not a production deployment profile.                                                                                                                                                                                                                                                                                                           |
-| Optional AI      | `true`, `false`                          | `false`                                                | Records product intent and requires `web` plus `api`. The base workspace intentionally includes no model-provider dependency; provider, safety, persistence, and evaluation choices remain explicit follow-up work.                                                                                                                                                                                                                                                                                                                           |
+| Worker transport | `none`, `postgres`, `redis`              | `postgres` when `worker` is selected, otherwise `none` | PostgreSQL outbox polling is the only baseline implementation and follows `docs/adr/0010-worker-delivery.md`. `redis` records a future adapter direction only; it does not provision Redis or make that transport runnable. Any non-baseline adapter must supply equivalent delivery semantics, infrastructure, tests, and operations. |
+| Telemetry        | `true`, `false`                          | `false`                                                | `true` enables local OTLP defaults. Production still requires an owned collector or observability backend, credentials, retention, sampling, and alerting. |
+| Deployment       | `containers`, `kubernetes`, `local`      | `containers`                                           | `containers` supports the repository preview lifecycle. `kubernetes` records the target but does not replace platform-specific manifests, ingress, secrets, autoscaling, or policy. `local` is not a production deployment profile. |
+| Optional AI      | `true`, `false`                          | `false`                                                | Records intent to add AI-powered product features and requires `web` plus `api`. It does not control coding-agent compatibility. The base workspace intentionally includes no model-provider dependency; provider, safety, persistence, and evaluation choices remain explicit follow-up work. |
 
 The generator rejects incompatible combinations before writing files. See `docs/template-initialization.md` for every option and validation rule.
 
@@ -85,10 +109,13 @@ Initialization rewrites these defaults when custom ports are selected. Start the
 Before the first commit, run:
 
 ```bash
+pnpm format
 pnpm check
 pnpm template:identity:check
 git status --short
 ```
+
+Agents should report the exact commands run, projects changed, generated files or migrations, and any remaining human decision. Review the diff rather than relying on the completion summary alone.
 
 Stop local dependencies with `pnpm infra:down` and the telemetry collector with `pnpm telemetry:down`.
 
@@ -97,14 +124,12 @@ Stop local dependencies with `pnpm infra:down` and the telemetry collector with 
 The container preview is the closest local equivalent to the required delivery workflow:
 
 ```bash
-pnpm containers:build
 pnpm preview:up
-pnpm preview:smoke
 pnpm performance:load
 pnpm preview:down
 ```
 
-`pnpm preview:down` should be safe to run again. Validation must leave the Git working tree clean.
+`preview:up` builds the images, starts dependencies, applies migrations, starts services, and runs its configured smoke profile. `pnpm preview:down` should be safe to run again. Validation must leave the Git working tree clean.
 
 ## Production replacement points
 
@@ -118,6 +143,6 @@ Treat the following as explicit ownership decisions before a generated applicati
 6. **Telemetry:** configure the production exporter, sampling, redaction, retention, dashboards, alerts, and incident ownership.
 7. **Deployment:** replace local Compose assumptions with owned image registry, domains, TLS, ingress, autoscaling, health probes, rollout, rollback, and environment policy.
 8. **Seed and sample data:** remove or restrict development identities and sample records; define migration and data-repair ownership.
-9. **Repository governance:** review CODEOWNERS, team access, required checks, branch protection, environments, dependency update policy, and release permissions.
+9. **Repository and agent governance:** review CODEOWNERS, team and agent access, required checks, branch protection, protected environments, dependency update policy, release permissions, and human approval boundaries.
 
 Complete `docs/generated-project-checklist.md` before treating a generated repository as ready for shared development or deployment.
