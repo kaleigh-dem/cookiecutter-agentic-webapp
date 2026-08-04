@@ -29,6 +29,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-images-${{ inputs.version }}
+  cancel-in-progress: false
+
 jobs:
   release:
     environment:
