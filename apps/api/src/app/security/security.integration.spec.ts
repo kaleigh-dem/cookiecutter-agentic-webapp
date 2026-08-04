@@ -238,7 +238,8 @@ async function runRequest(
   await pipeline.authenticate.canActivate(context);
   await pipeline.limit.canActivate(context);
   pipeline.authorize.canActivate(context);
-  if (!request.principal) throw new Error('Authentication did not set a principal.');
+  if (!request.principal)
+    throw new Error('Authentication did not set a principal.');
   return { headers, principal: request.principal };
 }
 
