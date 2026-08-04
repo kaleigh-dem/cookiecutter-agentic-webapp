@@ -1,0 +1,166 @@
+name: Finish P13-02 digest promotion
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.ref == 'agent/p13-02-digest-promotion'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p13-02-digest-promotion
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Reconcile scripts, roadmap, and existing contracts
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          package_path = Path('package.json')
+          package = json.loads(package_path.read_text())
+          scripts = package['scripts']
+          updated = {}
+          for key, value in scripts.items():
+              updated[key] = value
+              if key == 'release:plan':
+                  updated['release:manifest:check'] = (
+                      'node tools/delivery/release-manifest.mjs validate '
+                      '--manifest infra/release/release-manifest.example.json'
+                  )
+          updated['delivery:check'] = (
+              'pnpm deploy:config:check && pnpm release:manifest:check && '
+              'pnpm performance:check && pnpm supply-chain:check'
+          )
+          package['scripts'] = updated
+          package_path.write_text(json.dumps(package, indent=2) + '\n')
+
+          adr_path = Path('docs/adr/0013-image-supply-chain-artifacts.md')
+          adr = adr_path.read_text()
+          adr = adr.replace(
+              '- P13-02 still owns digest promotion between environments; this decision only establishes the evidence and identity attached to a published digest.',
+              '- Immutable promotion of these digests is governed by ADR 0014; this decision establishes the evidence and identity that promotion must preserve.',
+          )
+          adr_path.write_text(adr)
+
+          todo_path = Path('docs/TODO.md')
+          todo = todo_path.read_text()
+          todo = todo.replace(
+              '- [-] **P13-01 Add image and dependency supply-chain artifacts.**',
+              '- [x] **P13-01 Add image and dependency supply-chain artifacts.**',
+              1,
+          )
+          todo = todo.replace(
+              '- [ ] **P13-02 Promote digests instead of rebuilding releases.**',
+              '- [-] **P13-02 Promote digests instead of rebuilding releases.**',
+              1,
+          )
+          marker = (
+              'Goal: promote tested immutable artifacts with verifiable provenance '
+              'while keeping CI fast and failures diagnosable.\n\n'
+          )
+          record = (
+              'Phase 13 progress record (2026-08-04): P13-01 is completed in '
+              'reviewed PR #50 and squash commit '
+              '`d4766a30d2e39f308a830ce4c6099edfe3ed045c`, after reviewer PASS '
+              'for exact head `f9c97a3f58dacf654a14df439d7c78344b9612f4` '
+              'and successful CI #590, Delivery #333, Security #414, and '
+              'Generated Workspace #269. P13-02 is the only active Phase 13 task.\n\n'
+          )
+          if record not in todo:
+              todo = todo.replace(marker, marker + record, 1)
+          todo_path.write_text(todo)
+
+          spec_path = Path('tools/delivery/production-readiness.spec.ts')
+          spec = spec_path.read_text()
+          spec = spec.replace(
+              "const workflow = readFileSync(\n      new URL('../../.github/workflows/release.yml', import.meta.url),",
+              "const promotionWorkflow = readFileSync(\n      new URL('../../.github/workflows/promote.yml', import.meta.url),",
+              1,
+          )
+          spec = spec.replace(
+              "expect(workflow).toContain('secrets.PRODUCTION_ENVIRONMENT');",
+              "expect(promotionWorkflow).toContain(\n      'secrets.PRODUCTION_ENVIRONMENT',\n    );",
+              1,
+          )
+          spec = spec.replace(
+              "expect(workflow).toContain('--compare-release-environment');",
+              "expect(promotionWorkflow).toContain('--compare-release-environment');",
+              1,
+          )
+          spec_path.write_text(spec)
+
+          containers_path = Path('docs/delivery/containers-and-configuration.md')
+          containers = containers_path.read_text()
+          containers = containers.replace(
+              'The repository release workflow generates image SBOMs, enforces the vulnerability policy, signs published digests, and publishes build-provenance and SBOM attestations. See [Image supply-chain artifacts](image-supply-chain.md). The deployment platform remains responsible for TLS termination, admission enforcement, OCI referrer retention, secret rotation, network policy, managed backups, and environment approval.',
+              'The repository release workflow generates image SBOMs, enforces the vulnerability policy, signs published digests, and publishes build-provenance and SBOM attestations. The promotion workflow gates production selection through the `production` GitHub Environment and emits exact digest references. See [Image supply-chain artifacts](image-supply-chain.md). The deployment platform remains responsible for TLS termination, admission enforcement, OCI referrer retention, secret rotation, network policy, managed backups, and executing the approved production plan.',
+              1,
+          )
+          containers_path.write_text(containers)
+          PY
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format focused change set
+        run: >-
+          pnpm exec prettier --write
+          .github/workflows/release.yml
+          .github/workflows/promote.yml
+          package.json
+          infra/release/release-manifest.example.json
+          tools/delivery/release-manifest.mjs
+          tools/delivery/release-manifest.spec.mjs
+          tools/delivery/release-plan.mjs
+          tools/delivery/release-plan.spec.mjs
+          tools/delivery/release-promotion.spec.ts
+          tools/delivery/production-readiness.spec.ts
+          docs/TODO.md
+          docs/adr/0013-image-supply-chain-artifacts.md
+          docs/adr/0014-immutable-digest-promotion.md
+          docs/delivery/containers-and-configuration.md
+          docs/delivery/image-supply-chain.md
+          docs/delivery/releases-and-previews.md
+          docs/production-readiness.md
+
+      - name: Run deterministic P13-02 checks
+        run: |
+          node --check tools/delivery/release-manifest.mjs
+          node --check tools/delivery/release-plan.mjs
+          pnpm release:manifest:check
+          pnpm delivery:check
+          pnpm nx test delivery --skip-nx-cache
+          pnpm nx lint delivery --skip-nx-cache
+          pnpm format:check
+
+      - name: Commit final focused implementation
+        run: |
+          rm -f .github/workflows/p13-02-apply.yml
+          rm -f .github/workflows/p13-02-runner.yml
+          rm -f .github/workflows/p13-02-finish.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat(delivery): promote immutable release digests'
+          git push origin HEAD:agent/p13-02-digest-promotion
