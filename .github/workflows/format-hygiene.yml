@@ -1,0 +1,37 @@
+name: Format hygiene files
+
+on:
+  push:
+    branches:
+      - agent/repository-hygiene
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: >-
+          pnpm exec prettier --write
+          .github/ISSUE_TEMPLATE/bug_report.yml
+          .github/ISSUE_TEMPLATE/feature_request.yml
+          .github/dependabot.yml
+          tools/security/audit-baseline.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: formatted-hygiene-${{ github.sha }}
+          path: |
+            .github/ISSUE_TEMPLATE/bug_report.yml
+            .github/ISSUE_TEMPLATE/feature_request.yml
+            .github/dependabot.yml
+            tools/security/audit-baseline.json
