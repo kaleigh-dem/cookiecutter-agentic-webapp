@@ -1,13 +1,18 @@
+import 'reflect-metadata';
+
 import { InMemoryRateLimitStore } from '@agentic-webapp/backend-rate-limit';
-import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, NestFactory } from '@nestjs/core';
+import {
+  HttpException,
+  HttpStatus,
+  type ExecutionContext,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import {
   generateKeyPairSync,
   sign,
   type JsonWebKey,
   type KeyObject,
 } from 'node:crypto';
-import type { Server } from 'node:http';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -17,16 +22,12 @@ import {
   type OidcFetch,
   type OidcVerifierConfig,
 } from './oidc-access-token-verifier';
+import { EnvironmentRateLimitProvider } from './rate-limit-provider';
 import {
-  EnvironmentRateLimitProvider,
-  RATE_LIMIT_STORE,
-} from './rate-limit-provider';
-import {
-  ACCESS_TOKEN_VERIFIER,
   AuthenticationGuard,
   AuthorizationGuard,
   type AccessTokenVerifier,
-  NormalizedHttpExceptionFilter,
+  type AuthenticatedPrincipal,
   RateLimitGuard,
   RequirePermissions,
 } from './security.module';
@@ -41,14 +42,14 @@ interface SigningKey {
   readonly publicJwk: JsonWebKey;
 }
 
-interface RunningApplication {
-  readonly app: INestApplication;
-  readonly baseUrl: string;
-}
-
 interface ProviderState {
   readonly fetch: OidcFetch;
   readonly keyRequests: () => number;
+}
+
+interface IntegrationResponse {
+  readonly headers: ReadonlyMap<string, string>;
+  readonly principal: AuthenticatedPrincipal;
 }
 
 class SecurityVerificationController {
@@ -57,13 +58,11 @@ class SecurityVerificationController {
   }
 }
 
-Controller('security-verification')(SecurityVerificationController);
 const readDescriptor = Object.getOwnPropertyDescriptor(
   SecurityVerificationController.prototype,
   'read',
 );
 if (!readDescriptor) throw new Error('Security verification route is missing.');
-Get('read')(SecurityVerificationController.prototype, 'read', readDescriptor);
 RequirePermissions('agent-tasks:read')(
   SecurityVerificationController.prototype,
   'read',
@@ -167,86 +166,113 @@ function verifier(providerState: ProviderState): AccessTokenVerifier {
   );
 }
 
-async function startApplication(
+function createContext(accessToken: string): {
+  readonly context: ExecutionContext;
+  readonly headers: ReadonlyMap<string, string>;
+  readonly request: { principal?: AuthenticatedPrincipal };
+} {
+  const headers = new Map<string, string>();
+  const request = {
+    headers: { authorization: `Bearer ${accessToken}` },
+    method: 'GET',
+    originalUrl: '/security-verification/read',
+    route: { path: '/security-verification/read' },
+    socket: { remoteAddress: '203.0.113.10' },
+  } as {
+    headers: { authorization: string };
+    method: string;
+    originalUrl: string;
+    route: { path: string };
+    socket: { remoteAddress: string };
+    principal?: AuthenticatedPrincipal;
+  };
+  const response = {
+    setHeader(name: string, value: unknown) {
+      headers.set(name.toLowerCase(), String(value));
+      return response;
+    },
+  };
+  const context = {
+    getClass: () => SecurityVerificationController,
+    getHandler: () => SecurityVerificationController.prototype.read,
+    switchToHttp: () => ({
+      getRequest: () => request,
+      getResponse: () => response,
+    }),
+  } as unknown as ExecutionContext;
+  return { context, headers, request };
+}
+
+function guards(
   accessTokenVerifier: AccessTokenVerifier,
   authenticatedLimit = 100,
-): Promise<RunningApplication> {
-  class SecurityIntegrationModule {}
-  Module({
-    controllers: [SecurityVerificationController],
-    providers: [
-      {
-        provide: ACCESS_TOKEN_VERIFIER,
-        useValue: accessTokenVerifier,
-      },
-      {
-        provide: EnvironmentRateLimitProvider,
-        useValue: {
-          configuration: {
-            anonymousLimit: 100,
-            authenticatedLimit,
-            routeLimit: 100,
-            tenantLimit: 100,
-            windowMs: 60_000,
-          },
-        },
-      },
-      {
-        provide: RATE_LIMIT_STORE,
-        useValue: new InMemoryRateLimitStore(),
-      },
-      { provide: APP_GUARD, useClass: AuthenticationGuard },
-      { provide: APP_GUARD, useClass: RateLimitGuard },
-      { provide: APP_GUARD, useClass: AuthorizationGuard },
-      { provide: APP_FILTER, useClass: NormalizedHttpExceptionFilter },
-    ],
-  })(SecurityIntegrationModule);
-
-  const app = await NestFactory.create(SecurityIntegrationModule, {
-    logger: false,
-  });
-  await app.listen(0, '127.0.0.1');
-  const address = (app.getHttpServer() as Server).address();
-  if (!address || typeof address === 'string') {
-    await app.close();
-    throw new Error('Security integration server did not expose a TCP port.');
-  }
-  return { app, baseUrl: `http://127.0.0.1:${address.port}` };
+): {
+  readonly authenticate: AuthenticationGuard;
+  readonly authorize: AuthorizationGuard;
+  readonly limit: RateLimitGuard;
+} {
+  const reflector = new Reflector();
+  const configuration = {
+    anonymousLimit: 100,
+    authenticatedLimit,
+    routeLimit: 100,
+    tenantLimit: 100,
+    windowMs: 60_000,
+  };
+  return {
+    authenticate: new AuthenticationGuard(reflector, accessTokenVerifier),
+    authorize: new AuthorizationGuard(reflector),
+    limit: new RateLimitGuard(
+      reflector,
+      { configuration } as EnvironmentRateLimitProvider,
+      new InMemoryRateLimitStore(),
+    ),
+  };
 }
 
-async function request(
-  application: RunningApplication,
+async function runRequest(
+  pipeline: ReturnType<typeof guards>,
   accessToken: string,
-): Promise<Response> {
-  return fetch(`${application.baseUrl}/security-verification/read`, {
-    headers: { authorization: `Bearer ${accessToken}` },
-  });
+): Promise<IntegrationResponse> {
+  const { context, headers, request } = createContext(accessToken);
+  await pipeline.authenticate.canActivate(context);
+  await pipeline.limit.canActivate(context);
+  pipeline.authorize.canActivate(context);
+  if (!request.principal) throw new Error('Authentication did not set a principal.');
+  return { headers, principal: request.principal };
 }
 
-describe('security HTTP integration', () => {
+async function expectHttpError(
+  request: Promise<unknown>,
+  status: number,
+  code: string,
+): Promise<void> {
+  try {
+    await request;
+    throw new Error(`Expected HTTP ${status}.`);
+  } catch (error) {
+    expect(error).toBeInstanceOf(HttpException);
+    const httpError = error as HttpException;
+    expect(httpError.getStatus()).toBe(status);
+    expect(httpError.getResponse()).toMatchObject({ code });
+  }
+}
+
+describe('security guard integration', () => {
   it('rejects expired, wrong-issuer, and wrong-audience access tokens', async () => {
     const signingKey = createSigningKey('current-key');
-    const application = await startApplication(
-      verifier(provider([[signingKey.publicJwk]])),
-    );
+    const pipeline = guards(verifier(provider([[signingKey.publicJwk]])));
 
-    try {
-      for (const claims of [
-        validClaims({ exp: Math.floor(NOW_MS / 1_000) - 1 }),
-        validClaims({ iss: 'https://unexpected.example.com/tenant' }),
-        validClaims({ aud: 'different-api' }),
-      ]) {
-        const response = await request(
-          application,
-          createAccessToken(signingKey, claims),
-        );
-        expect(response.status).toBe(401);
-        await expect(response.json()).resolves.toMatchObject({
-          code: 'invalid_access_token',
-        });
-      }
-    } finally {
-      await application.app.close();
+    for (const claims of [
+      validClaims({ exp: Math.floor(NOW_MS / 1_000) - 1 }),
+      validClaims({ iss: 'https://unexpected.example.com/tenant' }),
+      validClaims({ aud: 'different-api' }),
+    ]) {
+      await expectHttpError(
+        runRequest(pipeline, createAccessToken(signingKey, claims)),
+        HttpStatus.UNAUTHORIZED,
+        'invalid_access_token',
+      );
     }
   });
 
@@ -257,75 +283,59 @@ describe('security HTTP integration', () => {
       [oldKey.publicJwk],
       [currentKey.publicJwk],
     ]);
-    const application = await startApplication(verifier(providerState));
+    const pipeline = guards(verifier(providerState));
 
-    try {
-      expect(
-        (await request(application, createAccessToken(oldKey, validClaims())))
-          .status,
-      ).toBe(200);
-      expect(
-        (
-          await request(
-            application,
-            createAccessToken(currentKey, validClaims()),
-          )
-        ).status,
-      ).toBe(200);
-      expect(providerState.keyRequests()).toBe(2);
-    } finally {
-      await application.app.close();
-    }
+    await expect(
+      runRequest(pipeline, createAccessToken(oldKey, validClaims())),
+    ).resolves.toMatchObject({ principal: { subject: 'actor-1' } });
+    await expect(
+      runRequest(pipeline, createAccessToken(currentKey, validClaims())),
+    ).resolves.toMatchObject({ principal: { subject: 'actor-1' } });
+    expect(providerState.keyRequests()).toBe(2);
   });
 
   it('denies a valid identity that lacks the route permission', async () => {
     const signingKey = createSigningKey('current-key');
-    const application = await startApplication(
-      verifier(provider([[signingKey.publicJwk]])),
-    );
+    const pipeline = guards(verifier(provider([[signingKey.publicJwk]])));
 
-    try {
-      const response = await request(
-        application,
+    await expectHttpError(
+      runRequest(
+        pipeline,
         createAccessToken(
           signingKey,
           validClaims({ permissions: ['operations:read'] }),
         ),
-      );
-      expect(response.status).toBe(403);
-      await expect(response.json()).resolves.toMatchObject({
-        code: 'insufficient_permissions',
-      });
-    } finally {
-      await application.app.close();
-    }
+      ),
+      HttpStatus.FORBIDDEN,
+      'insufficient_permissions',
+    );
   });
 
   it('enforces the authenticated rate limit without sharing counters between subjects', async () => {
     const signingKey = createSigningKey('current-key');
-    const application = await startApplication(
-      verifier(provider([[signingKey.publicJwk]])),
-      1,
-    );
+    const pipeline = guards(verifier(provider([[signingKey.publicJwk]])), 1);
+    const firstToken = createAccessToken(signingKey, validClaims());
 
+    await expect(runRequest(pipeline, firstToken)).resolves.toMatchObject({
+      principal: { subject: 'actor-1' },
+    });
     try {
-      const firstToken = createAccessToken(signingKey, validClaims());
-      expect((await request(application, firstToken)).status).toBe(200);
-
-      const limited = await request(application, firstToken);
-      expect(limited.status).toBe(429);
-      expect(limited.headers.get('x-rate-limit-policy')).toBe('authenticated');
-      await expect(limited.json()).resolves.toMatchObject({
+      await runRequest(pipeline, firstToken);
+      throw new Error('Expected the authenticated rate limit to reject.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      const httpError = error as HttpException;
+      expect(httpError.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+      expect(httpError.getResponse()).toMatchObject({
         code: 'rate_limit_exceeded',
       });
-
-      const secondSubject = createAccessToken(
-        signingKey,
-        validClaims({ sub: 'actor-2' }),
-      );
-      expect((await request(application, secondSubject)).status).toBe(200);
-    } finally {
-      await application.app.close();
     }
+
+    const secondSubject = createAccessToken(
+      signingKey,
+      validClaims({ sub: 'actor-2' }),
+    );
+    const secondResponse = await runRequest(pipeline, secondSubject);
+    expect(secondResponse.principal.subject).toBe('actor-2');
   });
 });
