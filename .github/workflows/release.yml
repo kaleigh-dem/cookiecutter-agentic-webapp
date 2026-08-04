@@ -209,8 +209,8 @@ jobs:
               sha256:*) ;;
               *) echo "Published $service image did not resolve to a sha256 digest." >&2; exit 1 ;;
             esac
-            echo "$service-name=$name" >> "$GITHUB_OUTPUT"
-            echo "$service-digest=$digest" >> "$GITHUB_OUTPUT"
+            echo "${service}_name=$name" >> "$GITHUB_OUTPUT"
+            echo "${service}_digest=$digest" >> "$GITHUB_OUTPUT"
           done
 
       - name: Install Cosign
@@ -220,9 +220,9 @@ jobs:
       - name: Sign published image digests
         if: inputs.push_images
         env:
-          API_REFERENCE: ${{ steps.digests.outputs.api-name }}@${{ steps.digests.outputs.api-digest }}
-          WORKER_REFERENCE: ${{ steps.digests.outputs.worker-name }}@${{ steps.digests.outputs.worker-digest }}
-          WEB_REFERENCE: ${{ steps.digests.outputs.web-name }}@${{ steps.digests.outputs.web-digest }}
+          API_REFERENCE: ${{ steps.digests.outputs.api_name }}@${{ steps.digests.outputs.api_digest }}
+          WORKER_REFERENCE: ${{ steps.digests.outputs.worker_name }}@${{ steps.digests.outputs.worker_digest }}
+          WEB_REFERENCE: ${{ steps.digests.outputs.web_name }}@${{ steps.digests.outputs.web_digest }}
         run: |
           cosign sign --yes "$API_REFERENCE"
           cosign sign --yes "$WORKER_REFERENCE"
@@ -232,32 +232,32 @@ jobs:
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.api-name }}
-          subject-digest: ${{ steps.digests.outputs.api-digest }}
+          subject-name: ${{ steps.digests.outputs.api_name }}
+          subject-digest: ${{ steps.digests.outputs.api_digest }}
           push-to-registry: true
 
       - name: Attest worker build provenance
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.worker-name }}
-          subject-digest: ${{ steps.digests.outputs.worker-digest }}
+          subject-name: ${{ steps.digests.outputs.worker_name }}
+          subject-digest: ${{ steps.digests.outputs.worker_digest }}
           push-to-registry: true
 
       - name: Attest web build provenance
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.web-name }}
-          subject-digest: ${{ steps.digests.outputs.web-digest }}
+          subject-name: ${{ steps.digests.outputs.web_name }}
+          subject-digest: ${{ steps.digests.outputs.web_digest }}
           push-to-registry: true
 
       - name: Attest API SBOM
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.api-name }}
-          subject-digest: ${{ steps.digests.outputs.api-digest }}
+          subject-name: ${{ steps.digests.outputs.api_name }}
+          subject-digest: ${{ steps.digests.outputs.api_digest }}
           sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.spdx.json
           push-to-registry: true
 
@@ -265,8 +265,8 @@ jobs:
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.worker-name }}
-          subject-digest: ${{ steps.digests.outputs.worker-digest }}
+          subject-name: ${{ steps.digests.outputs.worker_name }}
+          subject-digest: ${{ steps.digests.outputs.worker_digest }}
           sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.spdx.json
           push-to-registry: true
 
@@ -274,8 +274,8 @@ jobs:
         if: inputs.push_images
         uses: actions/attest@v4
         with:
-          subject-name: ${{ steps.digests.outputs.web-name }}
-          subject-digest: ${{ steps.digests.outputs.web-digest }}
+          subject-name: ${{ steps.digests.outputs.web_name }}
+          subject-digest: ${{ steps.digests.outputs.web_digest }}
           sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.spdx.json
           push-to-registry: true
 
@@ -285,7 +285,7 @@ jobs:
           {
             echo '## Published image digests'
             echo
-            echo '- `${{ steps.digests.outputs.api-name }}@${{ steps.digests.outputs.api-digest }}`'
-            echo '- `${{ steps.digests.outputs.worker-name }}@${{ steps.digests.outputs.worker-digest }}`'
-            echo '- `${{ steps.digests.outputs.web-name }}@${{ steps.digests.outputs.web-digest }}`'
+            echo '- `${{ steps.digests.outputs.api_name }}@${{ steps.digests.outputs.api_digest }}`'
+            echo '- `${{ steps.digests.outputs.worker_name }}@${{ steps.digests.outputs.worker_digest }}`'
+            echo '- `${{ steps.digests.outputs.web_name }}@${{ steps.digests.outputs.web_digest }}`'
           } >> "$GITHUB_STEP_SUMMARY"
