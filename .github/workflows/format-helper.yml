@@ -1,0 +1,27 @@
+name: Format helper
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/format-helper.yml
+      - tools/delivery/image-scan-policy.mjs
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Print exact Prettier output
+        run: |
+          npx --yes prettier@3.9.6 --write tools/delivery/image-scan-policy.mjs
+          echo 'FORMATTED_BEGIN'
+          base64 -w0 tools/delivery/image-scan-policy.mjs
+          echo
+          echo 'FORMATTED_END'
