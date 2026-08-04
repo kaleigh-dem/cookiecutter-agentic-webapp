@@ -1,0 +1,154 @@
+name: Apply corrected P13-02 review fixes
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.ref == 'agent/p13-02-digest-promotion'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p13-02-digest-promotion
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Apply reviewer findings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          input_expression = '$' + '{{ inputs.version }}'
+
+          release_path = Path('.github/workflows/release.yml')
+          release = release_path.read_text()
+          marker = "permissions:\n  contents: read\n\njobs:\n"
+          replacement = (
+              "permissions:\n  contents: read\n\n"
+              "concurrency:\n"
+              "  group: release-images-" + input_expression + "\n"
+              "  cancel-in-progress: false\n\n"
+              "jobs:\n"
+          )
+          if marker not in release:
+              raise SystemExit('release workflow permissions marker not found')
+          release_path.write_text(release.replace(marker, replacement, 1))
+
+          promote_path = Path('.github/workflows/promote.yml')
+          promote = promote_path.read_text()
+          marker = "jobs:\n  promote:\n    environment:\n"
+          replacement = """jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the default branch
+        run: |
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo 'Promote release digests must be dispatched from refs/heads/main.' >&2
+            exit 1
+          fi
+
+  promote:
+    needs: authorize
+    if: github.ref == 'refs/heads/main'
+    environment:
+"""
+          if marker not in promote:
+              raise SystemExit('promotion jobs marker not found')
+          promote_path.write_text(promote.replace(marker, replacement, 1))
+
+          spec_path = Path('tools/delivery/release-promotion.spec.ts')
+          spec = spec_path.read_text()
+          marker = "    expect(workflow).toContain('environment:\\n      name: preview');\n"
+          replacement = marker + (
+              "    expect(workflow).toContain(\n"
+              "      'concurrency:\\n  group: release-images-" + input_expression + "',\n"
+              "    );\n"
+              "    expect(workflow.indexOf('concurrency:')).toBeLessThan(\n"
+              "      workflow.indexOf('jobs:'),\n"
+              "    );\n"
+          )
+          if marker not in spec:
+              raise SystemExit('release promotion test marker not found')
+          spec = spec.replace(marker, replacement, 1)
+
+          marker = "    expect(workflow).toContain('environment:\\n      name: production');\n"
+          replacement = marker + """    expect(workflow).toContain('  authorize:\\n');
+    expect(workflow).toContain(
+      \"if [ \\\"$GITHUB_REF\\\" != 'refs/heads/main' ]; then\",
+    );
+    expect(workflow).toContain('needs: authorize');
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('actions/checkout@v7'),
+    );
+    expect(workflow.indexOf('Require the default branch')).toBeLessThan(
+      workflow.indexOf('environment:\\n      name: production'),
+    );
+"""
+          if marker not in spec:
+              raise SystemExit('promotion environment test marker not found')
+          spec_path.write_text(spec.replace(marker, replacement, 1))
+
+          docs_path = Path('docs/delivery/releases-and-previews.md')
+          docs = docs_path.read_text()
+          docs = docs.replace(
+              'The workflow refuses to overwrite an existing version, records the source workflow run, and uploads `release-images-VERSION` containing:',
+              'The workflow serializes dispatches for the same semantic version before checking the registry, refuses to overwrite an existing version, records the source workflow run, and uploads `release-images-VERSION` containing:',
+              1,
+          )
+          docs = docs.replace(
+              'The promotion workflow requires a successful `Release images` run from `main`, downloads the artifact from that exact run, validates its source SHA and manifest, verifies each Cosign signature and GitHub attestation, and compares the compiled browser values with the protected production configuration.',
+              'Before checkout or production Environment access, a separate guard job rejects any promotion execution not dispatched from `refs/heads/main`. The promotion workflow then requires a successful `Release images` run from `main`, downloads the artifact from that exact run, validates its source SHA and manifest, verifies each Cosign signature and GitHub attestation, and compares the compiled browser values with the protected production configuration.',
+              1,
+          )
+          docs_path.write_text(docs)
+          PY
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format focused files
+        run: >-
+          pnpm exec prettier --write
+          .github/workflows/release.yml
+          .github/workflows/promote.yml
+          tools/delivery/release-promotion.spec.ts
+          docs/delivery/releases-and-previews.md
+
+      - name: Run deterministic review-fix checks
+        run: |
+          pnpm delivery:check
+          pnpm nx test delivery --skip-nx-cache
+          pnpm nx lint delivery --skip-nx-cache
+          rm .github/workflows/p13-02-review-fix.yml
+          rm .github/workflows/p13-02-review-fix-v2.yml
+          git branch --force main origin/main
+          pnpm format:check
+
+      - name: Commit review fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(delivery): close release promotion races'
+          git push origin HEAD:agent/p13-02-digest-promotion
