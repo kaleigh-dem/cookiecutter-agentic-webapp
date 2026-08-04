@@ -12,9 +12,9 @@ node tools/delivery/release-plan.mjs \
   --output release-plan.json
 ```
 
-The plan is a review artifact. It requires configuration validation and a recorded database snapshot before migrations. Migrations run once, from a controlled release runner, before application services are updated. Never run migrations independently from every replica.
+The plan is a review artifact. Production plans run `pnpm production:check` before backup capture, migration inspection, or deployment and require a recorded database snapshot before migrations. Migrations run once, from a controlled release runner, before application services are updated. Never run migrations independently from every replica.
 
-The **Release images** workflow accepts a semantic version, target environment, and public API URL. It generates the plan, builds all three versioned images, and can push them to GHCR. Image publication is not deployment approval; the environment owner must review the plan and backup identifier before applying it.
+The **Release images** workflow accepts a semantic version, target environment, and public API URL. Production runs consume the masked `PRODUCTION_ENVIRONMENT` contract, compare its public web values with the image build inputs, generate the plan, build all three versioned images, and can push them to GHCR. Image publication is not deployment approval; the environment owner must review the plan and backup identifier before applying it.
 
 ## Preview validation
 
@@ -22,6 +22,7 @@ Run the local production-artifact preview:
 
 ```bash
 pnpm preview:up
+pnpm preview:smoke
 pnpm performance:load
 pnpm preview:down
 ```
@@ -33,9 +34,11 @@ pnpm preview:down
 3. Start PostgreSQL and wait for health.
 4. Apply pending migrations through the host-facing database URL.
 5. Start the application services and wait for health.
-6. Verify web, API liveness/readiness, and the protected metrics boundary.
+6. Run the configured smoke profile.
 
-The Delivery workflow runs this sequence for relevant pull requests and then enforces `performance/budgets.json`.
+The repository-local preview selects `live-agent-task`, which checks worker operations and proves a created Agent Task reaches terminal success. Generic generated preview and release plans select the `release` smoke profile, which does not require a development credential or internal worker URL. See `docs/reference-feature-agent-tasks.md` for the profile boundary.
+
+The Delivery workflow runs the preview lifecycle for relevant pull requests and enforces `performance/budgets.json`.
 
 ## Hosted previews
 
