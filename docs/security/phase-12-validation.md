@@ -20,6 +20,8 @@ Phase 12 is complete only when the generated production profile proves the follo
 
 The phase-closure pull request must pass the exact-head CI, Delivery, Security, and Generated Workspace workflows. Generated Workspace runs the generated repository's full `pnpm check`, so the OIDC, runtime-contract, distributed-rate-limit, and production-readiness proofs remain part of the generated validation contract.
 
+PR #49 is dedicated to Phase 12 closure evidence and must not include Phase 13 implementation.
+
 Operational behavior and residual risks are documented in:
 
 - `docs/oidc-authentication.md`;
