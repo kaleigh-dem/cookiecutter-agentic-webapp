@@ -36,13 +36,13 @@ describe('release image supply chain', () => {
     expect(workflow.match(/actions\/attest@v4/g)).toHaveLength(6);
     expect(workflow.match(/push-to-registry: true/g)).toHaveLength(6);
     expect(workflow).toContain(
-      'subject-digest: ${{ steps.digests.outputs.api-digest }}',
+      'subject-digest: ${{ steps.digests.outputs.api_digest }}',
     );
     expect(workflow).toContain(
-      'subject-digest: ${{ steps.digests.outputs.worker-digest }}',
+      'subject-digest: ${{ steps.digests.outputs.worker_digest }}',
     );
     expect(workflow).toContain(
-      'subject-digest: ${{ steps.digests.outputs.web-digest }}',
+      'subject-digest: ${{ steps.digests.outputs.web_digest }}',
     );
   });
 
