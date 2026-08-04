@@ -3,6 +3,8 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+// This phase gate intentionally composes the public template generator with delivery validation.
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import initGenerator from '@agentic-webapp/workspace-plugin/src/generators/init/generator';
 import { parseEnvironmentFile } from './environment.mjs';
 import { validateProductionReadiness } from './production-readiness.mjs';
