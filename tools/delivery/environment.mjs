@@ -10,13 +10,13 @@ const placeholderHostnames = new Set(['example.com', 'example.test']);
 export function parseEnvironmentFile(content) {
   const values = {};
 
-  for (const rawLine of content.split(/\r?\n/u)) {
+  for (const [index, rawLine] of content.split(/\r?\n/u).entries()) {
     const line = rawLine.trim();
     if (!line || line.startsWith('#')) continue;
 
     const separator = line.indexOf('=');
     if (separator < 1) {
-      throw new Error(`Invalid environment line: ${rawLine}`);
+      throw new Error(`Invalid environment line ${index + 1}.`);
     }
 
     const key = line.slice(0, separator).trim();
@@ -66,15 +66,30 @@ function normalizeHostname(hostname) {
   return hostname.toLowerCase().replace(/\.$/u, '');
 }
 
+function isPlaceholderHostname(hostname) {
+  const normalized = normalizeHostname(hostname);
+  return [...placeholderHostnames].some(
+    (placeholder) =>
+      normalized === placeholder || normalized.endsWith(`.${placeholder}`),
+  );
+}
+
 function hasPlaceholderHostname(value) {
   const normalized = value.trim().toLowerCase();
-  if (placeholderHostnames.has(normalized)) return true;
+  if (isPlaceholderHostname(normalized)) return true;
 
   try {
-    return placeholderHostnames.has(normalizeHostname(new URL(value).hostname));
+    return isPlaceholderHostname(new URL(value).hostname);
   } catch {
     return false;
   }
+}
+
+function hasPlaceholderEmailDomain(value) {
+  const normalized = value.trim().toLowerCase();
+  const separator = normalized.lastIndexOf('@');
+  if (separator <= 0 || separator === normalized.length - 1) return false;
+  return isPlaceholderHostname(normalized.slice(separator + 1));
 }
 
 function containsPlaceholder(value) {
@@ -83,6 +98,7 @@ function containsPlaceholder(value) {
     normalized.includes('changeme') ||
     normalized.includes('replace-me') ||
     hasPlaceholderHostname(value) ||
+    hasPlaceholderEmailDomain(value) ||
     value.includes('<') ||
     value.includes('>')
   );

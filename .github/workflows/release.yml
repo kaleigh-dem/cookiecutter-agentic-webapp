@@ -70,6 +70,24 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Materialize production environment
+        if: inputs.environment == 'production'
+        env:
+          PRODUCTION_ENVIRONMENT: ${{ secrets.PRODUCTION_ENVIRONMENT }}
+        run: |
+          if [ -z "${PRODUCTION_ENVIRONMENT:-}" ]; then
+            echo "The PRODUCTION_ENVIRONMENT secret is required for production releases." >&2
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$PRODUCTION_ENVIRONMENT" > "$RUNNER_TEMP/production.env"
+
+      - name: Validate production readiness
+        if: inputs.environment == 'production'
+        run: >-
+          pnpm production:check -- "$RUNNER_TEMP/production.env"
+          --compare-release-environment
+
       - name: Validate deployed browser authentication
         run: node tools/delivery/validate-browser-auth-build.mjs
 

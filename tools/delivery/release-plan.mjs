@@ -52,6 +52,10 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
       `${imagePrefix}/${service}:${version}`,
     ]),
   );
+  const validationCommand =
+    environment === 'production'
+      ? `pnpm production:check -- ${environmentFile}`
+      : `node tools/delivery/validate-environment.mjs ${environmentFile}`;
 
   return {
     schemaVersion: 1,
@@ -62,12 +66,12 @@ export function createReleasePlan({ environment, imagePrefix, version }) {
     orderedSteps: [
       {
         id: 'validate-configuration',
-        command: `node tools/delivery/validate-environment.mjs ${environmentFile}`,
+        command: validationCommand,
       },
       {
         id: 'capture-backup',
         command:
-          'Run the provider-specific database snapshot command and record its identifier.',
+          'The BACKUP_OWNER runs the provider-specific database snapshot command and records its identifier.',
       },
       {
         id: 'inspect-migrations',

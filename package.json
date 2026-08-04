@@ -25,6 +25,7 @@
     "security:licenses": "node tools/security/check-licenses.mjs",
     "delivery:check": "pnpm deploy:config:check && pnpm performance:check",
     "deploy:config:check": "nx run delivery:config-check",
+    "production:check": "node tools/delivery/production-check.mjs",
     "performance:check": "nx run delivery:performance-check",
     "performance:load": "node tools/delivery/load-test.mjs performance/budgets.json",
     "containers:build": "nx run-many -t container --projects=api,worker,web --parallel=1",
