@@ -2,22 +2,24 @@
 
 Last updated: 2026-08-03
 
-This file tracks active work required to turn the repository from a validated reference application into a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as checked-off tasks here.
+This file tracks active work required to evolve the repository as a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as a separate historical roadmap.
 
 ## Completed baseline
 
-Phases 2–9 established the current foundation:
+Phases 2–12 established the current foundation:
 
 - Nx workspace migration and enforceable project boundaries
 - architecture-aware domain, feature, job, and contract generators
-- PostgreSQL migrations, integration tests, repositories, and transactional outbox storage
-- deterministic OpenAPI generation and browser client generation
-- a vertical Agent Tasks reference feature
-- structured logging, OpenTelemetry, health checks, and runbooks
-- authentication and authorization boundaries plus security CI
-- production images, preview validation, release planning, and performance budgets
+- deterministic template initialization, releases, generated-workspace validation, and downstream upgrades
+- PostgreSQL migrations, integration tests, repositories, transactional outbox delivery, and distributed rate limits
+- deterministic OpenAPI generation, browser clients, and runtime HTTP contract enforcement
+- a complete asynchronous Agent Tasks reference feature
+- structured logging, OpenTelemetry, health checks, worker metrics, and runbooks
+- development and production browser authentication profiles plus OIDC access-token verification
+- production images, preview validation, production-readiness checks, release planning, and performance budgets
+- security verification for token expiry, issuer and audience mismatch, signing-key rotation, permission denial, and rate-limit behavior
 
-Relevant merged work is recorded in PRs #2–#10 and `docs/adr/`.
+Relevant merged work is recorded in PRs #2–#48 and `docs/adr/`.
 
 ## Status conventions
 
@@ -37,11 +39,9 @@ Relevant merged work is recorded in PRs #2–#10 and `docs/adr/`.
 
 ## Execution order
 
-1. Complete Phase 10 before generating production projects from the template.
-2. Complete Phase 11 before calling Agent Tasks a complete asynchronous reference workflow.
-3. Complete Phase 12 before production deployment of a generated application.
-4. Phase 13 can proceed in parallel after Phase 10 establishes the template release lifecycle.
-5. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
+1. Phases 10–12 are complete.
+2. Phase 13 is the next active phase; begin with P13-01 unless an explicit dependency or incident changes the sequence.
+3. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
 
 ## Phase 10 — Template productization
 
@@ -160,7 +160,7 @@ Goal: provide a production-capable security path while keeping providers replace
 
 - [x] **P12-03 Replace process-local production rate limiting.**
   - Retain the in-memory limiter for local development and unit tests.
-  - Add a distributed Redis or platform-backed implementation for multi-replica deployments.
+  - Add a distributed or platform-backed implementation for multi-replica deployments.
   - Define trusted-proxy and client-IP handling.
   - Add policy keys for anonymous, authenticated, route-specific, and tenant-specific limits.
   - Test consistency across multiple API instances.
@@ -177,14 +177,25 @@ Goal: provide a production-capable security path while keeping providers replace
   - Verify CORS origins, HTTPS endpoints, telemetry configuration, backup ownership, and rate-limit storage.
   - Expose the gate through `pnpm production:check` and the release workflow.
 
-- [-] **P12-06 Expand security verification.**
+- [x] **P12-06 Expand security verification.**
   - Add integration tests for token expiry, key rotation, invalid issuer and audience, permission denial, and rate-limit behavior.
   - Update the threat model for identity, proxy trust, worker replay, and multi-tenant boundaries.
   - Document secret rotation and identity-provider outage behavior.
 
 Exit criteria: a generated production profile authenticates real identities, enforces runtime contracts and distributed limits across replicas, and cannot pass the release gate with development-only security adapters.
 
-Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177; P12-03 is completed and verified in reviewed PR #32 and squash commit `fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery #250, Security #321, and Generated Workspace #181; P12-04 is completed and verified in reviewed PR #35 and squash commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`, including CI #501, Delivery #254, Security #325, and Generated Workspace #185; P12-05 is completed and verified in reviewed PR #36 and squash commit `49f0f38e9da6fe35a335ac5c7def49e977990a09`, after reviewer PASS for exact head `5959c12abccb744a8ea35d9bd4e700554ad787b2` and CI #532, Delivery #282, Security #356, and Generated Workspace #214. Phase 12 remains open because P12-06 and the overall phase exit criteria are not yet complete.
+### Phase 12 gate record — 2026-08-03
+
+Phase 12 is complete. Evidence:
+
+- P12-01: commit `512ba1d9799c74a1f0a60697776c93ccc29ed723`
+- P12-02: PR #27 and commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`
+- P12-03: PR #32 and commit `fb2c675b02d443952f018c3df11f65bff970e7dd`
+- P12-04: PR #35 and commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`
+- P12-05: PR #36 and commit `49f0f38e9da6fe35a335ac5c7def49e977990a09`
+- P12-06: PR #48 and commit `4e7f6d1c1365eae2d6c13995be0af76383c12d64`, with reviewer PASS on exact head `eef707030364fe09d75d25f1b391f766dd06fb41` and successful CI #565, Delivery #308, Security #389, and Generated Workspace #245
+
+The generated production profile now has reference OIDC identity, explicit browser authentication, runtime HTTP contract enforcement, PostgreSQL-backed distributed limits, a fail-closed release gate, integrated security verification, and documented identity operations.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
