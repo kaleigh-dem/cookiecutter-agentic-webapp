@@ -26,22 +26,22 @@ This document defines the baseline security model for applications generated fro
 
 ## Baseline threats and controls
 
-| Threat | Baseline controls |
-| --- | --- |
-| Identity spoofing | Provider-issued bearer tokens, exact issuer and audience validation, allowlisted algorithms, bounded clock skew, adapter-level verification, production rejection of development tokens |
-| Identity-provider metadata or key substitution | HTTPS discovery and JWKS, exact discovered-issuer match, usable signing-key filtering, bounded caches, one forced refresh for planned key rotation, fail-closed provider errors |
-| Expired or replayed access token | Required expiration, optional not-before validation, bounded token size and clock skew, permission checks on every protected request; application-specific revocation remains provider policy |
-| Broken object-level authorization | Domain ownership checks, permission guards, verified tenant mapping, automated authorization tests |
-| Credential leakage | Redacted structured logs, tracked-file secret scan, private vulnerability reporting, secret-manager references instead of committed values, documented rotation procedure |
-| Cross-origin abuse | Explicit allowed origin, method and header lists, no credentialed CORS by default |
-| Proxy spoofing and client-address confusion | Explicit trusted-hop count, no application parsing of `X-Forwarded-For`, deployment verification against the shortest trusted ingress path, allowlisted proxy function when paths vary |
-| Brute force and resource exhaustion | PostgreSQL-backed multi-replica request policies, verified subject and tenant keys, request-size defaults, queue isolation, fail-closed store errors |
-| Cross-tenant access or noisy-neighbor impact | Tenant identity originates only from verified claims, tenant-aware authorization and rate-limit policy, hashed storage keys, ownership checks, no trust in tenant headers or event payload overrides |
-| Worker replay changes identity or state | Versioned event contracts, persisted actor and tenant context, idempotency keys, conditional state transitions, bounded retries, quarantine and audited replay commands |
-| Injection and malformed input | Runtime domain validation, UUID parsing, normalized errors, CodeQL and lint gates |
-| Dependency compromise | Frozen lockfile, dependency review, vulnerability audit, license policy |
-| Sensitive-data exposure | Security response headers, error normalization, telemetry redaction, least-privilege permissions |
-| Audit tampering or ambiguity | Stable audit event names, actor/resource/outcome fields, request and trace correlation, replay and operator actions recorded separately |
+| Threat                                         | Baseline controls                                                                                                                                                                                    |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity spoofing                              | Provider-issued bearer tokens, exact issuer and audience validation, allowlisted algorithms, bounded clock skew, adapter-level verification, production rejection of development tokens              |
+| Identity-provider metadata or key substitution | HTTPS discovery and JWKS, exact discovered-issuer match, usable signing-key filtering, bounded caches, one forced refresh for planned key rotation, fail-closed provider errors                      |
+| Expired or replayed access token               | Required expiration, optional not-before validation, bounded token size and clock skew, permission checks on every protected request; application-specific revocation remains provider policy        |
+| Broken object-level authorization              | Domain ownership checks, permission guards, verified tenant mapping, automated authorization tests                                                                                                   |
+| Credential leakage                             | Redacted structured logs, tracked-file secret scan, private vulnerability reporting, secret-manager references instead of committed values, documented rotation procedure                            |
+| Cross-origin abuse                             | Explicit allowed origin, method and header lists, no credentialed CORS by default                                                                                                                    |
+| Proxy spoofing and client-address confusion    | Explicit trusted-hop count, no application parsing of `X-Forwarded-For`, deployment verification against the shortest trusted ingress path, allowlisted proxy function when paths vary               |
+| Brute force and resource exhaustion            | PostgreSQL-backed multi-replica request policies, verified subject and tenant keys, request-size defaults, queue isolation, fail-closed store errors                                                 |
+| Cross-tenant access or noisy-neighbor impact   | Tenant identity originates only from verified claims, tenant-aware authorization and rate-limit policy, hashed storage keys, ownership checks, no trust in tenant headers or event payload overrides |
+| Worker replay changes identity or state        | Versioned event contracts, persisted actor and tenant context, idempotency keys, conditional state transitions, bounded retries, quarantine and audited replay commands                              |
+| Injection and malformed input                  | Runtime domain validation, UUID parsing, normalized errors, CodeQL and lint gates                                                                                                                    |
+| Dependency compromise                          | Frozen lockfile, dependency review, vulnerability audit, license policy                                                                                                                              |
+| Sensitive-data exposure                        | Security response headers, error normalization, telemetry redaction, least-privilege permissions                                                                                                     |
+| Audit tampering or ambiguity                   | Stable audit event names, actor/resource/outcome fields, request and trace correlation, replay and operator actions recorded separately                                                              |
 
 ## Identity and key lifecycle
 

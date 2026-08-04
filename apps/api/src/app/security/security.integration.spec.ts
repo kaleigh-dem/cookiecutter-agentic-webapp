@@ -1,10 +1,5 @@
 import { InMemoryRateLimitStore } from '@agentic-webapp/backend-rate-limit';
-import {
-  Controller,
-  Get,
-  type INestApplication,
-  Module,
-} from '@nestjs/common';
+import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, NestFactory } from '@nestjs/core';
 import {
   generateKeyPairSync,
@@ -88,7 +83,11 @@ function createAccessToken(
   key: SigningKey,
   claims: Readonly<Record<string, unknown>>,
 ): string {
-  const header = encode({ alg: 'RS256', kid: key.publicJwk.kid, typ: 'at+jwt' });
+  const header = encode({
+    alg: 'RS256',
+    kid: key.publicJwk.kid,
+    typ: 'at+jwt',
+  });
   const payload = encode(claims);
   const signingInput = `${header}.${payload}`;
   const signature = sign(
