@@ -42,11 +42,14 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       APP_VERSION: ${{ inputs.version }}
       API_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-api:${{ inputs.version }}
@@ -56,6 +59,7 @@ jobs:
       NEXT_PUBLIC_AUTHENTICATION_PROFILE: ${{ inputs.authentication_profile }}
       NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: ${{ inputs.auth_session_endpoint }}
       NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: 30
+      SUPPLY_CHAIN_DIRECTORY: ${{ runner.temp }}/image-supply-chain
     steps:
       - uses: actions/checkout@v7
 
@@ -103,6 +107,83 @@ jobs:
       - name: Build versioned images
         run: pnpm containers:build
 
+      - name: Prepare supply-chain output
+        run: mkdir -p "$SUPPLY_CHAIN_DIRECTORY"
+
+      - name: Generate API image SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.API_IMAGE }}
+          format: spdx-json
+          output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Generate worker image SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.WORKER_IMAGE }}
+          format: spdx-json
+          output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Generate web image SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.WEB_IMAGE }}
+          format: spdx-json
+          output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.API_IMAGE }}
+          format: json
+          output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.trivy.json
+          scanners: vuln
+          exit-code: '0'
+
+      - name: Scan worker image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.WORKER_IMAGE }}
+          format: json
+          output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.trivy.json
+          scanners: vuln
+          exit-code: '0'
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.WEB_IMAGE }}
+          format: json
+          output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.trivy.json
+          scanners: vuln
+          exit-code: '0'
+
+      - name: Enforce image vulnerability policy
+        run: >-
+          node tools/delivery/image-scan-policy.mjs
+          --policy tools/security/image-scan-policy.json
+          --report api="$SUPPLY_CHAIN_DIRECTORY/api.trivy.json"
+          --report worker="$SUPPLY_CHAIN_DIRECTORY/worker.trivy.json"
+          --report web="$SUPPLY_CHAIN_DIRECTORY/web.trivy.json"
+
+      - name: Upload image supply-chain evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-supply-chain-${{ inputs.version }}
+          path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Authenticate to GHCR
         if: inputs.push_images
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -113,3 +194,98 @@ jobs:
           docker push "$API_IMAGE"
           docker push "$WORKER_IMAGE"
           docker push "$WEB_IMAGE"
+
+      - name: Resolve published image digests
+        if: inputs.push_images
+        id: digests
+        run: |
+          for service in api worker web; do
+            variable="${service^^}_IMAGE"
+            image="${!variable}"
+            reference=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            name=${reference%@*}
+            digest=${reference##*@}
+            case "$digest" in
+              sha256:*) ;;
+              *) echo "Published $service image did not resolve to a sha256 digest." >&2; exit 1 ;;
+            esac
+            echo "$service-name=$name" >> "$GITHUB_OUTPUT"
+            echo "$service-digest=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Install Cosign
+        if: inputs.push_images
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign published image digests
+        if: inputs.push_images
+        env:
+          API_REFERENCE: ${{ steps.digests.outputs.api-name }}@${{ steps.digests.outputs.api-digest }}
+          WORKER_REFERENCE: ${{ steps.digests.outputs.worker-name }}@${{ steps.digests.outputs.worker-digest }}
+          WEB_REFERENCE: ${{ steps.digests.outputs.web-name }}@${{ steps.digests.outputs.web-digest }}
+        run: |
+          cosign sign --yes "$API_REFERENCE"
+          cosign sign --yes "$WORKER_REFERENCE"
+          cosign sign --yes "$WEB_REFERENCE"
+
+      - name: Attest API build provenance
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.api-name }}
+          subject-digest: ${{ steps.digests.outputs.api-digest }}
+          push-to-registry: true
+
+      - name: Attest worker build provenance
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.worker-name }}
+          subject-digest: ${{ steps.digests.outputs.worker-digest }}
+          push-to-registry: true
+
+      - name: Attest web build provenance
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.web-name }}
+          subject-digest: ${{ steps.digests.outputs.web-digest }}
+          push-to-registry: true
+
+      - name: Attest API SBOM
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.api-name }}
+          subject-digest: ${{ steps.digests.outputs.api-digest }}
+          sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.spdx.json
+          push-to-registry: true
+
+      - name: Attest worker SBOM
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.worker-name }}
+          subject-digest: ${{ steps.digests.outputs.worker-digest }}
+          sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.spdx.json
+          push-to-registry: true
+
+      - name: Attest web SBOM
+        if: inputs.push_images
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.digests.outputs.web-name }}
+          subject-digest: ${{ steps.digests.outputs.web-digest }}
+          sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.spdx.json
+          push-to-registry: true
+
+      - name: Summarize published digests
+        if: inputs.push_images
+        run: |
+          {
+            echo '## Published image digests'
+            echo
+            echo '- `${{ steps.digests.outputs.api-name }}@${{ steps.digests.outputs.api-digest }}`'
+            echo '- `${{ steps.digests.outputs.worker-name }}@${{ steps.digests.outputs.worker-digest }}`'
+            echo '- `${{ steps.digests.outputs.web-name }}@${{ steps.digests.outputs.web-digest }}`'
+          } >> "$GITHUB_STEP_SUMMARY"
