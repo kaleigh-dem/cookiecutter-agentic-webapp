@@ -63,3 +63,5 @@ If the outage exceeds the accepted recovery objective, use only pre-approved bus
 - Rate-limit counters remain scoped to verified subjects and tenants and fail closed when the distributed store is unavailable.
 - Trusted-proxy configuration matches the deployed ingress topology.
 - Worker replay cannot change the initiating actor, tenant, or authorization decision recorded with the durable event.
+
+The repository HTTP integration suite exercises the identity, rotation, authorization, and subject-scoped rate-limit checks above through the real Nest guard pipeline.
