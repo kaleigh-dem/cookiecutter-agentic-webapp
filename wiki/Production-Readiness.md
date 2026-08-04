@@ -13,6 +13,10 @@ This page is a practical launch checklist. It distinguishes automated repository
 
 Passing local development, `pnpm check`, preview smoke, image publication, or digest promotion does not make the service production-ready. Automation validates code, configuration, image evidence, and release identity; it cannot assign ownership, approve business risk, create provider integrations, test a real restore, or operate an incident.
 
+## Agent boundary
+
+AI agents may prepare configuration, tests, release evidence, checklists, migration plans, and rollback procedures. Accountable humans must approve architecture exceptions, production access, vulnerability risk acceptance, destructive data operations, environment promotion, deployment, rollback, and incident decisions. Do not bypass protected environments or give an agent long-lived production credentials to increase autonomy.
+
 ## Automated repository checks
 
 Run:
@@ -43,7 +47,7 @@ The supply-chain and release-manifest commands validate repository policy and th
 - [ ] At least two maintainers can recover administration and release access.
 - [ ] Merge strategy, branch deletion, signing policy, and evidence retention are documented.
 
-See [Repository and GitHub Setup](Repository-and-GitHub-Setup).
+See [Repository and GitHub Setup](Repository-and-GitHub-Setup) for the complete administrator procedure.
 
 ## Branch protection and required checks
 
@@ -63,7 +67,7 @@ See [Repository and GitHub Setup](Repository-and-GitHub-Setup).
 - [ ] `production` requires reviewers.
 - [ ] Production deployments are restricted to `main`.
 - [ ] `PRODUCTION_ENVIRONMENT` is an environment-scoped masked multiline secret on `production`.
-- [ ] Image-publication write permissions are job-scoped to the preview release job.
+- [ ] Image publication write permissions are job-scoped to the preview release job.
 - [ ] Production promotion has read-only workflow, package, and attestation permissions.
 - [ ] Publication is not treated as production deployment approval.
 - [ ] Cloud access uses short-lived workload identity where possible.
@@ -74,11 +78,11 @@ See [Repository and GitHub Setup](Repository-and-GitHub-Setup).
 - [ ] API, worker, and web SBOMs are generated in SPDX 2.3 JSON.
 - [ ] Trivy reports are retained for each image.
 - [ ] HIGH and CRITICAL findings fail unless an exact, owned, expiring exception exists.
-- [ ] No expired, duplicate, broad, or stale exception remains.
-- [ ] Each digest has the expected Cosign keyless signature.
+- [ ] No expired, duplicate, broad, or stale vulnerability exception remains.
+- [ ] Each published digest has the expected Cosign keyless signature.
 - [ ] Each digest has GitHub build-provenance and SPDX SBOM attestations.
-- [ ] The release manifest binds source identity, browser build inputs, and all three digests.
-- [ ] The production plan uses the same `name@sha256` references as the source artifact.
+- [ ] The release manifest binds source workflow identity, browser build inputs, and all three digests.
+- [ ] The production plan uses the same `name@sha256` references as the source release artifact.
 - [ ] The registry and deployment platform preserve and enforce OCI evidence.
 
 See [Image Supply Chain](Image-Supply-Chain).
@@ -126,13 +130,13 @@ See [Image Supply Chain](Image-Supply-Chain).
 - [ ] Production OTLP endpoint and credentials are configured.
 - [ ] Logs and spans redact secrets and sensitive payloads.
 - [ ] Sampling, retention, dashboards, alerts, SLOs, and escalation are defined.
-- [ ] Service version matches release version.
+- [ ] Service version matches the release version.
 - [ ] Telemetry outage behavior is understood.
 
 ## Deployment infrastructure
 
 - [ ] Images are built and published once from reviewed `main` source.
-- [ ] Deployment consumes exact digest references from an approved promotion artifact.
+- [ ] The deployment consumes exact digest references from an approved promotion artifact.
 - [ ] No production deployment rebuilds or retags the release.
 - [ ] DNS, TLS, ingress, network policy, and domains are owned.
 - [ ] Health/readiness probes are wired to the platform.
@@ -149,7 +153,7 @@ See [Image Supply Chain](Image-Supply-Chain).
 - [ ] Database rollback is never automatic.
 - [ ] Restore is tested in isolation.
 - [ ] RPO/RTO are approved and measured.
-- [ ] Runbooks match the actual platform.
+- [ ] Release rollback and disaster-recovery runbooks match the actual platform.
 - [ ] Incident commander, contacts, and access paths are current.
 
 ## Evidence retention
@@ -157,11 +161,26 @@ See [Image Supply Chain](Image-Supply-Chain).
 - [ ] `image-supply-chain-<VERSION>` is copied before its default 30-day retention expires when needed.
 - [ ] `production-promotion-<VERSION>` is copied before its default 90-day retention expires when needed.
 - [ ] Longer-term evidence storage has an owner and retention policy.
-- [ ] The team understands automated long-term retention remains future P13-06 work.
+- [ ] The team understands that automated long-term retention remains future P13-06 work.
 
 ## Evidence required before launch
 
-Record production readiness output, approved environment values, identity tests, preview smoke and performance results, image SBOMs and scans, vulnerability approvals, release manifest and source run, signatures and attestations, production promotion approval, immutable release plan, migration and backup evidence, restore exercise, threat model, branch/environment settings, rollback rehearsal, dashboards, alert routing, named owners, and launch approval.
+Record links or artifacts for:
+
+- production readiness output;
+- approved environment values;
+- identity integration tests;
+- preview smoke and performance results;
+- image SBOMs and vulnerability reports;
+- vulnerability exceptions and approvals;
+- release manifest, source run, signatures, and attestations;
+- production promotion approval and immutable release plan;
+- migration review and backup identifier;
+- restore exercise;
+- threat-model review;
+- branch and environment settings;
+- rollback rehearsal;
+- operational dashboards, alert routing, named owners, and launch approval.
 
 ## Release and deployment boundary
 
@@ -169,6 +188,7 @@ Record production readiness output, approved environment values, identity tests,
 
 ## Related pages
 
+- [Agentic Development Model](Agentic-Development-Model)
 - [Repository and GitHub Setup](Repository-and-GitHub-Setup)
 - [Image Supply Chain](Image-Supply-Chain)
 - [Authentication and Authorization](Authentication-and-Authorization)
