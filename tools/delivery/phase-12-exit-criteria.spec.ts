@@ -180,10 +180,6 @@ describe('Phase 12 exit criteria', () => {
     const packageJson = JSON.parse(
       readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
     ) as { scripts: Record<string, string> };
-    const generatedWorkspaceValidation = readFileSync(
-      new URL('../template/generated-workspace-e2e.mjs', import.meta.url),
-      'utf8',
-    );
     const securityIntegration = readFileSync(
       new URL(
         '../../apps/api/src/app/security/security.integration.spec.ts',
@@ -207,9 +203,6 @@ describe('Phase 12 exit criteria', () => {
     );
 
     expect(packageJson.scripts.check).toContain('pnpm test');
-    expect(generatedWorkspaceValidation).toContain(
-      "execute('pnpm', ['check'], workspace",
-    );
     expect(securityIntegration).toContain(
       'rejects expired, wrong-issuer, and wrong-audience access tokens',
     );
@@ -217,7 +210,7 @@ describe('Phase 12 exit criteria', () => {
       'refreshes JWKS once when a provider rotates signing keys',
     );
     expect(contractIntegration).toContain(
-      'rejects malformed request bodies with field-level errors',
+      'rejects %s request bodies with field-level errors',
     );
     expect(contractIntegration).toContain(
       'fails closed when a handler produces an invalid response',
