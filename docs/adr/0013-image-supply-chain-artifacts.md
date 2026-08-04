@@ -29,4 +29,4 @@ The baseline must remain portable. It should use standard OCI registry attachmen
 - Publishing requires `packages: write`, `id-token: write`, `attestations: write`, and `artifact-metadata: write` permissions in the release workflow.
 - The registry must preserve OCI referrers used for signatures and attestations.
 - Generated repositories inherit a concrete signing and verification path without inheriting long-lived credentials.
-- P13-02 still owns digest promotion between environments; this decision only establishes the evidence and identity attached to a published digest.
+- Immutable promotion of these digests is governed by ADR 0014; this decision establishes the evidence and identity that promotion must preserve.

@@ -28,9 +28,7 @@ export function isSemanticVersion(value) {
     !parts.every(
       (part) =>
         part.length > 0 &&
-        [...part].every(
-          (character) => character >= '0' && character <= '9',
-        ) &&
+        [...part].every((character) => character >= '0' && character <= '9') &&
         (part === '0' || !part.startsWith('0')),
     )
   ) {

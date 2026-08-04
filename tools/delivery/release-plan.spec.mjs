@@ -106,9 +106,8 @@ describe('release planning', () => {
         ?.command,
     ).toContain('BACKUP_OWNER');
     expect(
-      preview.orderedSteps.find(
-        (step) => step.id === 'validate-configuration',
-      )?.command,
+      preview.orderedSteps.find((step) => step.id === 'validate-configuration')
+        ?.command,
     ).toBe(
       'node tools/delivery/validate-environment.mjs infra/environments/preview.env',
     );

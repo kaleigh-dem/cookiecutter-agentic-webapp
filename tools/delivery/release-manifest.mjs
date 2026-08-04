@@ -55,7 +55,9 @@ function validateImageName(value, service) {
 function validateDigest(value, service) {
   const digest = requireString(value, `${service} image digest`);
   if (!digestPattern.test(digest)) {
-    throw new Error(`${service} image digest must be a lowercase sha256 digest.`);
+    throw new Error(
+      `${service} image digest must be a lowercase sha256 digest.`,
+    );
   }
   return digest;
 }
@@ -237,10 +239,8 @@ export function releaseEnvironmentEntries(manifest) {
     WORKER_IMAGE: normalized.images.worker.reference,
     WEB_IMAGE: normalized.images.web.reference,
     NEXT_PUBLIC_API_BASE_URL: normalized.build.apiBaseUrl,
-    NEXT_PUBLIC_AUTHENTICATION_PROFILE:
-      normalized.build.authenticationProfile,
-    NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:
-      normalized.build.authSessionEndpoint,
+    NEXT_PUBLIC_AUTHENTICATION_PROFILE: normalized.build.authenticationProfile,
+    NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: normalized.build.authSessionEndpoint,
   };
 }
 
@@ -300,12 +300,15 @@ async function createCommand(values) {
 }
 
 async function validateCommand(values) {
-  const manifest = validateReleaseManifest(await loadManifest(values.manifest), {
-    version: values['expected-version'],
-    repository: values['expected-repository'],
-    runId: values['expected-run-id'],
-    commitSha: values['expected-commit-sha'],
-  });
+  const manifest = validateReleaseManifest(
+    await loadManifest(values.manifest),
+    {
+      version: values['expected-version'],
+      repository: values['expected-repository'],
+      runId: values['expected-run-id'],
+      commitSha: values['expected-commit-sha'],
+    },
+  );
   process.stdout.write(
     `${JSON.stringify(
       {

@@ -202,13 +202,15 @@ The generated production profile now has reference OIDC identity, explicit brows
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-- [-] **P13-01 Add image and dependency supply-chain artifacts.**
+Phase 13 progress record (2026-08-04): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`, after reviewer PASS for exact head `f9c97a3f58dacf654a14df439d7c78344b9612f4` and successful CI #590, Delivery #333, Security #414, and Generated Workspace #269. P13-02 is the only active Phase 13 task.
+
+- [x] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
   - Scan images and fail according to an explicit severity and exception policy.
   - Produce build provenance or attestations.
   - Sign published image digests and document verification.
 
-- [ ] **P13-02 Promote digests instead of rebuilding releases.**
+- [-] **P13-02 Promote digests instead of rebuilding releases.**
   - Publish immutable images once after validation.
   - Record image digests in the release plan.
   - Promote the same tested digests between preview and production environments.
