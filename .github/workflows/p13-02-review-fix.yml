@@ -1,6 +1,9 @@
 name: Apply P13-02 review fixes
 
 on:
+  push:
+    branches:
+      - agent/p13-02-digest-promotion
   pull_request:
     branches:
       - main
@@ -14,7 +17,8 @@ jobs:
   apply:
     if: >-
       github.actor != 'github-actions[bot]' &&
-      github.event.pull_request.head.ref == 'agent/p13-02-digest-promotion'
+      (github.event_name == 'push' ||
+      github.event.pull_request.head.ref == 'agent/p13-02-digest-promotion')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -141,6 +145,7 @@ jobs:
           pnpm nx test delivery --skip-nx-cache
           pnpm nx lint delivery --skip-nx-cache
           rm .github/workflows/p13-02-review-fix.yml
+          rm .github/workflows/p13-02-review-fix-v2.yml
           git branch --force main origin/main
           pnpm format:check
 
