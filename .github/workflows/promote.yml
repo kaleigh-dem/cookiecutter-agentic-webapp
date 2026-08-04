@@ -19,7 +19,20 @@ permissions:
   packages: read
 
 jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the default branch
+        run: |
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo 'Promote release digests must be dispatched from refs/heads/main.' >&2
+            exit 1
+          fi
+
   promote:
+    needs: authorize
+    if: github.ref == 'refs/heads/main'
     environment:
       name: production
     runs-on: ubuntu-latest
