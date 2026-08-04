@@ -1,12 +1,22 @@
 # Validation and Testing
 
-This page explains what repository validation proves, what it does not prove, and which focused commands to use while iterating.
+This page explains the executable feedback loop used by humans and AI agents: what repository validation proves, what it does not prove, and which focused commands to use while iterating.
 
 ## Prerequisites
 
 - Dependencies installed.
 - Docker available for integration and preview work.
-- A production-safe browser authentication profile when building release images.
+- A valid browser authentication profile when building web production artifacts.
+
+## Validation is the agent feedback loop
+
+Agentic development is reliable only when completion criteria are executable. Use three layers:
+
+1. **Focused feedback** for the project or boundary being changed.
+2. **Affected validation** for dependents discovered by Nx.
+3. **The full repository contract** before review or merge.
+
+A green command is evidence for a specific contract, not proof that the product requirement is correct or that production risk has been approved. Agents should report exactly which commands ran and humans should review the diff and remaining decisions.
 
 ## Full repository contract
 
@@ -49,7 +59,11 @@ pnpm contracts:check
 pnpm contracts:compat
 ```
 
-`generate` writes current generated artifacts, `check` fails on drift, and `compat` checks the maintained compatibility baseline. Never edit generated contract files directly.
+- `generate` writes current generated artifacts.
+- `check` fails when committed generated artifacts drift from source.
+- `compat` checks the maintained compatibility baseline.
+
+Never edit generated contract files directly.
 
 ### Formatting
 
@@ -67,7 +81,7 @@ pnpm security:audit
 pnpm security:licenses
 ```
 
-These enforce tracked-secret patterns, dependency vulnerability policy, and production-dependency license policy. They are baseline controls, not a penetration test or legal review.
+These enforce tracked secret patterns, dependency vulnerability policy, and production dependency license policy. They are baseline controls, not a complete penetration test or legal review.
 
 ### Delivery configuration
 
@@ -84,7 +98,7 @@ pnpm performance:check
 pnpm supply-chain:check
 ```
 
-- `deploy:config:check` validates checked-in deployment examples and rules.
+- `deploy:config:check` validates checked-in deployment examples and configuration rules.
 - `release:manifest:check` validates the checked-in release-manifest example against the current schema.
 - `performance:check` validates performance-budget configuration.
 - `supply-chain:check` validates vulnerability-policy and exception definitions.
@@ -137,7 +151,7 @@ pnpm performance:load
 pnpm production:check -- <ENVIRONMENT_FILE>
 ```
 
-Do not assume `pnpm check` proves the preview lifecycle, exact production configuration, provider reachability, backups, repository governance, image publication, signatures, attestations, or production approval.
+Do not assume `pnpm check` proves the preview lifecycle, exact production configuration, identity replacement, provider reachability, backups, repository governance, image publication, signatures, attestations, or production approval.
 
 ## Focused developer commands
 
@@ -189,7 +203,14 @@ pnpm nx run worker:build
 
 CI installs Chromium and runs affected `e2e` targets. The production-shaped preview separately runs deployed-image smoke tests and performance scenarios.
 
-The release smoke profile checks web home, API liveness and readiness, and that API metrics requires authentication. The local `live-agent-task` profile additionally checks worker operations and creates an Agent Task that must reach `succeeded`.
+The release smoke profile checks:
+
+- web home returns 200;
+- API liveness returns 200;
+- API readiness returns 200;
+- API metrics requires authentication.
+
+The local `live-agent-task` profile additionally checks worker liveness, readiness, and metrics and creates an Agent Task that must reach `succeeded`.
 
 ## Image release validation
 
@@ -210,7 +231,11 @@ See [Image Supply Chain](Image-Supply-Chain) and [Releases and Upgrades](Release
 
 ## Performance budgets
 
-Default load settings are 30 requests, concurrency 5, and a 5-second request timeout.
+Default load settings:
+
+- 30 requests;
+- concurrency 5;
+- 5-second request timeout.
 
 | Scenario | Maximum P95 | Maximum error rate |
 | --- | ---: | ---: |
@@ -219,9 +244,11 @@ Default load settings are 30 requests, concurrency 5, and a 5-second request tim
 | Worker readiness | 500 ms | 1% |
 | Web home | 750 ms | 1% |
 
-These are reference-environment release gates, not universal production SLOs.
+These are release gates for the reference environment, not universal production SLOs.
 
 ## Git cleanliness
+
+After generation, validation, and production build:
 
 ```bash
 git status --short
@@ -253,6 +280,7 @@ pnpm preview:down
 
 ## Related pages
 
+- [Agentic Development Model](Agentic-Development-Model)
 - [Everyday Development](Everyday-Development)
 - [Image Supply Chain](Image-Supply-Chain)
 - [Containers and Preview Environments](Containers-and-Preview-Environments)
