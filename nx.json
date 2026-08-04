@@ -13,7 +13,8 @@
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/pnpm-workspace.yaml",
       "{workspaceRoot}/tsconfig.base.json",
-      "{workspaceRoot}/eslint.config.mjs"
+      "{workspaceRoot}/eslint.config.mjs",
+      "{workspaceRoot}/vitest.config.ts"
     ]
   },
   "plugins": [
