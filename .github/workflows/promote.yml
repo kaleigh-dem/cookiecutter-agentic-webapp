@@ -1,0 +1,181 @@
+name: Promote release digests
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published semantic release version
+        required: true
+        type: string
+      source_run_id:
+        description: Successful Release images workflow run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  attestations: read
+  contents: read
+  packages: read
+
+jobs:
+  promote:
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_DIRECTORY: ${{ runner.temp }}/release-promotion
+      RELEASE_MANIFEST: ${{ runner.temp }}/release-promotion/release-manifest.json
+      RELEASE_IMAGE_ENVIRONMENT: ${{ runner.temp }}/release-promotion/release-images.env
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate the source workflow run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          case "$SOURCE_RUN_ID" in
+            ''|*[!0-9]*) echo 'source_run_id must be a positive integer.' >&2; exit 1 ;;
+          esac
+          mkdir -p "$RELEASE_DIRECTORY"
+          gh run view "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json workflowName,headBranch,event,conclusion,headSha,url \
+            > "$RELEASE_DIRECTORY/source-run.json"
+          node --input-type=module - "$RELEASE_DIRECTORY/source-run.json" <<'NODE'
+          import { readFile } from 'node:fs/promises';
+
+          const run = JSON.parse(await readFile(process.argv[2], 'utf8'));
+          const expected = {
+            workflowName: 'Release images',
+            headBranch: 'main',
+            event: 'workflow_dispatch',
+            conclusion: 'success',
+          };
+          for (const [key, value] of Object.entries(expected)) {
+            if (run[key] !== value) {
+              throw new Error(
+                `Source run ${key} must be ${value}, received ${run[key] ?? '<missing>'}.`,
+              );
+            }
+          }
+          if (!/^[a-f0-9]{40}$/u.test(run.headSha ?? '')) {
+            throw new Error('Source run must expose a full lowercase head SHA.');
+          }
+          NODE
+
+      - name: Download immutable release evidence
+        uses: actions/download-artifact@v8
+        with:
+          name: release-images-${{ inputs.version }}
+          path: ${{ env.RELEASE_DIRECTORY }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate the release manifest
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        run: |
+          SOURCE_HEAD_SHA=$(node --input-type=module - "$RELEASE_DIRECTORY/source-run.json" <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const run = JSON.parse(await readFile(process.argv[2], 'utf8'));
+          process.stdout.write(run.headSha);
+          NODE
+          )
+          node tools/delivery/release-manifest.mjs validate \
+            --manifest "$RELEASE_MANIFEST" \
+            --expected-version "${{ inputs.version }}" \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-run-id "$SOURCE_RUN_ID" \
+            --expected-commit-sha "$SOURCE_HEAD_SHA"
+          node tools/delivery/release-manifest.mjs export-env \
+            --manifest "$RELEASE_MANIFEST" \
+            --github-env "$GITHUB_ENV" \
+            --image-env "$RELEASE_IMAGE_ENVIRONMENT"
+
+      - name: Materialize protected production environment
+        env:
+          PRODUCTION_ENVIRONMENT: ${{ secrets.PRODUCTION_ENVIRONMENT }}
+        run: |
+          if [ -z "${PRODUCTION_ENVIRONMENT:-}" ]; then
+            echo 'The production GitHub Environment must provide PRODUCTION_ENVIRONMENT.' >&2
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$PRODUCTION_ENVIRONMENT" > "$RUNNER_TEMP/production.env"
+
+      - name: Validate production readiness against published build inputs
+        run: >-
+          pnpm production:check -- "$RUNNER_TEMP/production.env"
+          --compare-release-environment
+
+      - name: Authenticate to GHCR for verification
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Verify signatures and attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          identity="https://github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml@refs/heads/main"
+          for variable in API_IMAGE WORKER_IMAGE WEB_IMAGE; do
+            reference="${!variable}"
+            cosign verify "$reference" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              --certificate-identity "$identity"
+            gh attestation verify "oci://$reference" --repo "$GITHUB_REPOSITORY"
+            gh attestation verify "oci://$reference" \
+              --repo "$GITHUB_REPOSITORY" \
+              --predicate-type https://spdx.dev/Document/v2.3
+          done
+
+      - name: Generate the production release plan
+        run: |
+          node tools/delivery/release-plan.mjs \
+            --environment production \
+            --manifest "$RELEASE_MANIFEST" \
+            --image-environment-file release-images.env \
+            --output "$RELEASE_DIRECTORY/release-plan.production.json"
+          cat "$RELEASE_DIRECTORY/release-plan.production.json" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload approved production promotion
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-promotion-${{ inputs.version }}
+          path: |
+            ${{ env.RELEASE_DIRECTORY }}/release-manifest.json
+            ${{ env.RELEASE_DIRECTORY }}/release-images.env
+            ${{ env.RELEASE_DIRECTORY }}/release-plan.production.json
+            ${{ env.RELEASE_DIRECTORY }}/source-run.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Summarize approved digest promotion
+        run: |
+          {
+            echo
+            echo '## Production promotion'
+            echo
+            echo "- Source workflow run: \`${{ inputs.source_run_id }}\`"
+            echo "- API: \`$API_IMAGE\`"
+            echo "- Worker: \`$WORKER_IMAGE\`"
+            echo "- Web: \`$WEB_IMAGE\`"
+            echo
+            echo 'No image was rebuilt, retagged, or pushed by this workflow.'
+          } >> "$GITHUB_STEP_SUMMARY"
