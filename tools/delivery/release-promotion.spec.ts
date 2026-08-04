@@ -43,7 +43,7 @@ describe('immutable release promotion', () => {
 
     expect(workflow).toContain('  authorize:\n');
     expect(workflow).toContain(
-      "if [ \"$GITHUB_REF\" != 'refs/heads/main' ]; then",
+      'if [ "$GITHUB_REF" != \'refs/heads/main\' ]; then',
     );
     expect(workflow).toContain('needs: authorize');
     expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
