@@ -152,14 +152,14 @@ jobs:
           pnpm delivery:check
           pnpm nx test delivery --skip-nx-cache
           pnpm nx lint delivery --skip-nx-cache
+          rm -f .github/workflows/p13-02-apply.yml
+          rm -f .github/workflows/p13-02-runner.yml
+          rm -f .github/workflows/p13-02-finish.yml
           git branch --force main origin/main
           pnpm format:check
 
       - name: Commit final focused implementation
         run: |
-          rm -f .github/workflows/p13-02-apply.yml
-          rm -f .github/workflows/p13-02-runner.yml
-          rm -f .github/workflows/p13-02-finish.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
