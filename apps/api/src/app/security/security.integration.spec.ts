@@ -63,11 +63,7 @@ const readDescriptor = Object.getOwnPropertyDescriptor(
   'read',
 );
 if (!readDescriptor) throw new Error('Security verification route is missing.');
-Get('read')(
-  SecurityVerificationController.prototype,
-  'read',
-  readDescriptor,
-);
+Get('read')(SecurityVerificationController.prototype, 'read', readDescriptor);
 RequirePermissions('agent-tasks:read')(
   SecurityVerificationController.prototype,
   'read',
