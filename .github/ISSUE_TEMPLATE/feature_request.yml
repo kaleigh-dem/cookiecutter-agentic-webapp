@@ -1,0 +1,69 @@
+name: Feature request
+description: Propose a focused platform, template, or generated-workspace improvement.
+title: '[Feature]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `docs/TODO.md` and open pull requests before proposing new roadmap work. Keep requests focused enough to review and validate independently.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the concrete user, operator, or maintainer problem without prescribing a solution first.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: State the observable behavior or acceptance criteria.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary scope
+      options:
+        - Template initialization or upgrades
+        - Web application
+        - API or authentication
+        - Worker or asynchronous processing
+        - Contracts or generators
+        - Database or migrations
+        - Delivery or infrastructure
+        - Security or supply chain
+        - CI or developer tooling
+        - Documentation
+        - Optional AI profile
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Note current workarounds, rejected approaches, or why existing extension points are insufficient.
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Compatibility and operational impact
+      description: Identify migrations, generated-file ownership, security boundaries, rollout risk, or downstream upgrade concerns.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I reviewed `docs/TODO.md` and existing issues and pull requests.
+          required: true
+        - label: This request is focused enough to implement and validate independently.
+          required: true
+        - label: I identified likely compatibility or operational impact.
+          required: true

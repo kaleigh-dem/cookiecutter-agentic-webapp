@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible defect in the template or generated workspace.
+title: '[Bug]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a defect. Do not include secrets or security-sensitive exploit details; use GitHub's private vulnerability reporting flow for those.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Web application
+        - API
+        - Worker
+        - Contracts or generators
+        - Database or migrations
+        - Delivery or infrastructure
+        - CI or developer tooling
+        - Documentation
+        - Generated workspace
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest reliable sequence of commands or actions.
+      placeholder: |
+        1. Run ...
+        2. Configure ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include concise error output or logs with sensitive values removed.
+    validations:
+      required: true
+
+  - type: input
+    id: revision
+    attributes:
+      label: Repository revision
+      description: Commit SHA, tag, template version, or generated workspace version.
+      placeholder: b29a9ee or template-v0.2.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, Node.js version, pnpm version, and relevant runtime profile.
+      placeholder: macOS 15; Node 24; pnpm 10.13.1; local development profile
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and pull requests for this defect.
+          required: true
+        - label: I removed secrets and sensitive data from this report.
+          required: true
+        - label: I included a focused reproduction rather than only a screenshot.
+          required: true
