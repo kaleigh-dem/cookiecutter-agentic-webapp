@@ -2,6 +2,7 @@
 
 **Start**
 - [Home](Home)
+- [Agentic Development Model](Agentic-Development-Model)
 - [Quick Start](Quick-Start)
 - [Choosing Workspace Profiles](Choosing-Workspace-Profiles)
 - [Repository Tour](Repository-Tour)
