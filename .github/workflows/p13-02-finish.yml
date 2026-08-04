@@ -152,6 +152,7 @@ jobs:
           pnpm delivery:check
           pnpm nx test delivery --skip-nx-cache
           pnpm nx lint delivery --skip-nx-cache
+          git branch --force main origin/main
           pnpm format:check
 
       - name: Commit final focused implementation
