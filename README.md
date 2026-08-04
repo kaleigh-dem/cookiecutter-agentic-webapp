@@ -56,11 +56,12 @@ See `docs/template-releases.md` for versioning and publishing, `docs/template-va
 
 ## Upgrade a generated workspace
 
-Install the target release artifact temporarily and preview its ordered migration plan:
+Install the target release artifact temporarily and preview its ordered migration plan. Replace the example version with the release you downloaded:
 
 ```bash
-pnpm add --save-dev ./agentic-webapp-workspace-plugin-<target-version>.tgz
-pnpm exec agentic-webapp-upgrade --to <target-version> --dry-run
+TARGET_VERSION=0.2.0
+pnpm add --save-dev "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm exec agentic-webapp-upgrade --to "$TARGET_VERSION" --dry-run
 ```
 
 After reviewing ownership classes and conflicts, rerun with `--apply`, execute `pnpm check`, and commit the upgrade separately from application changes. Applied migrations synchronize the repository-local `pnpm template:upgrade` command.
