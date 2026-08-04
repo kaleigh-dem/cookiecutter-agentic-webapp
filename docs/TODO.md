@@ -172,19 +172,19 @@ Goal: provide a production-capable security path while keeping providers replace
   - Reuse runtime schemas for event and webhook validation.
   - Add negative contract tests against malformed and oversized payloads.
 
-- [-] **P12-05 Add a production-readiness gate.**
+- [x] **P12-05 Add a production-readiness gate.**
   - Fail when development authentication, placeholder secrets, local URLs, in-memory distributed controls, or unsupported runtime versions are selected for production.
   - Verify CORS origins, HTTPS endpoints, telemetry configuration, backup ownership, and rate-limit storage.
   - Expose the gate through `pnpm production:check` and the release workflow.
 
-- [ ] **P12-06 Expand security verification.**
+- [-] **P12-06 Expand security verification.**
   - Add integration tests for token expiry, key rotation, invalid issuer and audience, permission denial, and rate-limit behavior.
   - Update the threat model for identity, proxy trust, worker replay, and multi-tenant boundaries.
   - Document secret rotation and identity-provider outage behavior.
 
 Exit criteria: a generated production profile authenticates real identities, enforces runtime contracts and distributed limits across replicas, and cannot pass the release gate with development-only security adapters.
 
-Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177; P12-03 is completed and verified in reviewed PR #32 and squash commit `fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery #250, Security #321, and Generated Workspace #181; P12-04 is completed and verified in reviewed PR #35 and squash commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`, including CI #501, Delivery #254, Security #325, and Generated Workspace #185. Phase 12 remains open because P12-05 through P12-06 and the overall phase exit criteria are not yet complete.
+Phase gate record (2026-08-03): P12-01 is completed and verified in `512ba1d9799c74a1f0a60697776c93ccc29ed723`; P12-02 is completed and verified in reviewed PR #27 and squash commit `c02be9e6eb97f3080c8e7b30fb01e453e32429ba`, including CI #484, Delivery #241, Security #308, and Generated Workspace #177; P12-03 is completed and verified in reviewed PR #32 and squash commit `fb2c675b02d443952f018c3df11f65bff970e7dd`, including CI #497, Delivery #250, Security #321, and Generated Workspace #181; P12-04 is completed and verified in reviewed PR #35 and squash commit `4c9e7d864798ef2ac2cb5002b87c9b9856bb347e`, including CI #501, Delivery #254, Security #325, and Generated Workspace #185; P12-05 is completed and verified in reviewed PR #36 and squash commit `49f0f38e9da6fe35a335ac5c7def49e977990a09`, after reviewer PASS for exact head `5959c12abccb744a8ea35d9bd4e700554ad787b2` and CI #532, Delivery #282, Security #356, and Generated Workspace #214. Phase 12 remains open because P12-06 and the overall phase exit criteria are not yet complete.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
