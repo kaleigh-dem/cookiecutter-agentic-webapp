@@ -27,13 +27,16 @@ const ignoredIdentitySegments = new Set([
   'node_modules',
   'test-output',
 ]);
+const preservedTemplateSourcePaths = new Set([
+  'tools/workspace-plugin/src/generators/init/generator.ts',
+  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
+  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+]);
 const preservedUpstreamPaths = new Set([
   'README.md',
   'workspace.template.json',
   'docs/template-initialization.md',
-  'tools/workspace-plugin/src/generators/init/generator.ts',
-  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
-  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  ...preservedTemplateSourcePaths,
 ]);
 
 const templateIdentity = {
@@ -370,6 +373,10 @@ export function rewriteWorkspaceIdentity(
   options: NormalizedInitOptions,
 ): void {
   for (const path of listTreeFiles(tree)) {
+    if (preservedTemplateSourcePaths.has(path)) {
+      continue;
+    }
+
     const content = tree.read(path);
     if (!content || isBinary(content)) {
       continue;
