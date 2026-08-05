@@ -7,7 +7,7 @@ async function repositoryFile(path: string): Promise<string> {
 }
 
 describe('immutable release promotion', () => {
-  it('publishes each semantic version once and records exact digests', async () => {
+  it('reserves each semantic version while allowing exact-run recovery', async () => {
     const workflow = await repositoryFile('.github/workflows/release.yml');
 
     expect(workflow).toContain('environment:\n      name: preview');
@@ -18,8 +18,25 @@ describe('immutable release promotion', () => {
       workflow.indexOf('jobs:'),
     );
     expect(workflow).toContain('refs/heads/main');
-    expect(workflow).toContain('Refuse to overwrite a published version');
+    expect(workflow).toContain('Inspect release image state');
     expect(workflow).toContain('docker manifest inspect');
+    expect(workflow).toContain(
+      'if [ "$GITHUB_RUN_ATTEMPT" = \'1\' ]; then',
+    );
+    expect(workflow).toContain(
+      'Rerun the original failed Release images workflow to resume a partial publication.',
+    );
+    expect(workflow).toContain(
+      'org.opencontainers.image.version',
+    );
+    expect(workflow).toContain(
+      'org.opencontainers.image.revision',
+    );
+    expect(workflow).toContain('Push unpublished versioned images');
+    expect(workflow).toContain(
+      'if [ "$API_PUBLISHED" != \'true\' ]; then docker push "$API_IMAGE"; fi',
+    );
+    expect(workflow).toContain('overwrite: true');
     expect(workflow).not.toContain('push_images:');
     expect(workflow).not.toContain(
       'environment:\n        description: Release environment',
