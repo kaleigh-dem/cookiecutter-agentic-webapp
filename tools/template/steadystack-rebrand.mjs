@@ -2,16 +2,18 @@ import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const root = process.cwd();
 const selfPath = 'tools/template/steadystack-rebrand.mjs';
-const artifactRoot = '/tmp/steadystack-migration-artifact';
+const artifactRoot = mkdtempSync(path.join(os.tmpdir(), 'steadystack-migration-artifact-'));
 const historicalPaths = new Set([
   'CHANGELOG.md',
   'tools/template/migrations/0.1.0-to-0.2.0.mjs',
@@ -230,8 +232,6 @@ const classificationCounts = Object.fromEntries(
     ]),
 );
 
-rmSync(artifactRoot, { recursive: true, force: true });
-mkdirSync(artifactRoot, { recursive: true });
 const report = {
   baseSha: '618c6383ded604e5d274abea24f3095d8caedb5b',
   renamedReferences,
