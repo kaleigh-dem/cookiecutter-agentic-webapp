@@ -17,7 +17,7 @@ jobs:
   affected:
     runs-on: ubuntu-latest
     env:
-      CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/ci-diagnostics
+      CI_DIAGNOSTICS_DIR: ${{ github.workspace }}/test-output/ci-diagnostics
     steps:
       - uses: actions/checkout@v7
         with:
