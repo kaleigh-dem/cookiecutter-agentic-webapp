@@ -59,8 +59,6 @@ jobs:
     timeout-minutes: 45
     env:
       BUILDKIT_CACHE_DIR: ${{ github.workspace }}/.cache/buildkit
-      CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/generated-workspace/test-output
-      PERFORMANCE_REPORT_PATH: ${{ runner.temp }}/generated-workspace/test-output/performance-report.json
     steps:
       - uses: actions/checkout@v7
         with:
@@ -99,6 +97,9 @@ jobs:
           echo "path=$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Validate generated workspace lifecycle
+        env:
+          CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/generated-workspace/test-output
+          PERFORMANCE_REPORT_PATH: ${{ runner.temp }}/generated-workspace/test-output/performance-report.json
         run: |
           pnpm template:workspace:e2e -- \
             --artifact "${{ steps.artifact.outputs.path }}" \
