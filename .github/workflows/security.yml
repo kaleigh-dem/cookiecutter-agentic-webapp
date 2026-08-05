@@ -77,6 +77,26 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Correct staged patch indentation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('tools/delivery/apply-p13-02-review-fix.py')
+          text = path.read_text()
+          needle = ''').lstrip("\\n")
+          workflow_path.write_text(workflow[:start] + replacement + workflow[end:])'''
+          corrected = ''').lstrip("\\n")
+          replacement = "\\n".join(
+              ("            " + line) if line else ""
+              for line in replacement.splitlines()
+          ) + "\\n"
+          workflow_path.write_text(workflow[:start] + replacement + workflow[end:])'''
+          if needle not in text:
+              raise SystemExit('release workflow indentation marker not found')
+          path.write_text(text.replace(needle, corrected, 1))
+          PY
+
       - name: Apply reviewer findings
         run: python3 tools/delivery/apply-p13-02-review-fix.py
 
@@ -90,8 +110,6 @@ jobs:
           apps/worker/project.json
           apps/web/project.json
           docs/delivery/releases-and-previews.md
-          infra/docker/Dockerfile.node-service
-          infra/docker/Dockerfile.web
           tools/delivery/release-image-recovery.mjs
           tools/delivery/release-image-recovery.spec.mjs
           tools/delivery/release-promotion.spec.ts
