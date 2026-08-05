@@ -105,13 +105,13 @@ Production monitoring should consume the configured OpenTelemetry exporter.
 
 ## Metrics
 
-| Metric | Meaning |
-| --- | --- |
-| `worker_queue_depth` | Pending or processing outbox rows. |
-| `worker_oldest_message_age_ms` | Age of oldest non-terminal row. |
-| `worker_message_processing_duration_ms` | Handler and settlement duration. |
-| `worker_retries_total` | Persisted retry schedules. |
-| `worker_failures_total` | Persisted terminal failures. |
+| Metric                                  | Meaning                            |
+| --------------------------------------- | ---------------------------------- |
+| `worker_queue_depth`                    | Pending or processing outbox rows. |
+| `worker_oldest_message_age_ms`          | Age of oldest non-terminal row.    |
+| `worker_message_processing_duration_ms` | Handler and settlement duration.   |
+| `worker_retries_total`                  | Persisted retry schedules.         |
+| `worker_failures_total`                 | Persisted terminal failures.       |
 
 Initial alert guidance from the repository:
 
