@@ -29,8 +29,8 @@ jobs:
     timeout-minutes: 30
     env:
       BUILDKIT_CACHE_DIR: ${{ github.workspace }}/.cache/buildkit
-      CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/delivery-diagnostics
-      PERFORMANCE_REPORT_PATH: ${{ runner.temp }}/delivery-diagnostics/performance-report.json
+      CI_DIAGNOSTICS_DIR: ${{ github.workspace }}/test-output/delivery-diagnostics
+      PERFORMANCE_REPORT_PATH: ${{ github.workspace }}/test-output/delivery-diagnostics/performance-report.json
     steps:
       - uses: actions/checkout@v7
 
