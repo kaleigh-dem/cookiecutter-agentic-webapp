@@ -77,31 +77,8 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Execute staged patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          source = Path('.github/workflows/p13-02-release-recovery-hardening.yml').read_text()
-          marker = '      - name: Apply reviewer findings\n        shell: bash\n        run: |\n'
-          start = source.find(marker)
-          if start < 0:
-              raise SystemExit('staged patch marker not found')
-          start += len(marker)
-          end_marker = '\n      - run: pnpm install --frozen-lockfile\n'
-          end = source.find(end_marker, start)
-          if end < 0:
-              raise SystemExit('staged patch end marker not found')
-          lines = source[start:end].splitlines()
-          script = '\n'.join(
-              line[10:] if line.startswith('          ') else line
-              for line in lines
-          ) + '\n'
-          Path('/tmp/apply-release-recovery.sh').write_text(script)
-          PY
-          bash /tmp/apply-release-recovery.sh
+      - name: Apply reviewer findings
+        run: python3 tools/delivery/apply-p13-02-review-fix.py
 
       - run: pnpm install --frozen-lockfile
 
@@ -131,6 +108,7 @@ jobs:
           rm .github/workflows/p13-02-release-recovery-hardening.yml
           rm .github/workflows/p13-02-release-recovery-push.yml
           rm .github/p13-02-release-recovery-trigger
+          rm tools/delivery/apply-p13-02-review-fix.py
           git branch --force main origin/main
           pnpm format:check
 
