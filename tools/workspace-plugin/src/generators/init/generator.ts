@@ -40,13 +40,10 @@ const preservedUpstreamPaths = new Set([
 ]);
 
 const templateIdentity = {
-  className: 'SteadyStack',
   displayName: 'SteadyStack',
   packageScope: '@steadystack',
-  propertyName: 'steadystack',
   repository: 'kaleigh-dem/steady-stack',
   slug: 'steadystack',
-  snakeName: 'steadystack',
   upperSnakeName: 'STEADYSTACK',
 } as const;
 
@@ -112,18 +109,6 @@ function defaultDisplayName(applicationSlug: string): string {
     .split('-')
     .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
     .join(' ');
-}
-
-function className(applicationSlug: string): string {
-  return applicationSlug
-    .split('-')
-    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
-    .join('');
-}
-
-function propertyName(applicationSlug: string): string {
-  const normalizedClassName = className(applicationSlug);
-  return `${normalizedClassName[0]?.toLowerCase() ?? ''}${normalizedClassName.slice(1)}`;
 }
 
 export function normalizeInitOptions(
@@ -334,8 +319,6 @@ function rewriteIdentityContent(
   options: NormalizedInitOptions,
   preserveUpstreamRepository: boolean,
 ): string {
-  const generatedClassName = className(options.applicationSlug);
-  const generatedPropertyName = propertyName(options.applicationSlug);
   const generatedSnakeName = options.applicationSlug.replaceAll('-', '_');
   const generatedUpperSnakeName = generatedSnakeName.toUpperCase();
   const generatedRepository = `${options.repositoryOwner}/${options.applicationSlug}`;
@@ -349,11 +332,8 @@ function rewriteIdentityContent(
 
   const replacements: ReadonlyArray<readonly [string, string]> = [
     [templateIdentity.packageScope, options.packageScope],
-    [templateIdentity.displayName, options.displayName],
-    [templateIdentity.className, generatedClassName],
-    [templateIdentity.propertyName, generatedPropertyName],
     [templateIdentity.upperSnakeName, generatedUpperSnakeName],
-    [templateIdentity.snakeName, generatedSnakeName],
+    [templateIdentity.displayName, options.displayName],
     [templateIdentity.slug, options.applicationSlug],
   ];
 
