@@ -9,7 +9,24 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "node tools/delivery/build-container.mjs --scope web-${WEB_IMAGE_TARGET:-runtime} --file infra/docker/Dockerfile.web --tag ${WEB_IMAGE:-agentic-webapp-web:local} --target ${WEB_IMAGE_TARGET:-runtime} --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} --build-arg RELEASE_RUN_ID=${GITHUB_RUN_ID:-local} --build-arg RELEASE_BUILD_INPUTS_SHA256=${RELEASE_BUILD_INPUTS_SHA256:-local} --build-arg NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:4000} --build-arg NEXT_PUBLIC_AUTHENTICATION_PROFILE=${NEXT_PUBLIC_AUTHENTICATION_PROFILE:?NEXT_PUBLIC_AUTHENTICATION_PROFILE is required for web container builds} --build-arg NEXT_PUBLIC_AUTH_SESSION_ENDPOINT=${NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:-} --build-arg NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS=${NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS:-30}"
-      }
+      },
+      "inputs": [
+        "production",
+        "^production",
+        "containerCommonFiles",
+        "imageMetadata",
+        "browserEnvironment",
+        "{workspaceRoot}/infra/docker/Dockerfile.web",
+        {
+          "env": "WEB_IMAGE"
+        },
+        {
+          "env": "WEB_IMAGE_TARGET"
+        }
+      ]
+    },
+    "build": {
+      "inputs": ["production", "^production", "browserEnvironment"]
     },
     "typecheck": {
       "executor": "nx:run-commands",

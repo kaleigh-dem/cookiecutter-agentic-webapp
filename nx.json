@@ -10,20 +10,79 @@
       "!{projectRoot}/vitest.config.[jt]s"
     ],
     "sharedGlobals": [
+      "{workspaceRoot}/nx.json",
       "{workspaceRoot}/package.json",
+      "{workspaceRoot}/pnpm-lock.yaml",
       "{workspaceRoot}/pnpm-workspace.yaml",
+      "{workspaceRoot}/.node-version",
       "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/eslint.config.mjs",
       "{workspaceRoot}/vitest.config.ts"
+    ],
+    "browserEnvironment": [
+      {
+        "env": "NEXT_PUBLIC_API_BASE_URL"
+      },
+      {
+        "env": "NEXT_PUBLIC_AUTHENTICATION_PROFILE"
+      },
+      {
+        "env": "NEXT_PUBLIC_AUTH_SESSION_ENDPOINT"
+      },
+      {
+        "env": "NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS"
+      }
+    ],
+    "imageMetadata": [
+      {
+        "env": "APP_VERSION"
+      },
+      {
+        "env": "GITHUB_SHA"
+      },
+      {
+        "env": "GITHUB_RUN_ID"
+      },
+      {
+        "env": "RELEASE_BUILD_INPUTS_SHA256"
+      }
+    ],
+    "contractGeneration": [
+      "{workspaceRoot}/packages/contracts/project.json",
+      "{workspaceRoot}/packages/contracts/tsconfig*.json",
+      "{workspaceRoot}/packages/contracts/scripts/**/*",
+      "{workspaceRoot}/packages/contracts/src/**/*",
+      "!{workspaceRoot}/packages/contracts/src/generated/**/*",
+      "{workspaceRoot}/packages/contracts/openapi/**/*",
+      "!{workspaceRoot}/packages/contracts/openapi/generated/**/*"
+    ],
+    "workspaceGeneration": [
+      "{workspaceRoot}/tools/workspace-plugin/generators.json",
+      "{workspaceRoot}/tools/workspace-plugin/package.json",
+      "{workspaceRoot}/tools/workspace-plugin/project.json",
+      "{workspaceRoot}/tools/workspace-plugin/src/generators/**/*",
+      "{workspaceRoot}/tools/template/**/*"
+    ],
+    "deliveryConfiguration": [
+      "{workspaceRoot}/tools/delivery/**/*",
+      "{workspaceRoot}/tools/security/image-scan-policy.json",
+      "{workspaceRoot}/infra/environments/**/*",
+      "{workspaceRoot}/infra/release/**/*",
+      "{workspaceRoot}/infra/ci/baseline.json",
+      "{workspaceRoot}/performance/**/*"
+    ],
+    "containerCommonFiles": [
+      "{workspaceRoot}/.dockerignore",
+      "{workspaceRoot}/tools/delivery/build-container.mjs"
     ]
   },
   "plugins": [
     {
       "plugin": "@nx/next/plugin",
       "options": {
-        "startTargetName": "start",
         "buildTargetName": "build",
         "devTargetName": "dev",
+        "startTargetName": "start",
         "serveStaticTargetName": "serve-static"
       }
     },
@@ -48,21 +107,39 @@
     "test": {
       "cache": true,
       "dependsOn": ["^build"]
-    }
-  },
-  "generators": {
-    "@nx/next": {
-      "application": {
-        "appDir": true,
-        "linter": "eslint",
-        "style": "css"
-      }
     },
-    "@nx/nest": {
-      "application": {
-        "linter": "eslint",
-        "unitTestRunner": "none"
-      }
+    "container": {
+      "cache": false,
+      "inputs": [
+        "production",
+        "^production",
+        "containerCommonFiles",
+        "imageMetadata"
+      ]
+    },
+    "generate": {
+      "cache": true,
+      "inputs": ["contractGeneration", "sharedGlobals"]
+    },
+    "generate-check": {
+      "cache": false,
+      "inputs": ["contractGeneration", "sharedGlobals"]
+    },
+    "config-check": {
+      "cache": true,
+      "inputs": ["deliveryConfiguration", "sharedGlobals"]
+    },
+    "performance-check": {
+      "cache": true,
+      "inputs": ["deliveryConfiguration", "sharedGlobals"]
+    },
+    "generated-output-smoke": {
+      "cache": false,
+      "inputs": ["workspaceGeneration", "sharedGlobals"]
+    },
+    "initialization-output-smoke": {
+      "cache": false,
+      "inputs": ["workspaceGeneration", "sharedGlobals"]
     }
   }
 }

@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "web:build": {
+      "projectRoot": "apps/web",
+      "target": "build"
+    },
+    "api:build": {
+      "projectRoot": "apps/api",
+      "target": "build"
+    },
+    "worker:build": {
+      "projectRoot": "apps/worker",
+      "target": "build"
+    },
+    "web:container": {
+      "projectRoot": "apps/web",
+      "target": "container"
+    },
+    "api:container": {
+      "projectRoot": "apps/api",
+      "target": "container"
+    },
+    "worker:container": {
+      "projectRoot": "apps/worker",
+      "target": "container"
+    },
+    "contracts:generate": {
+      "projectRoot": "packages/contracts",
+      "target": "generate"
+    },
+    "contracts:generate-check": {
+      "projectRoot": "packages/contracts",
+      "target": "generate-check"
+    },
+    "delivery:config-check": {
+      "projectRoot": "tools/delivery",
+      "target": "config-check"
+    },
+    "delivery:performance-check": {
+      "projectRoot": "tools/delivery",
+      "target": "performance-check"
+    },
+    "workspace-plugin:generated-output-smoke": {
+      "projectRoot": "tools/workspace-plugin",
+      "target": "generated-output-smoke"
+    },
+    "workspace-plugin:initialization-output-smoke": {
+      "projectRoot": "tools/workspace-plugin",
+      "target": "initialization-output-smoke"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "public browser environment changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_AUTHENTICATION_PROFILE"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "image metadata changes invalidate every container",
+      "change": {
+        "env": "APP_VERSION"
+      },
+      "invalidates": ["web:container", "api:container", "worker:container"],
+      "doesNotInvalidate": ["web:build"]
+    },
+    {
+      "name": "web image target changes only container work",
+      "change": {
+        "env": "WEB_IMAGE_TARGET"
+      },
+      "invalidates": ["web:container"],
+      "doesNotInvalidate": [
+        "api:container",
+        "worker:container",
+        "web:build",
+        "api:build",
+        "worker:build"
+      ]
+    },
+    {
+      "name": "Dockerfile changes invalidate container targets",
+      "change": {
+        "file": "infra/docker/Dockerfile.web"
+      },
+      "invalidates": ["web:container"],
+      "doesNotInvalidate": [
+        "api:container",
+        "worker:container",
+        "web:build",
+        "api:build",
+        "worker:build"
+      ]
+    },
+    {
+      "name": "dockerignore changes invalidate container targets",
+      "change": {
+        "file": ".dockerignore"
+      },
+      "invalidates": ["web:container", "api:container", "worker:container"],
+      "doesNotInvalidate": ["contracts:generate"]
+    },
+    {
+      "name": "contract source changes invalidate contract generation",
+      "change": {
+        "file": "packages/contracts/src/health.ts"
+      },
+      "invalidates": ["contracts:generate", "contracts:generate-check"],
+      "doesNotInvalidate": [
+        "workspace-plugin:generated-output-smoke",
+        "delivery:config-check"
+      ]
+    },
+    {
+      "name": "contract generator changes invalidate contract generation",
+      "change": {
+        "file": "packages/contracts/scripts/generate.ts"
+      },
+      "invalidates": ["contracts:generate", "contracts:generate-check"],
+      "doesNotInvalidate": ["web:container"]
+    },
+    {
+      "name": "workspace generator changes invalidate generator smoke targets",
+      "change": {
+        "file": "tools/workspace-plugin/src/generators/domain/generator.ts"
+      },
+      "invalidates": [
+        "workspace-plugin:generated-output-smoke",
+        "workspace-plugin:initialization-output-smoke"
+      ],
+      "doesNotInvalidate": ["contracts:generate", "delivery:config-check"]
+    },
+    {
+      "name": "template lifecycle changes invalidate generator smoke targets",
+      "change": {
+        "file": "tools/template/release.mjs"
+      },
+      "invalidates": [
+        "workspace-plugin:generated-output-smoke",
+        "workspace-plugin:initialization-output-smoke"
+      ],
+      "doesNotInvalidate": ["contracts:generate"]
+    },
+    {
+      "name": "delivery environment changes invalidate delivery checks",
+      "change": {
+        "file": "infra/environments/preview.env.example"
+      },
+      "invalidates": ["delivery:config-check", "delivery:performance-check"],
+      "doesNotInvalidate": ["web:build", "contracts:generate"]
+    },
+    {
+      "name": "CI baseline changes invalidate performance evaluation",
+      "change": {
+        "file": "infra/ci/baseline.json"
+      },
+      "invalidates": ["delivery:config-check", "delivery:performance-check"],
+      "doesNotInvalidate": ["web:build", "contracts:generate"]
+    },
+    {
+      "name": "Nx configuration changes invalidate representative targets",
+      "change": {
+        "file": "nx.json"
+      },
+      "invalidates": [
+        "web:build",
+        "api:build",
+        "worker:build",
+        "contracts:generate",
+        "delivery:performance-check"
+      ],
+      "doesNotInvalidate": []
+    },
+    {
+      "name": "documentation-only changes do not invalidate audited targets",
+      "change": {
+        "file": "docs/ci/nx-cache-inputs-and-affected.md"
+      },
+      "invalidates": [],
+      "doesNotInvalidate": [
+        "web:build",
+        "api:build",
+        "worker:build",
+        "web:container",
+        "api:container",
+        "worker:container",
+        "contracts:generate",
+        "contracts:generate-check",
+        "delivery:config-check",
+        "delivery:performance-check",
+        "workspace-plugin:generated-output-smoke",
+        "workspace-plugin:initialization-output-smoke"
+      ]
+    }
+  ]
+}

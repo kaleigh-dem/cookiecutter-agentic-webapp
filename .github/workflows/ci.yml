@@ -42,6 +42,8 @@ jobs:
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
       - run: pnpm format:check
+      - name: Audit Nx cache inputs
+        run: node tools/delivery/nx-cache-audit.mjs
       - run: pnpm delivery:check
       - name: Verify release tooling
         run: |
@@ -51,9 +53,8 @@ jobs:
             --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
             --version 0.0.0-ci \
             --output "$CI_DIAGNOSTICS_DIR/release-plan.json"
-      - run: pnpm typecheck
-      - name: Build workspace
-        run: pnpm build
+      - name: Typecheck and build affected projects
+        run: pnpm nx affected -t typecheck build --parallel=3
         env:
           NEXT_PUBLIC_AUTHENTICATION_PROFILE: none
       - name: Verify template release artifact
