@@ -22,9 +22,11 @@ The web image uses `infra/docker/Dockerfile.web` and Next.js standalone output. 
 
 ## BuildKit cache behavior
 
-Container targets use `docker buildx build --load` and keep service-scoped BuildKit state under `.cache/buildkit`. The command works with an empty directory, so deleting the cache or running without GitHub Actions always produces the deterministic local fallback. CI may restore and save that directory through `actions/cache`, but cache restore failures are non-blocking and never select a different Dockerfile, target, tag, or build argument.
+Container targets use `docker buildx build --load`. Local execution is uncached by default, which is the deterministic local fallback for Docker installations using the default driver. CI installs a cache-capable Buildx builder and explicitly enables service-scoped local caches under `.cache/buildkit` with `BUILDKIT_CACHE_ENABLED=true`.
 
-Set `BUILDKIT_CACHE_DIR` to move the local cache outside the workspace. The cache is ignored by Git and may be removed safely:
+When enabled, the command imports an existing service cache only when present, exports to a separate next directory, and replaces the current cache only after a successful build. CI may restore and save `.cache/buildkit` through `actions/cache`, but cache restore failures are non-blocking and never select a different Dockerfile, target, tag, or build argument.
+
+Set `BUILDKIT_CACHE_DIR` to move an enabled cache outside the workspace. The cache is ignored by Git and may be removed safely. Omitting `BUILDKIT_CACHE_ENABLED` keeps the deterministic local fallback:
 
 ```bash
 rm -rf .cache/buildkit
