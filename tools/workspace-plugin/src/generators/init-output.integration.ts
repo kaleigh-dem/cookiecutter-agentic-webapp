@@ -223,10 +223,7 @@ async function main(): Promise<void> {
     );
     assert.match(first['.env.example'] ?? '', /WEB_PORT=3100/);
     assert.match(first['.env.example'] ?? '', /localhost:55432\/smoke_app/);
-    assert.match(
-      first['README.md'] ?? '',
-      /kaleigh-dem\/steady-stack/,
-    );
+    assert.match(first['README.md'] ?? '', /kaleigh-dem\/steady-stack/);
     assert.equal(first['.github/workflows/generated-workspace.yml'], undefined);
     assert.equal(first['.github/workflows/template-release.yml'], undefined);
     assert.equal(first['CHANGELOG.md'], undefined);

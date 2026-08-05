@@ -13,8 +13,7 @@ export function createDatabase(options: DatabaseOptions) {
   const poolConfig: PoolConfig = {
     connectionString: options.connectionString,
     max: options.maxConnections ?? 10,
-    application_name:
-      options.applicationName ?? 'steadystack-database-client',
+    application_name: options.applicationName ?? 'steadystack-database-client',
   };
   const pool = new Pool(poolConfig);
   const database = drizzle(pool, { schema });

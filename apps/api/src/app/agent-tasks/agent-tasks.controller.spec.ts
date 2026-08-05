@@ -1,7 +1,4 @@
-import {
-  CreateAgentTask,
-  GetAgentTask,
-} from '@steadystack/backend-agent-task';
+import { CreateAgentTask, GetAgentTask } from '@steadystack/backend-agent-task';
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 

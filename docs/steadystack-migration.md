@@ -4,15 +4,15 @@ SteadyStack is the canonical public identity for this Nx platform. The repositor
 
 ## Canonical names
 
-| Contract | Previous | SteadyStack |
-| --- | --- | --- |
-| GitHub repository | `kaleigh-dem/nx-fullstack-platform` | `kaleigh-dem/steady-stack` |
-| Display name | `Agentic Webapp Nx Template` | `SteadyStack` |
-| Package scope | `@agentic-webapp` | `@steadystack` |
-| Root package | `@agentic-webapp/source` | `@steadystack/source` |
-| Nx plugin | `@agentic-webapp/workspace-plugin` | `@steadystack/workspace-plugin` |
-| Upgrade executable | `agentic-webapp-upgrade` | `steadystack-upgrade` |
-| Release artifact basename | `agentic-webapp-workspace-plugin` | `steadystack-workspace-plugin` |
+| Contract                  | Previous                            | SteadyStack                     |
+| ------------------------- | ----------------------------------- | ------------------------------- |
+| GitHub repository         | `kaleigh-dem/nx-fullstack-platform` | `kaleigh-dem/steady-stack`      |
+| Display name              | `Agentic Webapp Nx Template`        | `SteadyStack`                   |
+| Package scope             | `@agentic-webapp`                   | `@steadystack`                  |
+| Root package              | `@agentic-webapp/source`            | `@steadystack/source`           |
+| Nx plugin                 | `@agentic-webapp/workspace-plugin`  | `@steadystack/workspace-plugin` |
+| Upgrade executable        | `agentic-webapp-upgrade`            | `steadystack-upgrade`           |
+| Release artifact basename | `agentic-webapp-workspace-plugin`   | `steadystack-workspace-plugin`  |
 
 ## Package and generator impact
 
