@@ -81,10 +81,7 @@ export function createBuildxCommand(input, options = {}) {
     arguments_.push('--cache-from', `type=local,src=${currentCache}`);
   }
   if (cacheEnabled) {
-    arguments_.push(
-      '--cache-to',
-      `type=local,dest=${nextCache},mode=max`,
-    );
+    arguments_.push('--cache-to', `type=local,dest=${nextCache},mode=max`);
   }
   arguments_.push(context);
 
