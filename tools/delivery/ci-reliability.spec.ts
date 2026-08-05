@@ -6,6 +6,7 @@ async function repositoryFile(path: string): Promise<string> {
   return readFile(new URL(`../../${path}`, import.meta.url), 'utf8');
 }
 
+// Keep the required PR workflows on one cancellation contract so a new commit supersedes every obsolete run together.
 const pullRequestConcurrency =
   "group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}";
 
