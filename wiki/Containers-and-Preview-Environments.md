@@ -51,7 +51,7 @@ Override with `API_IMAGE`, `WORKER_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `GITH
 
 > This behavior is being implemented in draft PR #55. Confirm the final environment-variable and workflow names against the merged implementation.
 
-Container targets use `docker buildx build --load`. Local execution remains uncached by default. Cache-capable CI jobs explicitly set `BUILDKIT_CACHE_ENABLED=true` and use service-scoped entries under `.cache/buildkit`.
+Container targets use `docker buildx build --load`. Local execution remains uncached by default. Cache-capable CI jobs explicitly set `BUILDKIT_CACHE_ENABLED=true` and use service-scoped caches. Delivery restores `.cache/buildkit`; Generated workspace currently sets `BUILDKIT_CACHE_DIR` to the sibling path `../buildkit-cache` so the cache remains outside the temporary generated repository.
 
 When cache is enabled, the build imports a service cache only when it exists, exports into a separate next directory, and replaces the current cache only after a successful build. GitHub Actions cache restore is non-blocking.
 
@@ -60,8 +60,9 @@ The cache is an optimization, not a correctness dependency. Cache loss may make 
 Reproduce the deterministic fallback:
 
 ```bash
-rm -rf .cache/buildkit
+rm -rf .cache/buildkit ../buildkit-cache
 unset BUILDKIT_CACHE_ENABLED
+unset BUILDKIT_CACHE_DIR
 pnpm containers:build
 ```
 
