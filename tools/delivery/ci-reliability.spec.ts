@@ -43,23 +43,23 @@ describe('CI cancellation, caching, and diagnostics', () => {
     const buildTool = await repositoryFile(
       'tools/delivery/build-container.mjs',
     );
-    const generatedWorkspaceE2e = await repositoryFile(
-      'tools/template/generated-workspace-e2e.mjs',
-    );
 
     for (const workflow of [delivery, generated]) {
       expect(workflow).toContain('uses: docker/setup-buildx-action@v3');
       expect(workflow).toContain("BUILDKIT_CACHE_ENABLED: 'true'");
       expect(workflow).toContain('uses: actions/cache@v5');
       expect(workflow).toContain('continue-on-error: true');
-      expect(workflow).toContain('path: .cache/buildkit');
     }
+    expect(delivery).toContain('path: .cache/buildkit');
+    expect(generated).toContain(
+      'BUILDKIT_CACHE_DIR: ${{ github.workspace }}/../buildkit-cache',
+    );
+    expect(generated).toContain('path: ../buildkit-cache');
     expect(buildTool).toContain("BUILDKIT_CACHE_ENABLED === 'true'");
     expect(buildTool).toContain('type=local,src=');
     expect(buildTool).toContain('type=local,dest=');
     expect(buildTool).toContain('.cache/buildkit');
     expect(buildTool).not.toContain('ACTIONS_RUNTIME_TOKEN');
-    expect(generatedWorkspaceE2e).toContain("'.cache'");
 
     for (const path of [
       'apps/api/project.json',
