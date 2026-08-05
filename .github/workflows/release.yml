@@ -103,19 +103,75 @@ jobs:
       - name: Validate deployed browser authentication
         run: node tools/delivery/validate-browser-auth-build.mjs
 
+      - name: Compute release build identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          fingerprint=$(node tools/delivery/release-image-recovery.mjs fingerprint \
+            --api-base-url "$NEXT_PUBLIC_API_BASE_URL" \
+            --authentication-profile "$NEXT_PUBLIC_AUTHENTICATION_PROFILE" \
+            --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \
+            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS")
+          echo "RELEASE_BUILD_INPUTS_SHA256=$fingerprint" >> "$GITHUB_ENV"
+
       - name: Authenticate to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Refuse to overwrite a published version
+      - name: Inspect release image state
+        id: existing-images
+        shell: bash
         run: |
-          for image in "$API_IMAGE" "$WORKER_IMAGE" "$WEB_IMAGE"; do
-            if docker manifest inspect "$image" >/dev/null 2>&1; then
-              echo "Release image already exists and will not be overwritten: $image" >&2
-              exit 1
+          set -euo pipefail
+          all_published=true
+
+          for service in api worker web; do
+            variable="${service^^}_IMAGE"
+            image="${!variable}"
+
+            inspect_error="$RUNNER_TEMP/${service}-manifest-inspect.err"
+            if docker manifest inspect "$image" >/dev/null 2>"$inspect_error"; then
+              if [ "$GITHUB_RUN_ATTEMPT" = '1' ]; then
+                echo "Release image already exists and will not be overwritten: $image" >&2
+                echo 'Rerun the original failed Release images workflow to resume a partial publication.' >&2
+                exit 1
+              fi
+
+              docker pull "$image"
+              reference=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+              name=${reference%@*}
+              digest=${reference##*@}
+              labels_file="$RUNNER_TEMP/${service}-labels.json"
+              docker image inspect --format '{{json .Config.Labels}}' "$image" > "$labels_file"
+              node tools/delivery/release-image-recovery.mjs verify-labels \
+                --labels-file "$labels_file" \
+                --version "$APP_VERSION" \
+                --revision "$GITHUB_SHA" \
+                --run-id "$GITHUB_RUN_ID" \
+                --build-inputs-sha256 "$RELEASE_BUILD_INPUTS_SHA256"
+
+              case "$digest" in
+                sha256:*) ;;
+                *) echo "Published $service image did not resolve to a sha256 digest." >&2; exit 1 ;;
+              esac
+
+              echo "${service}_published=true" >> "$GITHUB_OUTPUT"
+              echo "${service}_name=$name" >> "$GITHUB_OUTPUT"
+              echo "${service}_digest=$digest" >> "$GITHUB_OUTPUT"
+              echo "${service}_scan_ref=$name@$digest" >> "$GITHUB_OUTPUT"
+            else
+              node tools/delivery/release-image-recovery.mjs assert-manifest-absent \
+                --error-file "$inspect_error" \
+                --image "$image"
+              all_published=false
+              echo "${service}_published=false" >> "$GITHUB_OUTPUT"
+              echo "${service}_scan_ref=$image" >> "$GITHUB_OUTPUT"
             fi
           done
 
+          echo "all_published=$all_published" >> "$GITHUB_OUTPUT"
+
       - name: Build versioned images
+        if: steps.existing-images.outputs.all_published != 'true'
         run: pnpm containers:build
 
       - name: Prepare supply-chain output
@@ -124,7 +180,7 @@ jobs:
       - name: Generate API image SBOM
         uses: anchore/sbom-action@v0.24.0
         with:
-          image: ${{ env.API_IMAGE }}
+          image: ${{ steps.existing-images.outputs.api_scan_ref }}
           format: spdx-json
           output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.spdx.json
           upload-artifact: false
@@ -134,7 +190,7 @@ jobs:
       - name: Generate worker image SBOM
         uses: anchore/sbom-action@v0.24.0
         with:
-          image: ${{ env.WORKER_IMAGE }}
+          image: ${{ steps.existing-images.outputs.worker_scan_ref }}
           format: spdx-json
           output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.spdx.json
           upload-artifact: false
@@ -144,7 +200,7 @@ jobs:
       - name: Generate web image SBOM
         uses: anchore/sbom-action@v0.24.0
         with:
-          image: ${{ env.WEB_IMAGE }}
+          image: ${{ steps.existing-images.outputs.web_scan_ref }}
           format: spdx-json
           output-file: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.spdx.json
           upload-artifact: false
@@ -154,7 +210,7 @@ jobs:
       - name: Scan API image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.API_IMAGE }}
+          image-ref: ${{ steps.existing-images.outputs.api_scan_ref }}
           format: json
           output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/api.trivy.json
           scanners: vuln
@@ -163,7 +219,7 @@ jobs:
       - name: Scan worker image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.WORKER_IMAGE }}
+          image-ref: ${{ steps.existing-images.outputs.worker_scan_ref }}
           format: json
           output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/worker.trivy.json
           scanners: vuln
@@ -172,7 +228,7 @@ jobs:
       - name: Scan web image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.WEB_IMAGE }}
+          image-ref: ${{ steps.existing-images.outputs.web_scan_ref }}
           format: json
           output: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.trivy.json
           scanners: vuln
@@ -194,29 +250,62 @@ jobs:
           path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}
           if-no-files-found: error
           retention-days: 30
+          overwrite: true
 
-      - name: Push versioned images
+      - name: Push unpublished versioned images
+        env:
+          API_PUBLISHED: ${{ steps.existing-images.outputs.api_published }}
+          WORKER_PUBLISHED: ${{ steps.existing-images.outputs.worker_published }}
+          WEB_PUBLISHED: ${{ steps.existing-images.outputs.web_published }}
         run: |
-          docker push "$API_IMAGE"
-          docker push "$WORKER_IMAGE"
-          docker push "$WEB_IMAGE"
+          if [ "$API_PUBLISHED" != 'true' ]; then docker push "$API_IMAGE"; fi
+          if [ "$WORKER_PUBLISHED" != 'true' ]; then docker push "$WORKER_IMAGE"; fi
+          if [ "$WEB_PUBLISHED" != 'true' ]; then docker push "$WEB_IMAGE"; fi
 
       - name: Resolve published image digests
         id: digests
+        env:
+          API_PUBLISHED: ${{ steps.existing-images.outputs.api_published }}
+          API_EXISTING_NAME: ${{ steps.existing-images.outputs.api_name }}
+          API_EXISTING_DIGEST: ${{ steps.existing-images.outputs.api_digest }}
+          WORKER_PUBLISHED: ${{ steps.existing-images.outputs.worker_published }}
+          WORKER_EXISTING_NAME: ${{ steps.existing-images.outputs.worker_name }}
+          WORKER_EXISTING_DIGEST: ${{ steps.existing-images.outputs.worker_digest }}
+          WEB_PUBLISHED: ${{ steps.existing-images.outputs.web_published }}
+          WEB_EXISTING_NAME: ${{ steps.existing-images.outputs.web_name }}
+          WEB_EXISTING_DIGEST: ${{ steps.existing-images.outputs.web_digest }}
+        shell: bash
         run: |
-          for service in api worker web; do
-            variable="${service^^}_IMAGE"
-            image="${!variable}"
-            reference=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
-            name=${reference%@*}
-            digest=${reference##*@}
+          set -euo pipefail
+
+          resolve_digest() {
+            local service=$1
+            local image=$2
+            local published=$3
+            local existing_name=$4
+            local existing_digest=$5
+            local name digest reference
+
+            if [ "$published" = 'true' ]; then
+              name=$existing_name
+              digest=$existing_digest
+            else
+              reference=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+              name=${reference%@*}
+              digest=${reference##*@}
+            fi
+
             case "$digest" in
               sha256:*) ;;
               *) echo "Published $service image did not resolve to a sha256 digest." >&2; exit 1 ;;
             esac
             echo "${service}_name=$name" >> "$GITHUB_OUTPUT"
             echo "${service}_digest=$digest" >> "$GITHUB_OUTPUT"
-          done
+          }
+
+          resolve_digest api "$API_IMAGE" "$API_PUBLISHED" "$API_EXISTING_NAME" "$API_EXISTING_DIGEST"
+          resolve_digest worker "$WORKER_IMAGE" "$WORKER_PUBLISHED" "$WORKER_EXISTING_NAME" "$WORKER_EXISTING_DIGEST"
+          resolve_digest web "$WEB_IMAGE" "$WEB_PUBLISHED" "$WEB_EXISTING_NAME" "$WEB_EXISTING_DIGEST"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
@@ -322,6 +411,7 @@ jobs:
           path: ${{ env.RELEASE_EVIDENCE_DIRECTORY }}
           if-no-files-found: error
           retention-days: 90
+          overwrite: true
 
       - name: Summarize published release
         env:

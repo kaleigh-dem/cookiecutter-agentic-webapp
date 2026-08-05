@@ -1,12 +1,41 @@
 # Agentic Webapp Nx Template
 
-A production-minded Nx monorepo template for a large TypeScript web application operated by humans and coding agents.
+A production-minded Nx monorepo template designed to become the foundation for many TypeScript web applications that are built and maintained substantially by humans and coding agents.
 
 > Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform. Generated workspaces use their configured identity throughout.
 
+## Primary goal
+
+This is not only a full-stack starter. It is a repository operating model for agent-led software development.
+
+The template makes the preferred engineering path explicit enough for a capable contributor with no prior conversation history to:
+
+- discover repository-wide and subsystem-specific rules;
+- inspect project ownership and dependency direction;
+- generate approved structures instead of copying examples;
+- change code through stable public boundaries;
+- receive focused and repository-wide feedback;
+- produce reviewable validation and release evidence;
+- upgrade a long-lived generated project without treating every file as replaceable.
+
+Agentic compatibility is independent of product AI features. The optional `ai` workspace profile records product intent and does not add a model provider. Every generated workspace retains the agent-facing repository controls.
+
+See `docs/agentic-development.md` for the standard workflow, human approval boundaries, and maintenance guidance.
+
 ## Why Nx
 
-Nx supplies the project graph, generators, architectural boundary enforcement, computation caching, affected-only CI, and coding-agent integration that a large monorepo needs. This repository adds opinionated web/backend boundaries, layered `AGENTS.md` guidance, and the application-specific platform pieces that Nx does not prescribe.
+Nx supplies the project graph, generators, architectural boundary enforcement, computation caching, affected-only CI, and coding-agent integration that a large monorepo needs. This repository adds opinionated web/backend boundaries, layered `AGENTS.md` guidance, Nx MCP configuration, deterministic local generators, and the application-specific platform pieces that Nx does not prescribe.
+
+## Agentic development controls
+
+- Root and nested `AGENTS.md` files provide layered instructions.
+- `.mcp.json` exposes the Nx MCP server to compatible agent clients.
+- Nx projects and tags make ownership and dependency direction queryable.
+- Local generators create correctly tagged domains, features, jobs, and contracts.
+- ESLint, TypeScript references, generated contracts, and synchronization checks reject architectural drift.
+- Focused targets and affected commands support fast iteration.
+- `pnpm check`, preview smoke, delivery policy, and production gates provide objective completion criteria.
+- Template provenance, ownership-aware migrations, and release evidence support long-lived generated products.
 
 ## Included now
 
@@ -17,13 +46,13 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 - shared UI, contracts, database, environment, observability, and web-feature packages
 - pnpm workspaces
 - enforced scope, runtime, and project-type boundaries
-- Nx project graph, caching, affected commands, and local generators
+- Nx project graph, caching, affected commands, local generators, MCP configuration, and agent instructions
 - versioned Nx preset artifacts, downstream migrations, and upgrade ownership policy
-- Nx MCP configuration and agent instructions
 - PostgreSQL development service and optional OpenTelemetry collector
 - PostgreSQL-backed distributed API rate limiting with explicit proxy trust
-- production OCI images, preview orchestration, release plans, production-readiness checks, and performance budgets
-- GitHub Actions using standalone, affected, security, delivery, release, and generated-workspace validation
+- production OCI images, preview orchestration, immutable release manifests, production-readiness checks, and performance budgets
+- image SBOMs, vulnerability policy, keyless signatures, and provenance/SBOM attestations
+- GitHub Actions using standalone, affected, security, delivery, release, promotion, and generated-workspace validation
 - generated-repository onboarding and governance checklists
 
 ## Create a workspace
@@ -46,7 +75,29 @@ pnpm template:identity:check
 
 Initialization rewrites package scopes, service and image names, Compose projects and labels, database defaults, telemetry identifiers, TypeScript conditions, CODEOWNERS, and other text-based identity surfaces. The generated `workspace.template.json` records the exact upstream template version and upgrade ownership-policy version.
 
-Start with `docs/getting-started.md` for required tooling, supported application and infrastructure profiles, first-run commands, and production replacement points. See `docs/template-initialization.md` for every generator option and validation rule.
+Start with `docs/agentic-development.md` and `docs/getting-started.md`. See `docs/template-initialization.md` for every generator option and validation rule.
+
+## Standard contributor or agent workflow
+
+Before changing a subsystem:
+
+```bash
+cat AGENTS.md
+pnpm nx show projects
+pnpm nx show project <PROJECT_NAME>
+pnpm graph
+```
+
+Read the closest nested `AGENTS.md`, identify the source of truth, and use a local generator for repeated structure. During iteration, run focused project targets and `pnpm affected`. Before handoff:
+
+```bash
+pnpm format
+pnpm check
+pnpm template:identity:check
+git status --short
+```
+
+An agent's completion statement is not evidence by itself. Review the diff, generated files, migrations, validation output, and remaining human decisions.
 
 ## Template releases
 
@@ -98,34 +149,35 @@ Production API replicas share anonymous, authenticated, route, and tenant rate-l
 pnpm check
 ```
 
-The validation contract includes workspace synchronization, generated contracts, formatting, security policy, delivery configuration, performance budgets, linting, type checking, tests, and production builds. A production build must leave the Git working tree clean.
+The validation contract includes workspace synchronization, generated contracts, formatting, security policy, delivery configuration, release-manifest and supply-chain policy, performance budgets, linting, type checking, tests, and production builds. A production build must leave the Git working tree clean.
 
 ## Build and validate release artifacts
 
 ```bash
-pnpm containers:build
 pnpm preview:up
-pnpm preview:smoke
 pnpm performance:load
 pnpm preview:down
 ```
 
-Generate an immutable, migration-ordered release plan:
+The **Release images** workflow publishes each semantic image version once from `main`, generates supply-chain evidence, resolves exact digests, and writes `release-manifest.json` plus `release-images.env`. Generate a production plan from that immutable evidence with:
 
 ```bash
 node tools/delivery/release-plan.mjs \
   --environment production \
-  --image-prefix ghcr.io/OWNER/agentic-webapp \
-  --version 1.2.3
+  --manifest release-manifest.json \
+  --image-environment-file release-images.env \
+  --output release-plan.production.json
 ```
+
+The **Promote release digests** workflow verifies the source run, signatures, attestations, production build inputs, and protected environment before producing an approved plan. It does not rebuild, retag, push, or deploy images.
 
 See `docs/delivery/`, `docs/runbooks/release-rollback.md`, and `docs/runbooks/disaster-recovery.md` before operating an environment.
 
 ## Production readiness
 
-A generated repository is not production-ready solely because its local and preview paths pass. Complete `docs/generated-project-checklist.md` to configure repository access, CODEOWNERS, required checks, branch protection, environments, secrets, release permissions, operational ownership, and deployment evidence. The production replacement points are listed in `docs/getting-started.md`.
+A generated repository is not production-ready solely because agents completed the implementation, local and preview paths pass, or immutable release evidence exists. Complete `docs/generated-project-checklist.md` to configure repository access, agent permissions, CODEOWNERS, required checks, branch protection, environments, secrets, release permissions, operational ownership, and deployment evidence.
 
-Validate the exact production environment contract before building release images:
+Validate the exact production environment contract before promotion:
 
 ```bash
 pnpm production:check -- infra/environments/production.env
@@ -154,4 +206,4 @@ pnpm nx show projects
 pnpm nx show project web
 ```
 
-Read `AGENTS.md`, the closest nested `AGENTS.md`, and `docs/TODO.md` before changing a subsystem. Update the TODO ledger whenever a PR changes roadmap status or scope.
+Read `AGENTS.md`, the closest nested `AGENTS.md`, and relevant ADRs before changing a subsystem. Upstream template maintainers also review `docs/TODO.md`; generated application teams maintain their own product backlog and decisions.

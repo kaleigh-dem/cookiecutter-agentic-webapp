@@ -7,8 +7,16 @@ async function repositoryFile(path: string): Promise<string> {
 }
 
 describe('immutable release promotion', () => {
-  it('publishes each semantic version once and records exact digests', async () => {
+  it('reserves each semantic version while allowing exact-run recovery', async () => {
     const workflow = await repositoryFile('.github/workflows/release.yml');
+
+    const apiProject = await repositoryFile('apps/api/project.json');
+    const workerProject = await repositoryFile('apps/worker/project.json');
+    const webProject = await repositoryFile('apps/web/project.json');
+    const nodeDockerfile = await repositoryFile(
+      'infra/docker/Dockerfile.node-service',
+    );
+    const webDockerfile = await repositoryFile('infra/docker/Dockerfile.web');
 
     expect(workflow).toContain('environment:\n      name: preview');
     expect(workflow).toContain(
@@ -18,8 +26,41 @@ describe('immutable release promotion', () => {
       workflow.indexOf('jobs:'),
     );
     expect(workflow).toContain('refs/heads/main');
-    expect(workflow).toContain('Refuse to overwrite a published version');
+    expect(workflow).toContain('Inspect release image state');
     expect(workflow).toContain('docker manifest inspect');
+
+    expect(workflow).toContain('release-image-recovery.mjs fingerprint');
+    expect(workflow).toContain('assert-manifest-absent');
+    expect(workflow).toContain('verify-labels');
+    expect(workflow).toContain('--run-id "$GITHUB_RUN_ID"');
+    expect(workflow).toContain(
+      '--build-inputs-sha256 "$RELEASE_BUILD_INPUTS_SHA256"',
+    );
+    expect(workflow).toContain('2>"$inspect_error"');
+    expect(workflow).not.toContain('>/dev/null 2>&1');
+    for (const project of [apiProject, workerProject, webProject]) {
+      expect(project).toContain('RELEASE_RUN_ID=${GITHUB_RUN_ID:-local}');
+      expect(project).toContain(
+        'RELEASE_BUILD_INPUTS_SHA256=${RELEASE_BUILD_INPUTS_SHA256:-local}',
+      );
+    }
+    for (const dockerfile of [nodeDockerfile, webDockerfile]) {
+      expect(dockerfile).toContain('io.agentic-webapp.release.run-id');
+      expect(dockerfile).toContain(
+        'io.agentic-webapp.release.build-inputs-sha256',
+      );
+    }
+    expect(workflow).toContain('if [ "$GITHUB_RUN_ATTEMPT" = \'1\' ]; then');
+    expect(workflow).toContain(
+      'Rerun the original failed Release images workflow to resume a partial publication.',
+    );
+    expect(nodeDockerfile).toContain('org.opencontainers.image.version');
+    expect(nodeDockerfile).toContain('org.opencontainers.image.revision');
+    expect(workflow).toContain('Push unpublished versioned images');
+    expect(workflow).toContain(
+      'if [ "$API_PUBLISHED" != \'true\' ]; then docker push "$API_IMAGE"; fi',
+    );
+    expect(workflow).toContain('overwrite: true');
     expect(workflow).not.toContain('push_images:');
     expect(workflow).not.toContain(
       'environment:\n        description: Release environment',
@@ -96,6 +137,9 @@ describe('immutable release promotion', () => {
       'docs/delivery/releases-and-previews.md',
     );
 
+    const wikiRelease = await repositoryFile('wiki/Releases-and-Upgrades.md');
+    const wikiSupplyChain = await repositoryFile('wiki/Image-Supply-Chain.md');
+
     expect(packageJson.scripts['release:manifest:check']).toContain(
       'release-manifest.mjs validate',
     );
@@ -111,5 +155,10 @@ describe('immutable release promotion', () => {
     expect(documentation).toContain(
       'Before checkout or production Environment access',
     );
+
+    expect(documentation).toContain('same workflow run ID');
+    expect(documentation).toContain('fail closed');
+    expect(wikiRelease).toContain('same workflow run ID');
+    expect(wikiSupplyChain).toContain('build-input fingerprint');
   });
 });
