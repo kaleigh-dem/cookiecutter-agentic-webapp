@@ -12,3 +12,4 @@ infra/environments/production.env
 .DS_Store
 .idea/
 .vscode/
+# exact-head trigger
