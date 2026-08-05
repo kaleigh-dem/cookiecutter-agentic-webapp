@@ -13,7 +13,7 @@ Dispatch **Release images** with a new semantic version and the production-safe 
 - `release-images.env`;
 - `release-plan.preview.json`.
 
-The manifest records the API, worker, and web `name@sha256` references plus the public web build inputs. Use its source workflow run ID when dispatching **Promote release digests**.
+The manifest records the API, worker, and web `name@sha256` references plus every public web build input used by promotion: the API base URL, authentication profile, session endpoint, and session refresh-skew seconds. Use its source workflow run ID when dispatching **Promote release digests**.
 
 Generate a plan from a downloaded manifest locally with:
 
@@ -38,7 +38,7 @@ Dispatch **Promote release digests** with:
 - the published semantic version;
 - the source workflow run ID reported by **Release images**.
 
-Before checkout or production Environment access, a separate guard job rejects any promotion execution not dispatched from `refs/heads/main`. The promotion workflow then requires a successful `Release images` run from `main`, downloads the artifact from that exact run, validates its source SHA and manifest, verifies each Cosign signature and GitHub attestation, and compares the compiled browser values with the protected production configuration.
+Before checkout or production Environment access, a separate guard job rejects any promotion execution not dispatched from `refs/heads/main`. The promotion workflow then requires a successful `Release images` run from `main`, downloads the artifact from that exact run, validates its source SHA and manifest, verifies each Cosign signature and GitHub attestation, and compares all compiled browser values—including `NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS`—with the protected production configuration.
 
 The production job has only `actions: read`, `attestations: read`, `contents: read`, and `packages: read`. It does not receive package-write, attestation-write, or OIDC-token permissions. It does not build, retag, or push images. Its output is the approved `production-promotion-VERSION` artifact containing the source metadata, immutable manifest, digest environment file, and production release plan.
 
