@@ -91,4 +91,3 @@ describe('CI cancellation, caching, and diagnostics', () => {
     expect(documentation).toContain('deterministic local fallback');
   });
 });
-// exact-head trigger
