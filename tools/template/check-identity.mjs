@@ -31,6 +31,7 @@ const allowedTemplateSourcePaths = new Set([
   'tools/workspace-plugin/src/generators/init/generator.ts',
   'tools/workspace-plugin/src/generators/init/generator.spec.ts',
   'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  'tools/workspace-plugin/src/generators/preset/generator.spec.ts',
   'tools/template/check-identity.mjs',
 ]);
 const allowedUpstreamPaths = new Set([

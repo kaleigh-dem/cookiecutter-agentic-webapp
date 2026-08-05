@@ -32,6 +32,7 @@ const preservedTemplateSourcePaths = new Set([
   'tools/workspace-plugin/src/generators/init/generator.spec.ts',
   'tools/workspace-plugin/src/generators/init-output.integration.ts',
   'tools/template/check-identity.mjs',
+  'tools/workspace-plugin/src/generators/preset/generator.spec.ts',
 ]);
 const preservedUpstreamPaths = new Set([
   'README.md',
