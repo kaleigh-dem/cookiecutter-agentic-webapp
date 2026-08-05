@@ -154,10 +154,7 @@ export function runContainerBuild(input) {
   const cacheRoot = resolve(
     process.env.BUILDKIT_CACHE_DIR ?? '.cache/buildkit',
   );
-  const currentCache = resolve(
-    cacheRoot,
-    required(input.scope, 'Cache scope'),
-  );
+  const currentCache = resolve(cacheRoot, required(input.scope, 'Cache scope'));
   if (cacheEnabled) recoverCacheDirectory(currentCache);
 
   const command = createBuildxCommand(input, { cacheEnabled, cacheRoot });
