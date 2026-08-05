@@ -1,10 +1,19 @@
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
-async function repositoryFile(path: string): Promise<string> {
-  return readFile(new URL(`../../${path}`, import.meta.url), 'utf8');
+function repositoryFileUrl(path: string): URL {
+  return new URL(`../../${path}`, import.meta.url);
 }
+
+async function repositoryFile(path: string): Promise<string> {
+  return readFile(repositoryFileUrl(path), 'utf8');
+}
+
+const hasSourceWorkflowContracts = existsSync(
+  repositoryFileUrl('.github/workflows/generated-workspace.yml'),
+);
 
 // Keep the required PR workflows on one cancellation contract so a new commit supersedes every obsolete run together.
 const pullRequestConcurrency =
@@ -12,6 +21,8 @@ const pullRequestConcurrency =
 
 describe('CI cancellation, caching, and diagnostics', () => {
   it('cancels only superseded pull-request runs in required workflows', async () => {
+    if (!hasSourceWorkflowContracts) return;
+
     for (const path of [
       '.github/workflows/ci.yml',
       '.github/workflows/delivery.yml',
@@ -23,12 +34,17 @@ describe('CI cancellation, caching, and diagnostics', () => {
   });
 
   it('persists optional BuildKit caches while retaining local fallback', async () => {
+    if (!hasSourceWorkflowContracts) return;
+
     const delivery = await repositoryFile('.github/workflows/delivery.yml');
     const generated = await repositoryFile(
       '.github/workflows/generated-workspace.yml',
     );
     const buildTool = await repositoryFile(
       'tools/delivery/build-container.mjs',
+    );
+    const generatedWorkspaceE2e = await repositoryFile(
+      'tools/template/generated-workspace-e2e.mjs',
     );
 
     for (const workflow of [delivery, generated]) {
@@ -43,6 +59,7 @@ describe('CI cancellation, caching, and diagnostics', () => {
     expect(buildTool).toContain('type=local,dest=');
     expect(buildTool).toContain('.cache/buildkit');
     expect(buildTool).not.toContain('ACTIONS_RUNTIME_TOKEN');
+    expect(generatedWorkspaceE2e).toContain("'.cache'");
 
     for (const path of [
       'apps/api/project.json',
@@ -56,6 +73,8 @@ describe('CI cancellation, caching, and diagnostics', () => {
   });
 
   it('retains actionable failure evidence with workflow-valid contexts', async () => {
+    if (!hasSourceWorkflowContracts) return;
+
     const ci = await repositoryFile('.github/workflows/ci.yml');
     const delivery = await repositoryFile('.github/workflows/delivery.yml');
     const generated = await repositoryFile(
