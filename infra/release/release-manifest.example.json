@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "version": "1.2.3",
+  "source": {
+    "environment": "preview",
+    "repository": "OWNER/REPOSITORY",
+    "workflow": ".github/workflows/release.yml",
+    "runId": "123456789",
+    "commitSha": "1111111111111111111111111111111111111111",
+    "ref": "refs/heads/main"
+  },
+  "build": {
+    "apiBaseUrl": "https://api.example.com",
+    "authenticationProfile": "oidc",
+    "authSessionEndpoint": "/auth/session/access-token",
+    "authSessionRefreshSkewSeconds": "30"
+  },
+  "images": {
+    "api": {
+      "name": "ghcr.io/owner/agentic-webapp-api",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reference": "ghcr.io/owner/agentic-webapp-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "worker": {
+      "name": "ghcr.io/owner/agentic-webapp-worker",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "reference": "ghcr.io/owner/agentic-webapp-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "web": {
+      "name": "ghcr.io/owner/agentic-webapp-web",
+      "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "reference": "ghcr.io/owner/agentic-webapp-web@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+}

@@ -6,14 +6,18 @@ The **Release images** workflow creates supply-chain evidence for the API, worke
 
 For each image, the workflow:
 
-1. builds the versioned production image;
-2. generates an SPDX 2.3 JSON SBOM;
-3. generates a Trivy JSON vulnerability report;
-4. evaluates all three reports against `tools/security/image-scan-policy.json`;
-5. uploads the six files as the `image-supply-chain-VERSION` workflow artifact;
-6. when `push_images` is enabled, pushes the validated images, resolves their registry digests, signs those digests, and publishes build-provenance and SBOM attestations.
+1. validates that the workflow was dispatched from `main` and that the semantic version has not already been published;
+2. builds the versioned production image;
+3. generates an SPDX 2.3 JSON SBOM;
+4. generates a Trivy JSON vulnerability report;
+5. evaluates all three reports against `tools/security/image-scan-policy.json`;
+6. uploads the six files as the `image-supply-chain-VERSION` workflow artifact;
+7. pushes the validated images, resolves their registry digests, signs those digests, and publishes build-provenance and SBOM attestations;
+8. writes `release-manifest.json`, `release-images.env`, and `release-plan.preview.json` to the immutable `release-images-VERSION` artifact.
 
-The artifact upload uses `if: always()`, so a failed policy gate still retains the available SBOMs and scan reports for diagnosis. A failed gate prevents image publication, signing, and attestation.
+The supply-chain artifact upload uses `if: always()`, so a failed policy gate still retains the available SBOMs and scan reports for diagnosis. A failed gate prevents image publication, signing, attestation, and manifest creation.
+
+The workflow refuses to overwrite any existing API, worker, or web version tag. Use a new semantic version when source, dependencies, labels, or public web build inputs change.
 
 ## Vulnerability policy
 
@@ -44,11 +48,28 @@ Review an exception as a temporary risk acceptance. The owner must track the rem
 
 Publication uses the registry digest returned after `docker push`. The workflow never signs or attests a mutable tag. Cosign obtains a short-lived signing certificate from the GitHub Actions OIDC identity, and GitHub publishes both build provenance and the SPDX SBOM attestation for the same digest.
 
-Record the three digest references from the workflow summary before deployment or promotion.
+`release-manifest.json` is the authoritative link between:
+
+- the semantic version;
+- the source repository, workflow run ID, commit SHA, ref, and preview environment;
+- the public browser values compiled into the web image;
+- the three exact image digest references.
+
+Validate a downloaded manifest with:
+
+```bash
+pnpm release:manifest:check
+
+node tools/delivery/release-manifest.mjs validate \
+  --manifest release-manifest.json \
+  --expected-version 1.2.3 \
+  --expected-repository OWNER/REPOSITORY \
+  --expected-run-id SOURCE_RUN_ID
+```
 
 ## Verify a published image
 
-Set the repository, image name, and digest from the workflow summary:
+Set the repository, image name, and digest from the release manifest:
 
 ```bash
 REPOSITORY=OWNER/REPOSITORY
@@ -82,9 +103,17 @@ gh attestation verify "oci://$REFERENCE" \
 
 Verification must use the expected repository and workflow identity. A valid signature from a different repository or workflow is not sufficient.
 
+## Promote to production
+
+The **Promote release digests** workflow consumes the `release-images-VERSION` artifact from one successful **Release images** run on `main`. It validates the manifest against that run, verifies all signatures and attestations, and confirms that the protected production configuration matches the web image's compiled public values.
+
+The job targets the `production` GitHub Environment. Configure required reviewers and allow deployments only from `main`. Promotion has read-only permissions and does not build, retag, or push an image. The approved `production-promotion-VERSION` artifact is the handoff to the deployment platform.
+
+Rollback selects a previously approved release manifest and digest environment file rather than a mutable rollback tag.
+
 ## Deterministic checks
 
-The delivery test suite covers policy normalization, severity enforcement, exact exceptions, expiration, stale exceptions, and release-workflow wiring:
+The delivery test suite covers policy normalization, severity enforcement, exact exceptions, expiration, stale exceptions, manifest validation, digest release planning, and promotion-workflow wiring:
 
 ```bash
 pnpm nx test delivery --skip-nx-cache

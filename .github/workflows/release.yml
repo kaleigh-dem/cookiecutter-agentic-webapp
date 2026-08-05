@@ -7,16 +7,8 @@ on:
         description: Semantic release version
         required: true
         type: string
-      environment:
-        description: Release environment
-        required: true
-        default: preview
-        type: choice
-        options:
-          - preview
-          - production
       api_base_url:
-        description: Public API URL compiled into the web image
+        description: Production-safe public API URL compiled into the web image
         required: true
         type: string
       authentication_profile:
@@ -33,21 +25,24 @@ on:
         required: true
         default: /auth/session/access-token
         type: string
-      push_images:
-        description: Push versioned images to GHCR
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
-  artifact-metadata: write
+
+concurrency:
+  group: release-images-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
   release:
+    environment:
+      name: preview
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -60,8 +55,16 @@ jobs:
       NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: ${{ inputs.auth_session_endpoint }}
       NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: 30
       SUPPLY_CHAIN_DIRECTORY: ${{ runner.temp }}/image-supply-chain
+      RELEASE_EVIDENCE_DIRECTORY: ${{ runner.temp }}/release-images
     steps:
       - uses: actions/checkout@v7
+
+      - name: Require the default branch
+        run: |
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo 'Release images must be dispatched from refs/heads/main.' >&2
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v6.0.9
         with:
@@ -74,35 +77,43 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Materialize production environment
-        if: inputs.environment == 'production'
-        env:
-          PRODUCTION_ENVIRONMENT: ${{ secrets.PRODUCTION_ENVIRONMENT }}
+      - name: Validate release manifest inputs
         run: |
-          if [ -z "${PRODUCTION_ENVIRONMENT:-}" ]; then
-            echo "The PRODUCTION_ENVIRONMENT secret is required for production releases." >&2
-            exit 1
-          fi
-          umask 077
-          printf '%s\n' "$PRODUCTION_ENVIRONMENT" > "$RUNNER_TEMP/production.env"
-
-      - name: Validate production readiness
-        if: inputs.environment == 'production'
-        run: >-
-          pnpm production:check -- "$RUNNER_TEMP/production.env"
-          --compare-release-environment
+          node tools/delivery/release-manifest.mjs create \
+            --version "$APP_VERSION" \
+            --source-environment preview \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow .github/workflows/release.yml \
+            --run-id "$GITHUB_RUN_ID" \
+            --commit-sha "$GITHUB_SHA" \
+            --ref "$GITHUB_REF" \
+            --api-name "${API_IMAGE%:*}" \
+            --api-digest "sha256:$(printf '0%.0s' {1..64})" \
+            --worker-name "${WORKER_IMAGE%:*}" \
+            --worker-digest "sha256:$(printf '1%.0s' {1..64})" \
+            --web-name "${WEB_IMAGE%:*}" \
+            --web-digest "sha256:$(printf '2%.0s' {1..64})" \
+            --api-base-url "$NEXT_PUBLIC_API_BASE_URL" \
+            --authentication-profile "$NEXT_PUBLIC_AUTHENTICATION_PROFILE" \
+            --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \
+            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS" \
+            --output "$RUNNER_TEMP/release-inputs.json"
+          rm "$RUNNER_TEMP/release-inputs.json"
 
       - name: Validate deployed browser authentication
         run: node tools/delivery/validate-browser-auth-build.mjs
 
-      - name: Generate ordered release plan
+      - name: Authenticate to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Refuse to overwrite a published version
         run: |
-          node tools/delivery/release-plan.mjs \
-            --environment "${{ inputs.environment }}" \
-            --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
-            --version "${{ inputs.version }}" \
-            --output release-plan.json
-          cat release-plan.json >> "$GITHUB_STEP_SUMMARY"
+          for image in "$API_IMAGE" "$WORKER_IMAGE" "$WEB_IMAGE"; do
+            if docker manifest inspect "$image" >/dev/null 2>&1; then
+              echo "Release image already exists and will not be overwritten: $image" >&2
+              exit 1
+            fi
+          done
 
       - name: Build versioned images
         run: pnpm containers:build
@@ -184,19 +195,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Authenticate to GHCR
-        if: inputs.push_images
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
       - name: Push versioned images
-        if: inputs.push_images
         run: |
           docker push "$API_IMAGE"
           docker push "$WORKER_IMAGE"
           docker push "$WEB_IMAGE"
 
       - name: Resolve published image digests
-        if: inputs.push_images
         id: digests
         run: |
           for service in api worker web; do
@@ -214,11 +219,9 @@ jobs:
           done
 
       - name: Install Cosign
-        if: inputs.push_images
         uses: sigstore/cosign-installer@v4.1.2
 
       - name: Sign published image digests
-        if: inputs.push_images
         env:
           API_REFERENCE: ${{ steps.digests.outputs.api_name }}@${{ steps.digests.outputs.api_digest }}
           WORKER_REFERENCE: ${{ steps.digests.outputs.worker_name }}@${{ steps.digests.outputs.worker_digest }}
@@ -229,7 +232,6 @@ jobs:
           cosign sign --yes "$WEB_REFERENCE"
 
       - name: Attest API build provenance
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.api_name }}
@@ -237,7 +239,6 @@ jobs:
           push-to-registry: true
 
       - name: Attest worker build provenance
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.worker_name }}
@@ -245,7 +246,6 @@ jobs:
           push-to-registry: true
 
       - name: Attest web build provenance
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.web_name }}
@@ -253,7 +253,6 @@ jobs:
           push-to-registry: true
 
       - name: Attest API SBOM
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.api_name }}
@@ -262,7 +261,6 @@ jobs:
           push-to-registry: true
 
       - name: Attest worker SBOM
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.worker_name }}
@@ -271,7 +269,6 @@ jobs:
           push-to-registry: true
 
       - name: Attest web SBOM
-        if: inputs.push_images
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.digests.outputs.web_name }}
@@ -279,13 +276,67 @@ jobs:
           sbom-path: ${{ env.SUPPLY_CHAIN_DIRECTORY }}/web.spdx.json
           push-to-registry: true
 
-      - name: Summarize published digests
-        if: inputs.push_images
+      - name: Create immutable release evidence
+        env:
+          API_NAME: ${{ steps.digests.outputs.api_name }}
+          API_DIGEST: ${{ steps.digests.outputs.api_digest }}
+          WORKER_NAME: ${{ steps.digests.outputs.worker_name }}
+          WORKER_DIGEST: ${{ steps.digests.outputs.worker_digest }}
+          WEB_NAME: ${{ steps.digests.outputs.web_name }}
+          WEB_DIGEST: ${{ steps.digests.outputs.web_digest }}
+        run: |
+          mkdir -p "$RELEASE_EVIDENCE_DIRECTORY"
+          node tools/delivery/release-manifest.mjs create \
+            --version "$APP_VERSION" \
+            --source-environment preview \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow .github/workflows/release.yml \
+            --run-id "$GITHUB_RUN_ID" \
+            --commit-sha "$GITHUB_SHA" \
+            --ref "$GITHUB_REF" \
+            --api-name "$API_NAME" \
+            --api-digest "$API_DIGEST" \
+            --worker-name "$WORKER_NAME" \
+            --worker-digest "$WORKER_DIGEST" \
+            --web-name "$WEB_NAME" \
+            --web-digest "$WEB_DIGEST" \
+            --api-base-url "$NEXT_PUBLIC_API_BASE_URL" \
+            --authentication-profile "$NEXT_PUBLIC_AUTHENTICATION_PROFILE" \
+            --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \
+            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS" \
+            --output "$RELEASE_EVIDENCE_DIRECTORY/release-manifest.json"
+          node tools/delivery/release-manifest.mjs export-env \
+            --manifest "$RELEASE_EVIDENCE_DIRECTORY/release-manifest.json" \
+            --image-env "$RELEASE_EVIDENCE_DIRECTORY/release-images.env"
+          node tools/delivery/release-plan.mjs \
+            --environment preview \
+            --manifest "$RELEASE_EVIDENCE_DIRECTORY/release-manifest.json" \
+            --image-environment-file release-images.env \
+            --output "$RELEASE_EVIDENCE_DIRECTORY/release-plan.preview.json"
+
+      - name: Upload immutable release evidence
+        id: release-evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-images-${{ inputs.version }}
+          path: ${{ env.RELEASE_EVIDENCE_DIRECTORY }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Summarize published release
+        env:
+          API_REFERENCE: ${{ steps.digests.outputs.api_name }}@${{ steps.digests.outputs.api_digest }}
+          WORKER_REFERENCE: ${{ steps.digests.outputs.worker_name }}@${{ steps.digests.outputs.worker_digest }}
+          WEB_REFERENCE: ${{ steps.digests.outputs.web_name }}@${{ steps.digests.outputs.web_digest }}
         run: |
           {
-            echo '## Published image digests'
+            echo '## Published immutable release'
             echo
-            echo '- `${{ steps.digests.outputs.api_name }}@${{ steps.digests.outputs.api_digest }}`'
-            echo '- `${{ steps.digests.outputs.worker_name }}@${{ steps.digests.outputs.worker_digest }}`'
-            echo '- `${{ steps.digests.outputs.web_name }}@${{ steps.digests.outputs.web_digest }}`'
+            echo "- Source workflow run: \`$GITHUB_RUN_ID\`"
+            echo "- Release evidence artifact ID: \`${{ steps.release-evidence.outputs.artifact-id }}\`"
+            echo "- \`$API_REFERENCE\`"
+            echo "- \`$WORKER_REFERENCE\`"
+            echo "- \`$WEB_REFERENCE\`"
+            echo
+            echo 'Promote this release by dispatching **Promote release digests** with the version and source workflow run ID above.'
           } >> "$GITHUB_STEP_SUMMARY"
