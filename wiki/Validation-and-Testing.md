@@ -212,6 +212,20 @@ The release smoke profile checks:
 
 The local `live-agent-task` profile additionally checks worker liveness, readiness, and metrics and creates an Agent Task that must reach `succeeded`.
 
+## CI concurrency and retained failure evidence
+
+> This behavior is being implemented in draft PR #55. Use the exact workflow and artifact names only after they match the merged implementation.
+
+Required workflows cancel an older in-progress run only when a newer commit supersedes it on the same pull request. `main`, scheduled, and manually dispatched runs remain protected from this cancellation rule. A cancelled run is not a passing result; reviewers must verify checks for the exact pull-request head SHA.
+
+After a failure, use the retained artifact that matches the workflow:
+
+- `ci-failure-<run_id>-<run_attempt>` for Playwright evidence and the generated CI release plan;
+- `delivery-failure-<run_id>-<run_attempt>` for preview service logs and performance JSON;
+- `generated-workspace-diagnostics-<run_id>-<run_attempt>` for the generated repository's diagnostic bundle.
+
+Artifacts are retained for 14 days. See [CI Diagnostics](CI-Diagnostics) for the artifact-to-failure lookup, Playwright trace inspection, release-plan review, generated-workspace evidence, and deterministic local fallback commands.
+
 ## Image release validation
 
 The image release workflow adds checks that local `pnpm check` cannot reproduce by itself:
@@ -282,13 +296,15 @@ pnpm preview:down
 
 - [Agentic Development Model](Agentic-Development-Model)
 - [Everyday Development](Everyday-Development)
+- [CI Diagnostics](CI-Diagnostics)
 - [Image Supply Chain](Image-Supply-Chain)
 - [Containers and Preview Environments](Containers-and-Preview-Environments)
 - [Troubleshooting](Troubleshooting)
 
 ## Next steps
 
-1. [Image Supply Chain](Image-Supply-Chain)
-2. [Production Readiness](Production-Readiness)
+1. [CI Diagnostics](CI-Diagnostics)
+2. [Image Supply Chain](Image-Supply-Chain)
+3. [Production Readiness](Production-Readiness)
 
 [Back to Home](Home)

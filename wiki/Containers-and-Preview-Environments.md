@@ -47,6 +47,27 @@ agentic-webapp-web:local
 
 Override with `API_IMAGE`, `WORKER_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `GITHUB_SHA`.
 
+## BuildKit cache behavior
+
+> This behavior is being implemented in draft PR #55. Confirm the final environment-variable and workflow names against the merged implementation.
+
+Container targets use `docker buildx build --load`. Local execution remains uncached by default. Cache-capable CI jobs explicitly set `BUILDKIT_CACHE_ENABLED=true` and use service-scoped caches. Delivery restores `.cache/buildkit`; Generated workspace currently sets `BUILDKIT_CACHE_DIR` to the sibling path `../buildkit-cache` so the cache remains outside the temporary generated repository.
+
+When cache is enabled, the build imports a service cache only when it exists, exports into a separate next directory, and replaces the current cache only after a successful build. GitHub Actions cache restore is non-blocking.
+
+The cache is an optimization, not a correctness dependency. Cache loss may make a run slower but must not change the Dockerfile, target, build arguments, tag, or resulting image for the same inputs.
+
+Reproduce the deterministic fallback:
+
+```bash
+rm -rf .cache/buildkit ../buildkit-cache
+unset BUILDKIT_CACHE_ENABLED
+unset BUILDKIT_CACHE_DIR
+pnpm containers:build
+```
+
+Set `BUILDKIT_CACHE_DIR` only when an enabled cache should live outside the default `.cache/buildkit` path.
+
 ## Start preview
 
 ```bash
@@ -135,6 +156,20 @@ curl --fail http://localhost:4001/health/ready
 curl --fail http://localhost:4001/metrics
 ```
 
+## Retained Delivery diagnostics
+
+> These artifact names are prepared for draft PR #55 and must remain aligned with the merged workflow.
+
+A failed Delivery run captures preview Compose output in `service-logs.txt` and writes machine-readable load-test output to `performance-report.json` when produced. GitHub Actions uploads them as:
+
+```text
+delivery-failure-<run_id>-<run_attempt>
+```
+
+The artifact is retained for 14 days. Download it before rerunning a long-lived investigation. Start with `service-logs.txt` for startup, health, migration, authentication, and worker symptoms. Start with `performance-report.json` for a performance-budget failure, then correlate the failing scenario with service logs.
+
+See [CI Diagnostics](CI-Diagnostics) for the full artifact lookup and local reproduction sequence.
+
 ## Shut down
 
 ```bash
@@ -203,12 +238,14 @@ The repository builds and can push images, but does not deploy them to a product
 ## Related pages
 
 - [Validation and Testing](Validation-and-Testing)
+- [CI Diagnostics](CI-Diagnostics)
 - [Production Readiness](Production-Readiness)
 - [Troubleshooting](Troubleshooting)
 
 ## Next steps
 
-1. [Production Readiness](Production-Readiness)
-2. [Releases and Upgrades](Releases-and-Upgrades)
+1. [CI Diagnostics](CI-Diagnostics)
+2. [Production Readiness](Production-Readiness)
+3. [Releases and Upgrades](Releases-and-Upgrades)
 
 [Back to Home](Home)
