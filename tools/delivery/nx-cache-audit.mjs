@@ -123,7 +123,7 @@ function auditCiCoverage(ciWorkflow, generatedWorkflow) {
     },
     {
       name: 'Nx base/head setup',
-      ok: /nrwl\/nx-set-shas@v5/.test(ciWorkflow),
+      ok: /nrwl\/nx-set-shas@[0-9a-f]{40}(?:\s+#\s*v5)?/.test(ciWorkflow),
     },
     {
       name: 'affected typecheck and build',
