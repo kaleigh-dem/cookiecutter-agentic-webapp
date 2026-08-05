@@ -17,7 +17,11 @@ describe('BuildKit container builds', () => {
         buildArguments: ['SERVICE=api', 'APP_VERSION=1.2.3'],
         context: '.',
       },
-      { cacheRoot: '.cache/example', cacheExists: true },
+      {
+        cacheRoot: '.cache/example',
+        cacheEnabled: false,
+        cacheExists: true,
+      },
     );
 
     expect(command.arguments_).toEqual([
