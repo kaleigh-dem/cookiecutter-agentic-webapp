@@ -7,6 +7,35 @@ This page is organized by observable symptom. Each entry includes likely causes,
 - Run diagnostics from the workspace root unless stated otherwise.
 - Preserve logs and the working tree before destructive recovery.
 
+## CI failed but the console log is insufficient
+
+**Symptom:** A required workflow failed, was superseded, or ended without enough evidence in the visible step log.
+
+**Diagnose:** Confirm the workflow run belongs to the exact pull-request head SHA. A cancelled run may only indicate that a newer commit superseded it.
+
+For the Phase 13 P13-03 implementation in draft PR #55, download the matching retained artifact:
+
+- `ci-failure-<run_id>-<run_attempt>` for Playwright evidence and `release-plan.json`;
+- `delivery-failure-<run_id>-<run_attempt>` for `service-logs.txt` and `performance-report.json`;
+- `generated-workspace-diagnostics-<run_id>-<run_attempt>` for generated-repository evidence.
+
+Artifact names and paths must be rechecked against the merged implementation before the draft-status notice is removed. The planned retention is 14 days.
+
+**Resolve:** Inspect the first failed operation, then reproduce the smallest matching command locally. Cache loss may slow a container build but must not affect correctness.
+
+```bash
+rm -rf .cache/buildkit
+unset BUILDKIT_CACHE_ENABLED
+pnpm nx run web-feature-agent-tasks:e2e
+pnpm containers:build
+pnpm preview:up
+pnpm preview:smoke
+pnpm performance:load
+pnpm preview:down
+```
+
+**Verify:** Rerun the focused command and then the applicable repository contract. Review [CI Diagnostics](CI-Diagnostics) for trace inspection, artifact lookup, generated-workspace bundles, and release-plan guidance.
+
 ## Unsupported Node.js or pnpm version
 
 **Symptom:** Install warns or fails on `engines`; commands behave differently from CI.
@@ -364,10 +393,12 @@ pnpm check
 
 - [Quick Start](Quick-Start)
 - [Validation and Testing](Validation-and-Testing)
+- [CI Diagnostics](CI-Diagnostics)
 - [Releases and Upgrades](Releases-and-Upgrades)
 
 ## Next steps
 
-1. [Documentation Audit](Documentation-Audit)
+1. [CI Diagnostics](CI-Diagnostics)
+2. [Documentation Audit](Documentation-Audit)
 
 [Back to Home](Home)
