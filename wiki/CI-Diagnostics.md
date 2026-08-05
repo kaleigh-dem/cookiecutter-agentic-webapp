@@ -20,14 +20,14 @@ Always review checks attached to the exact pull-request head SHA.
 
 Artifacts are uploaded only after failure and only when the workflow produced matching files.
 
-| Failure class | Workflow artifact | Inspect first |
-| --- | --- | --- |
-| Browser or Playwright failure | `ci-failure-<run_id>-<run_attempt>` | `playwright-results/`, retained trace/video/screenshots, then `playwright-report/` |
-| CI release-plan generation or validation | `ci-failure-<run_id>-<run_attempt>` | `release-plan.json` |
-| Preview startup, health, smoke, or service failure | `delivery-failure-<run_id>-<run_attempt>` | `service-logs.txt` |
-| Performance-budget failure | `delivery-failure-<run_id>-<run_attempt>` | `performance-report.json`, then `service-logs.txt` |
-| Generated-workspace lifecycle failure | `generated-workspace-diagnostics-<run_id>-<run_attempt>` | the failed step's generated workspace output and test-output bundle |
-| Security policy failure | no dedicated failure bundle | failing Security job output and the focused local security command |
+| Failure class                                      | Workflow artifact                                        | Inspect first                                                                      |
+| -------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Browser or Playwright failure                      | `ci-failure-<run_id>-<run_attempt>`                      | `playwright-results/`, retained trace/video/screenshots, then `playwright-report/` |
+| CI release-plan generation or validation           | `ci-failure-<run_id>-<run_attempt>`                      | `release-plan.json`                                                                |
+| Preview startup, health, smoke, or service failure | `delivery-failure-<run_id>-<run_attempt>`                | `service-logs.txt`                                                                 |
+| Performance-budget failure                         | `delivery-failure-<run_id>-<run_attempt>`                | `performance-report.json`, then `service-logs.txt`                                 |
+| Generated-workspace lifecycle failure              | `generated-workspace-diagnostics-<run_id>-<run_attempt>` | the failed step's generated workspace output and test-output bundle                |
+| Security policy failure                            | no dedicated failure bundle                              | failing Security job output and the focused local security command                 |
 
 The P13-03 implementation retains these failure artifacts for 14 days. Download evidence before rerunning or closing a long-running investigation.
 
