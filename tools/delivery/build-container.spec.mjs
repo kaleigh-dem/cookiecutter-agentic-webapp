@@ -1,11 +1,42 @@
-import { resolve } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   createBuildxCommand,
   parseBuildContainerArguments,
+  recoverCacheDirectory,
+  replaceCacheDirectory,
 } from './build-container.mjs';
+
+const temporaryDirectories = [];
+
+function temporaryDirectory() {
+  const directory = mkdtempSync(join(tmpdir(), 'build-container-'));
+  temporaryDirectories.push(directory);
+  return directory;
+}
+
+function writeCache(directory, value) {
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(join(directory, 'marker.txt'), value);
+}
+
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 describe('BuildKit container builds', () => {
   it('uses an uncached deterministic fallback by default', () => {
@@ -85,6 +116,66 @@ describe('BuildKit container builds', () => {
     );
     expect(command.arguments_).toContain('--target');
     expect(command.currentCache).not.toBe(command.nextCache);
+  });
+
+  it('excludes cache blobs from the Docker build context', () => {
+    const ignoredPaths = readFileSync(
+      new URL('../../.dockerignore', import.meta.url),
+      'utf8',
+    )
+      .split(/\r?\n/u)
+      .filter(Boolean);
+
+    expect(ignoredPaths).toContain('.cache');
+  });
+
+  it('installs a completed cache before removing the previous generation', () => {
+    const root = temporaryDirectory();
+    const currentCache = join(root, 'api');
+    const nextCache = `${currentCache}.next`;
+    writeCache(currentCache, 'old');
+    writeCache(nextCache, 'new');
+
+    replaceCacheDirectory(currentCache, nextCache);
+
+    expect(readFileSync(join(currentCache, 'marker.txt'), 'utf8')).toBe('new');
+    expect(existsSync(`${currentCache}.previous`)).toBe(false);
+  });
+
+  it('restores the previous cache when installation fails', () => {
+    const root = temporaryDirectory();
+    const currentCache = join(root, 'worker');
+    const nextCache = `${currentCache}.next`;
+    writeCache(currentCache, 'old');
+    writeCache(nextCache, 'new');
+    let renameCalls = 0;
+
+    expect(() =>
+      replaceCacheDirectory(currentCache, nextCache, {
+        renameSync(source, destination) {
+          renameCalls += 1;
+          if (renameCalls === 2) throw new Error('forced install failure');
+          renameSync(source, destination);
+        },
+      }),
+    ).toThrow('forced install failure');
+
+    expect(readFileSync(join(currentCache, 'marker.txt'), 'utf8')).toBe('old');
+    expect(readFileSync(join(nextCache, 'marker.txt'), 'utf8')).toBe('new');
+    expect(existsSync(`${currentCache}.previous`)).toBe(false);
+  });
+
+  it('recovers a previous cache after an interrupted replacement', () => {
+    const root = temporaryDirectory();
+    const currentCache = join(root, 'web-runtime');
+    const backupCache = `${currentCache}.previous`;
+    writeCache(currentCache, 'old');
+    renameSync(currentCache, backupCache);
+
+    recoverCacheDirectory(currentCache);
+
+    expect(readFileSync(join(currentCache, 'marker.txt'), 'utf8')).toBe('old');
+    expect(existsSync(backupCache)).toBe(false);
   });
 
   it('parses repeated build arguments without depending on GitHub Actions', () => {

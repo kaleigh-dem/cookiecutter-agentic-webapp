@@ -10,6 +10,62 @@ function required(value, label) {
   return normalized;
 }
 
+function cacheFileSystem(operations = {}) {
+  return {
+    exists: operations.existsSync ?? existsSync,
+    rename: operations.renameSync ?? renameSync,
+    remove: operations.rmSync ?? rmSync,
+  };
+}
+
+export function recoverCacheDirectory(currentCache, operations = {}) {
+  const { exists, rename, remove } = cacheFileSystem(operations);
+  const backupCache = `${currentCache}.previous`;
+  if (!exists(backupCache)) return;
+
+  if (exists(currentCache)) {
+    remove(backupCache, { recursive: true, force: true });
+    return;
+  }
+
+  rename(backupCache, currentCache);
+}
+
+export function replaceCacheDirectory(
+  currentCache,
+  nextCache,
+  operations = {},
+) {
+  const { exists, rename, remove } = cacheFileSystem(operations);
+  const backupCache = `${currentCache}.previous`;
+  recoverCacheDirectory(currentCache, operations);
+
+  if (!exists(nextCache)) return;
+  if (!exists(currentCache)) {
+    rename(nextCache, currentCache);
+    return;
+  }
+
+  rename(currentCache, backupCache);
+  try {
+    rename(nextCache, currentCache);
+  } catch (error) {
+    try {
+      if (!exists(currentCache) && exists(backupCache)) {
+        rename(backupCache, currentCache);
+      }
+    } catch (rollbackError) {
+      throw new AggregateError(
+        [error, rollbackError],
+        `Failed to install ${nextCache} and restore ${currentCache}.`,
+      );
+    }
+    throw error;
+  }
+
+  remove(backupCache, { recursive: true, force: true });
+}
+
 export function parseBuildContainerArguments(arguments_) {
   const values = { buildArguments: [], context: '.' };
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -94,7 +150,17 @@ export function createBuildxCommand(input, options = {}) {
 }
 
 export function runContainerBuild(input) {
-  const command = createBuildxCommand(input);
+  const cacheEnabled = process.env.BUILDKIT_CACHE_ENABLED === 'true';
+  const cacheRoot = resolve(
+    process.env.BUILDKIT_CACHE_DIR ?? '.cache/buildkit',
+  );
+  const currentCache = resolve(
+    cacheRoot,
+    required(input.scope, 'Cache scope'),
+  );
+  if (cacheEnabled) recoverCacheDirectory(currentCache);
+
+  const command = createBuildxCommand(input, { cacheEnabled, cacheRoot });
   if (command.cacheEnabled) {
     rmSync(command.nextCache, { recursive: true, force: true });
     mkdirSync(dirname(command.nextCache), { recursive: true });
@@ -114,9 +180,8 @@ export function runContainerBuild(input) {
     );
   }
 
-  if (command.cacheEnabled && existsSync(command.nextCache)) {
-    rmSync(command.currentCache, { recursive: true, force: true });
-    renameSync(command.nextCache, command.currentCache);
+  if (command.cacheEnabled) {
+    replaceCacheDirectory(command.currentCache, command.nextCache);
   }
 }
 
