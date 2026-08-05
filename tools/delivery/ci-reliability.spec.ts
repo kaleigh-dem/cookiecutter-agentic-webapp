@@ -52,7 +52,7 @@ describe('CI cancellation, caching, and diagnostics', () => {
     }
   });
 
-  it('retains actionable failure evidence', async () => {
+  it('retains actionable failure evidence with workflow-valid contexts', async () => {
     const ci = await repositoryFile('.github/workflows/ci.yml');
     const delivery = await repositoryFile('.github/workflows/delivery.yml');
     const generated = await repositoryFile(
@@ -65,10 +65,24 @@ describe('CI cancellation, caching, and diagnostics', () => {
 
     expect(ci).toContain('release-plan.json');
     expect(ci).toContain('Upload CI failure diagnostics');
+    expect(ci).toContain(
+      'CI_DIAGNOSTICS_DIR: ${{ github.workspace }}/test-output/ci-diagnostics',
+    );
     expect(delivery).toContain('service-logs.txt');
     expect(delivery).toContain('performance-report.json');
     expect(delivery).toContain('Upload delivery failure diagnostics');
+    expect(delivery).toContain(
+      'CI_DIAGNOSTICS_DIR: ${{ github.workspace }}/test-output/delivery-diagnostics',
+    );
     expect(generated).toContain('generated-workspace-diagnostics-');
+    expect(generated).toContain(
+      'Validate generated workspace lifecycle\n        env:\n          CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/generated-workspace/test-output',
+    );
+    for (const workflow of [ci, delivery]) {
+      expect(workflow).not.toContain(
+        'CI_DIAGNOSTICS_DIR: ${{ runner.temp }}',
+      );
+    }
     expect(playwright).toContain("trace: 'retain-on-failure'");
     expect(playwright).toContain("screenshot: 'only-on-failure'");
     expect(performance).toContain('PERFORMANCE_REPORT_PATH');
