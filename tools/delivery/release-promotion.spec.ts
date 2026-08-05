@@ -20,18 +20,12 @@ describe('immutable release promotion', () => {
     expect(workflow).toContain('refs/heads/main');
     expect(workflow).toContain('Inspect release image state');
     expect(workflow).toContain('docker manifest inspect');
-    expect(workflow).toContain(
-      'if [ "$GITHUB_RUN_ATTEMPT" = \'1\' ]; then',
-    );
+    expect(workflow).toContain('if [ "$GITHUB_RUN_ATTEMPT" = \'1\' ]; then');
     expect(workflow).toContain(
       'Rerun the original failed Release images workflow to resume a partial publication.',
     );
-    expect(workflow).toContain(
-      'org.opencontainers.image.version',
-    );
-    expect(workflow).toContain(
-      'org.opencontainers.image.revision',
-    );
+    expect(workflow).toContain('org.opencontainers.image.version');
+    expect(workflow).toContain('org.opencontainers.image.revision');
     expect(workflow).toContain('Push unpublished versioned images');
     expect(workflow).toContain(
       'if [ "$API_PUBLISHED" != \'true\' ]; then docker push "$API_IMAGE"; fi',
