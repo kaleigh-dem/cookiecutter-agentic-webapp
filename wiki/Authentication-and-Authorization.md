@@ -119,11 +119,11 @@ Providers should publish new public keys before using them and retain old public
 
 ## Failure behavior
 
-| Condition | API result |
-| --- | --- |
-| Malformed token, bad signature, wrong issuer/audience, expired token, invalid claims | `401 invalid_access_token` |
-| Valid identity without required permission | `403 insufficient_permissions` |
-| Discovery/JWKS outage, malformed provider metadata, unusable keys | `503 identity_provider_unavailable` |
+| Condition                                                                            | API result                          |
+| ------------------------------------------------------------------------------------ | ----------------------------------- |
+| Malformed token, bad signature, wrong issuer/audience, expired token, invalid claims | `401 invalid_access_token`          |
+| Valid identity without required permission                                           | `403 insufficient_permissions`      |
+| Discovery/JWKS outage, malformed provider metadata, unusable keys                    | `503 identity_provider_unavailable` |
 
 The system fails closed. Do not switch production to the development verifier during an outage.
 
