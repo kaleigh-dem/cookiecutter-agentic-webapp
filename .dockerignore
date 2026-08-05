@@ -1,6 +1,7 @@
 .git
 .github
 .nx
+.cache
 node_modules
 dist
 apps/web/.next

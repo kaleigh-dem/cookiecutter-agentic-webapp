@@ -9,9 +9,15 @@ permissions:
   actions: read
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   affected:
     runs-on: ubuntu-latest
+    env:
+      CI_DIAGNOSTICS_DIR: ${{ github.workspace }}/test-output/ci-diagnostics
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,11 +45,12 @@ jobs:
       - run: pnpm delivery:check
       - name: Verify release tooling
         run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
           node tools/delivery/release-plan.mjs \
             --environment preview \
             --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
             --version 0.0.0-ci \
-            --output "$RUNNER_TEMP/release-plan.json"
+            --output "$CI_DIAGNOSTICS_DIR/release-plan.json"
       - run: pnpm typecheck
       - name: Build workspace
         run: pnpm build
@@ -69,6 +76,15 @@ jobs:
       - name: Verify validation leaves the checkout clean
         run: git diff --exit-code
       - run: pnpm nx affected -t lint test
+
+      - name: Upload CI failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}
+          if-no-files-found: ignore
+          retention-days: 14
 
   node-current-compatibility:
     name: Node 26 compatibility

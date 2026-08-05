@@ -50,13 +50,16 @@ permissions:
   contents: read
 
 concurrency:
-  group: generated-workspace-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   end-to-end:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      BUILDKIT_CACHE_DIR: ${{ github.workspace }}/../buildkit-cache
+      BUILDKIT_CACHE_ENABLED: 'true'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -70,6 +73,18 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Restore BuildKit cache
+        continue-on-error: true
+        uses: actions/cache@v5
+        with:
+          path: ../buildkit-cache
+          key: generated-buildkit-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'infra/docker/**', 'apps/api/project.json', 'apps/worker/project.json', 'apps/web/project.json') }}
+          restore-keys: |
+            generated-buildkit-${{ runner.os }}-
 
       - run: pnpm install --frozen-lockfile
 
@@ -86,6 +101,9 @@ jobs:
           echo "path=$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Validate generated workspace lifecycle
+        env:
+          CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/generated-workspace/test-output
+          PERFORMANCE_REPORT_PATH: ${{ runner.temp }}/generated-workspace/test-output/performance-report.json
         run: |
           pnpm template:workspace:e2e -- \
             --artifact "${{ steps.artifact.outputs.path }}" \
@@ -96,7 +114,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: generated-workspace-diagnostics
+          name: generated-workspace-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/generated-workspace/test-output
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14

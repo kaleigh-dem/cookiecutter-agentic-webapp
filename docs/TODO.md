@@ -202,7 +202,7 @@ The generated production profile now has reference OIDC identity, explicit brows
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 is in progress in draft PR #55, which is implementing pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 remains planned.
+Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 is the next planned task.
 
 - [x] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
@@ -216,7 +216,7 @@ Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 an
   - Promote the same tested digests between preview and production environments.
   - Add GitHub Environment approval and least-privilege permissions for production publication or deployment.
 
-- [-] **P13-03 Improve CI cancellation, caching, and diagnostics.**
+- [x] **P13-03 Improve CI cancellation, caching, and diagnostics.**
   - Add workflow concurrency and cancel superseded pull-request runs.
   - Add Docker BuildKit cache reuse.
   - Upload Playwright traces, screenshots, service logs, release plans, and performance reports after failures.

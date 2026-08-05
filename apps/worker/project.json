@@ -27,7 +27,7 @@
     "container": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker build --build-arg SERVICE=worker --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} --build-arg RELEASE_RUN_ID=${GITHUB_RUN_ID:-local} --build-arg RELEASE_BUILD_INPUTS_SHA256=${RELEASE_BUILD_INPUTS_SHA256:-local} -f infra/docker/Dockerfile.node-service -t ${WORKER_IMAGE:-agentic-webapp-worker:local} ."
+        "command": "node tools/delivery/build-container.mjs --scope worker --file infra/docker/Dockerfile.node-service --tag ${WORKER_IMAGE:-agentic-webapp-worker:local} --build-arg SERVICE=worker --build-arg APP_VERSION=${APP_VERSION:-development} --build-arg VCS_REF=${GITHUB_SHA:-local} --build-arg RELEASE_RUN_ID=${GITHUB_RUN_ID:-local} --build-arg RELEASE_BUILD_INPUTS_SHA256=${RELEASE_BUILD_INPUTS_SHA256:-local}"
       }
     },
     "typecheck": {
