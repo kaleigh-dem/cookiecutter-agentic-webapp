@@ -53,12 +53,15 @@ export function createBuildxCommand(input, options = {}) {
   const file = required(input.file, 'Dockerfile');
   const tag = required(input.tag, 'Image tag');
   const context = required(input.context ?? '.', 'Build context');
+  const cacheEnabled =
+    options.cacheEnabled ?? process.env.BUILDKIT_CACHE_ENABLED === 'true';
   const cacheRoot = resolve(
     options.cacheRoot ?? process.env.BUILDKIT_CACHE_DIR ?? '.cache/buildkit',
   );
   const currentCache = resolve(cacheRoot, scope);
   const nextCache = `${currentCache}.next`;
-  const cacheExists = options.cacheExists ?? existsSync(currentCache);
+  const cacheExists =
+    cacheEnabled && (options.cacheExists ?? existsSync(currentCache));
   const arguments_ = [
     'buildx',
     'build',
@@ -77,19 +80,28 @@ export function createBuildxCommand(input, options = {}) {
   if (cacheExists) {
     arguments_.push('--cache-from', `type=local,src=${currentCache}`);
   }
-  arguments_.push(
-    '--cache-to',
-    `type=local,dest=${nextCache},mode=max`,
-    context,
-  );
+  if (cacheEnabled) {
+    arguments_.push(
+      '--cache-to',
+      `type=local,dest=${nextCache},mode=max`,
+    );
+  }
+  arguments_.push(context);
 
-  return { arguments_, currentCache, nextCache };
+  return {
+    arguments_,
+    cacheEnabled,
+    currentCache,
+    nextCache,
+  };
 }
 
 export function runContainerBuild(input) {
   const command = createBuildxCommand(input);
-  rmSync(command.nextCache, { recursive: true, force: true });
-  mkdirSync(dirname(command.nextCache), { recursive: true });
+  if (command.cacheEnabled) {
+    rmSync(command.nextCache, { recursive: true, force: true });
+    mkdirSync(dirname(command.nextCache), { recursive: true });
+  }
 
   const result = spawnSync('docker', command.arguments_, {
     env: process.env,
@@ -97,13 +109,15 @@ export function runContainerBuild(input) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    rmSync(command.nextCache, { recursive: true, force: true });
+    if (command.cacheEnabled) {
+      rmSync(command.nextCache, { recursive: true, force: true });
+    }
     throw new Error(
       `docker ${command.arguments_.join(' ')} failed with status ${result.status ?? 'unknown'}.`,
     );
   }
 
-  if (existsSync(command.nextCache)) {
+  if (command.cacheEnabled && existsSync(command.nextCache)) {
     rmSync(command.currentCache, { recursive: true, force: true });
     renameSync(command.nextCache, command.currentCache);
   }
