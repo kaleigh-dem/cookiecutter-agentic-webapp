@@ -79,9 +79,7 @@ describe('CI cancellation, caching, and diagnostics', () => {
       'Validate generated workspace lifecycle\n        env:\n          CI_DIAGNOSTICS_DIR: ${{ runner.temp }}/generated-workspace/test-output',
     );
     for (const workflow of [ci, delivery]) {
-      expect(workflow).not.toContain(
-        'CI_DIAGNOSTICS_DIR: ${{ runner.temp }}',
-      );
+      expect(workflow).not.toContain('CI_DIAGNOSTICS_DIR: ${{ runner.temp }}');
     }
     expect(playwright).toContain("trace: 'retain-on-failure'");
     expect(playwright).toContain("screenshot: 'only-on-failure'");
