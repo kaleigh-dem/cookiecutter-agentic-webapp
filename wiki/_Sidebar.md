@@ -14,6 +14,7 @@
 - [Code Generation](Code-Generation)
 - [Architecture](Architecture)
 - [Validation and Testing](Validation-and-Testing)
+- [CI Diagnostics](CI-Diagnostics)
 
 **Configure and operate**
 
