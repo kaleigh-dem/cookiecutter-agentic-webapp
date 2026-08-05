@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { evaluateScenario, percentile, validateBudgets } from './load-test.mjs';
+import {
+  evaluateScenario,
+  parseLoadTestArguments,
+  percentile,
+  validateBudgets,
+} from './load-test.mjs';
 
 describe('performance budgets', () => {
   it('calculates nearest-rank percentiles', () => {
@@ -39,5 +44,28 @@ describe('performance budgets', () => {
         ],
       }),
     ).toEqual([]);
+  });
+
+  it('resolves a deterministic performance report path from CI or CLI', () => {
+    expect(
+      parseLoadTestArguments([], {
+        PERFORMANCE_REPORT_PATH: '/tmp/performance.json',
+      }),
+    ).toEqual({
+      filePath: 'performance/budgets.json',
+      outputPath: '/tmp/performance.json',
+      validateOnly: false,
+    });
+    expect(
+      parseLoadTestArguments([
+        'performance/custom.json',
+        '--output',
+        'test-output/report.json',
+      ]),
+    ).toEqual({
+      filePath: 'performance/custom.json',
+      outputPath: 'test-output/report.json',
+      validateOnly: false,
+    });
   });
 });

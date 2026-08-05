@@ -4,6 +4,7 @@ dist/
 coverage/
 test-output/
 .nx/
+.cache/
 .env
 .env.local
 infra/environments/production.env

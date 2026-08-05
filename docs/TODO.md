@@ -1,6 +1,6 @@
 # Template Roadmap
 
-Last updated: 2026-08-04
+Last updated: 2026-08-05
 
 This file tracks active work required to evolve the repository as a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as a separate historical roadmap.
 
@@ -202,7 +202,7 @@ The generated production profile now has reference OIDC identity, explicit brows
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-Phase 13 progress record (2026-08-04): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`, after reviewer PASS for exact head `f9c97a3f58dacf654a14df439d7c78344b9612f4` and successful CI #590, Delivery #333, Security #414, and Generated Workspace #269. P13-02 is the only active Phase 13 task.
+Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 is the next planned task.
 
 - [x] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
@@ -210,13 +210,13 @@ Phase 13 progress record (2026-08-04): P13-01 is completed in reviewed PR #50 an
   - Produce build provenance or attestations.
   - Sign published image digests and document verification.
 
-- [-] **P13-02 Promote digests instead of rebuilding releases.**
+- [x] **P13-02 Promote digests instead of rebuilding releases.**
   - Publish immutable images once after validation.
   - Record image digests in the release plan.
   - Promote the same tested digests between preview and production environments.
   - Add GitHub Environment approval and least-privilege permissions for production publication or deployment.
 
-- [ ] **P13-03 Improve CI cancellation, caching, and diagnostics.**
+- [x] **P13-03 Improve CI cancellation, caching, and diagnostics.**
   - Add workflow concurrency and cancel superseded pull-request runs.
   - Add Docker BuildKit cache reuse.
   - Upload Playwright traces, screenshots, service logs, release plans, and performance reports after failures.

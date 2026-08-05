@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 export function percentile(values, fraction) {
@@ -72,6 +73,41 @@ export function validateBudgets(budgets) {
   return issues;
 }
 
+export function parseLoadTestArguments(arguments_, environment = process.env) {
+  let filePath = 'performance/budgets.json';
+  let filePathSet = false;
+  let outputPath = environment.PERFORMANCE_REPORT_PATH?.trim() || undefined;
+  let validateOnly = false;
+
+  for (let index = 0; index < arguments_.length; index += 1) {
+    const argument = arguments_[index];
+    if (argument === '--' || argument === '') continue;
+    if (argument === '--validate-only') {
+      validateOnly = true;
+      continue;
+    }
+    if (argument === '--output') {
+      const value = arguments_[index + 1];
+      if (!value || value.startsWith('--')) {
+        throw new Error('--output requires a path.');
+      }
+      outputPath = value;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith('--')) {
+      throw new Error(`Unknown load-test option: ${argument}.`);
+    }
+    if (filePathSet) {
+      throw new Error(`Unexpected load-test argument: ${argument}.`);
+    }
+    filePath = argument;
+    filePathSet = true;
+  }
+
+  return { filePath, outputPath, validateOnly };
+}
+
 async function measureRequest(url, timeoutMs) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -117,12 +153,16 @@ async function runScenario(scenario, defaults) {
   return evaluateScenario(scenario, measurements);
 }
 
+async function writeReport(outputPath, report) {
+  if (!outputPath) return;
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`);
+}
+
 async function main() {
-  const arguments_ = process.argv.slice(2);
-  const validateOnly = arguments_.includes('--validate-only');
-  const filePath =
-    arguments_.find((argument) => !argument.startsWith('--')) ??
-    'performance/budgets.json';
+  const { filePath, outputPath, validateOnly } = parseLoadTestArguments(
+    process.argv.slice(2),
+  );
   const budgets = JSON.parse(await readFile(filePath, 'utf8'));
   const issues = validateBudgets(budgets);
 
@@ -140,7 +180,9 @@ async function main() {
   for (const scenario of budgets.scenarios) {
     results.push(await runScenario(scenario, budgets.defaults));
   }
-  process.stdout.write(`${JSON.stringify({ results }, null, 2)}\n`);
+  const report = { results };
+  await writeReport(outputPath, report);
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (results.some((result) => !result.passed)) process.exitCode = 1;
 }
 
