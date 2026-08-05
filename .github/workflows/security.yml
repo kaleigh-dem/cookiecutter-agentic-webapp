@@ -15,6 +15,73 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  validate-p13-03:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.ref == 'agent/p13-03-ci-reliability'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p13-03-ci-reliability
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format P13-03 files
+        run: >-
+          pnpm exec prettier --write
+          .github/workflows/ci.yml
+          .github/workflows/delivery.yml
+          .github/workflows/generated-workspace.yml
+          .github/workflows/security.yml
+          apps/api/project.json
+          apps/web/project.json
+          apps/worker/project.json
+          docs/TODO.md
+          docs/adr/0015-ci-cancellation-caching-and-diagnostics.md
+          docs/delivery/containers-and-configuration.md
+          packages/web/features/agent-tasks/playwright.config.ts
+          tools/delivery/build-container.mjs
+          tools/delivery/build-container.spec.mjs
+          tools/delivery/ci-reliability.spec.ts
+          tools/delivery/load-test.mjs
+          tools/delivery/load-test.spec.mjs
+
+      - name: Run deterministic checks
+        run: |
+          set -euo pipefail
+          node --check tools/delivery/build-container.mjs
+          node --check tools/delivery/load-test.mjs
+          pnpm delivery:check
+          pnpm nx test delivery --skip-nx-cache
+          pnpm nx lint delivery --skip-nx-cache
+          git checkout HEAD^ -- .github/workflows/security.yml
+          git branch --force main origin/main
+          pnpm format:check
+          git diff --check
+
+      - name: Create clean validated commit
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'ci: finalize cache-capable Buildx fallback'
+          echo "FINAL_COMMIT=$(git rev-parse HEAD)"
+          git push origin HEAD:agent/p13-03-ci-reliability
+
   package-policy:
     runs-on: ubuntu-latest
     steps:
