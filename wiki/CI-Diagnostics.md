@@ -135,7 +135,7 @@ A release-plan failure is metadata or policy evidence. It does not mean an image
 
 ## BuildKit cache behavior
 
-Delivery and Generated workspace may restore `.cache/buildkit` and enable cache-aware `docker buildx build --load` execution.
+Delivery restores `.cache/buildkit`. Generated workspace restores the sibling path `../buildkit-cache` and sets `BUILDKIT_CACHE_DIR` to that location so the cache remains outside the temporary generated repository. Both workflows enable cache-aware `docker buildx build --load` execution explicitly.
 
 The cache is an optimization only:
 
@@ -147,8 +147,9 @@ The cache is an optimization only:
 Reproduce without cache:
 
 ```bash
-rm -rf .cache/buildkit
+rm -rf .cache/buildkit ../buildkit-cache
 unset BUILDKIT_CACHE_ENABLED
+unset BUILDKIT_CACHE_DIR
 pnpm containers:build
 ```
 
@@ -170,7 +171,7 @@ pnpm preview:down
 pnpm check
 ```
 
-Record the exact command, environment overrides, source SHA, and whether `.cache/buildkit` was present.
+Record the exact command, environment overrides, source SHA, and whether either BuildKit cache path was present.
 
 ## Related pages
 
