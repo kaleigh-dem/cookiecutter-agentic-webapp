@@ -1,0 +1,111 @@
+name: Publish reviewed wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/wiki-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-reviewed-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Synchronize reviewed wiki source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@v7
+
+      - name: Clone rendered wiki
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          wiki_checkout="$RUNNER_TEMP/rendered-wiki"
+          git clone \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" \
+            "$wiki_checkout"
+          echo "WIKI_CHECKOUT=$wiki_checkout" >> "$GITHUB_ENV"
+
+      - name: Copy reviewed Markdown without deleting wiki-only pages
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' source; do
+            cp "$source" "$WIKI_CHECKOUT/$(basename "$source")"
+          done < <(find wiki -maxdepth 1 -type f -name '*.md' -print0 | sort -z)
+
+      - name: Validate publication candidate
+        run: |
+          python <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          wiki = Path(os.environ['WIKI_CHECKOUT'])
+          required = {
+              'Home.md',
+              'Agentic-Development-Model.md',
+              'Image-Supply-Chain.md',
+              'Releases-and-Upgrades.md',
+              'Authentication-and-Authorization.md',
+              'Database-and-Data-Management.md',
+              'Worker-and-Background-Jobs.md',
+              'Containers-and-Preview-Environments.md',
+              'Troubleshooting.md',
+              'CI-Diagnostics.md',
+              '_Sidebar.md',
+          }
+          missing = sorted(name for name in required if not (wiki / name).is_file())
+          if missing:
+              raise SystemExit(f"Missing required wiki pages: {', '.join(missing)}")
+
+          home = (wiki / 'Home.md').read_text(encoding='utf-8')
+          if '(Agentic-Development-Model)' not in home:
+              raise SystemExit('Home must link to Agentic Development Model.')
+
+          sidebar = (wiki / '_Sidebar.md').read_text(encoding='utf-8')
+          unresolved = []
+          for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', sidebar):
+              page = target.split('#', 1)[0]
+              if not page or '://' in page or page.startswith('mailto:'):
+                  continue
+              if not (wiki / f'{page}.md').is_file():
+                  unresolved.append(target)
+          if unresolved:
+              raise SystemExit(
+                  'Unresolved sidebar links: ' + ', '.join(sorted(set(unresolved)))
+              )
+          PY
+
+          git -C "$WIKI_CHECKOUT" diff --check
+
+      - name: Publish changed pages
+        run: |
+          set -euo pipefail
+          git -C "$WIKI_CHECKOUT" config user.name 'github-actions[bot]'
+          git -C "$WIKI_CHECKOUT" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$WIKI_CHECKOUT" add --all -- '*.md'
+
+          deleted=$(git -C "$WIKI_CHECKOUT" diff --cached --diff-filter=D --name-only)
+          if [ -n "$deleted" ]; then
+            echo 'Refusing to delete existing wiki-only pages:' >&2
+            echo "$deleted" >&2
+            exit 1
+          fi
+
+          if git -C "$WIKI_CHECKOUT" diff --cached --quiet; then
+            echo 'Rendered wiki already matches the reviewed source.'
+            exit 0
+          fi
+
+          git -C "$WIKI_CHECKOUT" diff --cached --name-status
+          git -C "$WIKI_CHECKOUT" commit -m "Publish reviewed wiki source from ${GITHUB_SHA}"
+          git -C "$WIKI_CHECKOUT" push origin HEAD
