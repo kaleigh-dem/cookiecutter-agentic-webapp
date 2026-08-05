@@ -1,0 +1,209 @@
+name: Apply corrected P13-02 refresh-skew fix
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.event.pull_request.head.ref == 'agent/p13-02-digest-promotion'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/p13-02-digest-promotion
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Apply reviewer finding
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'{label} marker not found')
+              return text.replace(old, new, 1)
+
+          manifest_path = Path('tools/delivery/release-manifest.mjs')
+          manifest = manifest_path.read_text()
+          manifest = replace_once(
+              manifest,
+              'function validateImageName(value, service) {\n',
+              """function validateRefreshSkewSeconds(value) {
+            const normalized = requireString(
+              value,
+              'Build authentication refresh skew seconds',
+            );
+            if (
+              !/^(?:0|[1-9]\\d{0,2})$/u.test(normalized) ||
+              Number(normalized) > 300
+            ) {
+              throw new Error(
+                'Build authentication refresh skew seconds must be an integer between 0 and 300.',
+              );
+            }
+            return normalized;
+          }
+
+          function validateImageName(value, service) {
+          """.replace('          ', ''),
+              'manifest validator',
+          )
+          manifest = replace_once(
+              manifest,
+              "  return {\n    apiBaseUrl,\n    authenticationProfile,\n    authSessionEndpoint,\n  };\n",
+              "  const authSessionRefreshSkewSeconds = validateRefreshSkewSeconds(\n    build.authSessionRefreshSkewSeconds,\n  );\n\n  return {\n    apiBaseUrl,\n    authenticationProfile,\n    authSessionEndpoint,\n    authSessionRefreshSkewSeconds,\n  };\n",
+              'manifest build return',
+          )
+          manifest = replace_once(
+              manifest,
+              '    NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: normalized.build.authSessionEndpoint,\n',
+              '    NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: normalized.build.authSessionEndpoint,\n    NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS:\n      normalized.build.authSessionRefreshSkewSeconds,\n',
+              'manifest environment export',
+          )
+          manifest = replace_once(
+              manifest,
+              "      authSessionEndpoint: values['auth-session-endpoint'],\n",
+              "      authSessionEndpoint: values['auth-session-endpoint'],\n      authSessionRefreshSkewSeconds:\n        values['auth-session-refresh-skew-seconds'],\n",
+              'manifest create command',
+          )
+          manifest_path.write_text(manifest)
+
+          readiness_path = Path('tools/delivery/production-readiness.mjs')
+          readiness = readiness_path.read_text()
+          readiness_path.write_text(replace_once(
+              readiness,
+              "  'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT',\n",
+              "  'NEXT_PUBLIC_AUTH_SESSION_ENDPOINT',\n  'NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS',\n",
+              'production compatibility key',
+          ))
+
+          workflow_path = Path('.github/workflows/release.yml')
+          workflow = workflow_path.read_text()
+          marker = '            --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \\\n'
+          replacement = marker + '            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS" \\\n'
+          if workflow.count(marker) != 2:
+              raise SystemExit('expected two release manifest command markers')
+          workflow_path.write_text(workflow.replace(marker, replacement))
+
+          manifest_spec_path = Path('tools/delivery/release-manifest.spec.mjs')
+          manifest_spec = manifest_spec_path.read_text()
+          manifest_spec = replace_once(
+              manifest_spec,
+              "      authSessionEndpoint: '/auth/session/access-token',\n",
+              "      authSessionEndpoint: '/auth/session/access-token',\n      authSessionRefreshSkewSeconds: '30',\n",
+              'manifest spec fixture',
+          )
+          manifest_spec = replace_once(
+              manifest_spec,
+              "    expect(entries.NEXT_PUBLIC_API_BASE_URL).toBe('https://api.example.com');\n",
+              "    expect(entries.NEXT_PUBLIC_API_BASE_URL).toBe('https://api.example.com');\n    expect(entries.NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS).toBe(\n      '30',\n    );\n",
+              'manifest spec export',
+          )
+          manifest_spec = replace_once(
+              manifest_spec,
+              "    ).toThrow('missing the web image');\n  });\n",
+              "    ).toThrow('missing the web image');\n    expect(() =>\n      validateReleaseManifest({\n        ...manifest,\n        build: {\n          ...manifest.build,\n          authSessionRefreshSkewSeconds: '301',\n        },\n      }),\n    ).toThrow('between 0 and 300');\n  });\n",
+              'manifest spec rejection',
+          )
+          manifest_spec_path.write_text(manifest_spec)
+
+          plan_spec_path = Path('tools/delivery/release-plan.spec.mjs')
+          plan_spec = plan_spec_path.read_text()
+          plan_spec_path.write_text(replace_once(
+              plan_spec,
+              "      authSessionEndpoint: '/auth/session/access-token',\n",
+              "      authSessionEndpoint: '/auth/session/access-token',\n      authSessionRefreshSkewSeconds: '30',\n",
+              'release plan fixture',
+          ))
+
+          readiness_spec_path = Path('tools/delivery/production-readiness.spec.ts')
+          readiness_spec = readiness_spec_path.read_text()
+          readiness_spec = replace_once(
+              readiness_spec,
+              "  NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: '/auth/session/access-token',\n",
+              "  NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: '/auth/session/access-token',\n  NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: '30',\n",
+              'production fixture',
+          )
+          readiness_spec = replace_once(
+              readiness_spec,
+              "        NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:\n          validProduction.NEXT_PUBLIC_AUTH_SESSION_ENDPOINT,\n",
+              "        NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:\n          validProduction.NEXT_PUBLIC_AUTH_SESSION_ENDPOINT,\n        NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: '45',\n",
+              'release compatibility fixture',
+          )
+          readiness_spec = replace_once(
+              readiness_spec,
+              "      'NEXT_PUBLIC_AUTHENTICATION_PROFILE does not match the release image build configuration.',\n    ]);\n",
+              "      'NEXT_PUBLIC_AUTHENTICATION_PROFILE does not match the release image build configuration.',\n      'NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS does not match the release image build configuration.',\n    ]);\n",
+              'release compatibility expectation',
+          )
+          readiness_spec_path.write_text(readiness_spec)
+
+          promotion_spec_path = Path('tools/delivery/release-promotion.spec.ts')
+          promotion_spec = promotion_spec_path.read_text()
+          promotion_spec_path.write_text(replace_once(
+              promotion_spec,
+              "    expect(workflow).toContain('release-manifest.mjs create');\n",
+              "    expect(workflow).toContain('release-manifest.mjs create');\n    expect(workflow).toContain('--auth-session-refresh-skew-seconds');\n",
+              'promotion workflow contract',
+          ))
+
+          example_path = Path('infra/release/release-manifest.example.json')
+          example = example_path.read_text()
+          example_path.write_text(replace_once(
+              example,
+              '    "authSessionEndpoint": "/auth/session/access-token"\n',
+              '    "authSessionEndpoint": "/auth/session/access-token",\n    "authSessionRefreshSkewSeconds": "30"\n',
+              'release manifest example',
+          ))
+          PY
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format focused files
+        run: >-
+          pnpm exec prettier --write
+          .github/workflows/release.yml
+          infra/release/release-manifest.example.json
+          tools/delivery/production-readiness.mjs
+          tools/delivery/production-readiness.spec.ts
+          tools/delivery/release-manifest.mjs
+          tools/delivery/release-manifest.spec.mjs
+          tools/delivery/release-plan.spec.mjs
+          tools/delivery/release-promotion.spec.ts
+
+      - name: Run deterministic checks
+        run: |
+          pnpm delivery:check
+          pnpm nx test delivery --skip-nx-cache
+          pnpm nx lint delivery --skip-nx-cache
+          rm .github/workflows/p13-02-refresh-skew-fix.yml
+          rm .github/workflows/p13-02-refresh-skew-fix-v2.yml
+          git branch --force main origin/main
+          pnpm format:check
+
+      - name: Commit review fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(delivery): preserve browser refresh skew'
+          git push origin HEAD:agent/p13-02-digest-promotion
