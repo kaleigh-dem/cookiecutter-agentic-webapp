@@ -26,6 +26,8 @@ The `Release images` workflow runs from `main` and publishes one immutable image
 
 A failed vulnerability gate prevents publication, signing, attestation, and release-manifest creation. It does not discard the available scan evidence.
 
+A partial publication is recoverable only by rerunning the original workflow run. Each image carries the workflow run ID and a SHA-256 build-input fingerprint covering the public API URL, authentication profile, session endpoint, and refresh-skew value. Recovery rejects images from another run or with different inputs. Registry inspection also fails closed: only explicit `manifest unknown` or `no such manifest` responses are interpreted as an absent tag.
+
 ## When the gate runs
 
 The image policy runs after all three images are built and scanned but before any image is published. This order prevents a known-unapproved HIGH or CRITICAL finding from reaching the registry through the normal release workflow.

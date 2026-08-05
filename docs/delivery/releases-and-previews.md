@@ -15,6 +15,8 @@ Dispatch **Release images** with a new semantic version and the production-safe 
 
 The manifest records the API, worker, and web `name@sha256` references plus every public web build input used by promotion: the API base URL, authentication profile, session endpoint, and session refresh-skew seconds. Use its source workflow run ID when dispatching **Promote release digests**.
 
+If publication fails after one or more pushes, rerun that exact workflow run. Existing images are reusable only when their OCI labels match the same workflow run ID, commit, semantic version, and canonical build-input fingerprint. Registry inspection failures fail closed; only an explicit missing-manifest response is treated as an unpublished tag.
+
 Generate a plan from a downloaded manifest locally with:
 
 ```bash

@@ -37,9 +37,13 @@ RUN pnpm nx run web:build
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ARG APP_VERSION=development
 ARG VCS_REF=unknown
+ARG RELEASE_RUN_ID=local
+ARG RELEASE_BUILD_INPUTS_SHA256=local
 
 LABEL org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
+      io.agentic-webapp.release.run-id="${RELEASE_RUN_ID}" \
+      io.agentic-webapp.release.build-inputs-sha256="${RELEASE_BUILD_INPUTS_SHA256}" \
       org.opencontainers.image.source="https://github.com/kaleigh-dem/nx-fullstack-platform"
 
 ENV HOSTNAME=0.0.0.0 \

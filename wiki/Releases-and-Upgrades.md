@@ -18,7 +18,7 @@ The release path has two explicit stages:
 1. **Release images** builds, scans, signs, attests, and publishes one immutable set of API, worker, and web images from `main`.
 2. **Promote release digests** approves those exact digests for production and creates the production release plan.
 
-The publication workflow refuses to overwrite an existing semantic-version tag. Promotion does not rebuild, retag, or push images.
+The publication workflow refuses to overwrite an existing semantic-version tag. If a partial publication fails, only a rerun of the same workflow run ID may reuse an existing image, and only when version, commit, and the canonical public build-input fingerprint all match. Registry inspection errors fail closed rather than being treated as absent tags. Promotion does not rebuild, retag, or push images.
 
 ## Publish release images
 
