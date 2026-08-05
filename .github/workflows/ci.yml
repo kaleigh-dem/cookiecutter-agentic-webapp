@@ -47,13 +47,15 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'agent/steadystack-rebrand'
         run: node tools/template/commit-steadystack-rebrand.mjs
 
-      - name: Commit and push the complete migration
+      - name: Commit and expose the complete migration tree
         if: github.event_name == 'pull_request' && github.head_ref == 'agent/steadystack-rebrand'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
           git commit -m "refactor: adopt SteadyStack project identity"
+          echo "STEADYSTACK_COMMIT_SHA=$(git rev-parse HEAD)"
+          echo "STEADYSTACK_TREE_SHA=$(git rev-parse 'HEAD^{tree}')"
           git push origin "HEAD:${{ github.head_ref }}"
       # END STEADYSTACK BOOTSTRAP
 
