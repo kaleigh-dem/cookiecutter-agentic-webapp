@@ -45,9 +45,13 @@ describe('CI cancellation, caching, and diagnostics', () => {
     );
 
     for (const workflow of [delivery, generated]) {
-      expect(workflow).toContain('uses: docker/setup-buildx-action@v3');
+      expect(workflow).toContain(
+        'uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3',
+      );
       expect(workflow).toContain("BUILDKIT_CACHE_ENABLED: 'true'");
-      expect(workflow).toContain('uses: actions/cache@v5');
+      expect(workflow).toContain(
+        'uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5',
+      );
       expect(workflow).toContain('continue-on-error: true');
     }
     expect(delivery).toContain('path: .cache/buildkit');

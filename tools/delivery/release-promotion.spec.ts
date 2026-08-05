@@ -90,7 +90,9 @@ describe('immutable release promotion', () => {
     expect(workflow).toContain('needs: authorize');
     expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
     expect(workflow.indexOf('Require the default branch')).toBeLessThan(
-      workflow.indexOf('actions/checkout@v7'),
+      workflow.indexOf(
+        'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7',
+      ),
     );
     expect(workflow.indexOf('Require the default branch')).toBeLessThan(
       workflow.indexOf('environment:\n      name: production'),
@@ -103,7 +105,9 @@ describe('immutable release promotion', () => {
     expect(workflow).not.toContain('packages: write');
     expect(workflow).not.toContain('id-token: write');
     expect(workflow).not.toContain('attestations: write');
-    expect(workflow).toContain('actions/download-artifact@v8');
+    expect(workflow).toContain(
+      'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8',
+    );
     expect(workflow).toContain('run-id: ${{ inputs.source_run_id }}');
     expect(workflow).toContain("workflowName: 'Release images'");
     expect(workflow).toContain("headBranch: 'main'");
