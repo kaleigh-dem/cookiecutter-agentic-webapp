@@ -8,7 +8,7 @@ P13-04 audits the cache inputs and affected graph used by required CI. The goal 
 
 `nx.json` separates the inputs that are not represented by ordinary project source files:
 
-- `browserEnvironment` contains the four `NEXT_PUBLIC_*` values embedded in the browser build.
+- `browserEnvironment` contains every `NEXT_PUBLIC_*` value embedded in the browser build, covering API routing, authentication, and browser telemetry configuration.
 - `imageMetadata` contains version, revision, workflow-run, and release-input metadata embedded in production images.
 - `containerCommonFiles` contains the shared container wrapper and `.dockerignore`.
 - `contractGeneration` contains contract source, generator scripts, and OpenAPI inputs, excluding generated outputs.
@@ -25,7 +25,7 @@ Run:
 node tools/delivery/nx-cache-audit.mjs
 ```
 
-The checked-in fixture verifies relevant positive and negative cases for environment, Nx configuration, Docker, generator, contract, and delivery changes. It also proves that a documentation-only change does not invalidate the audited targets. The same audit verifies the required-CI contract:
+The checked-in fixture verifies relevant positive and negative cases for environment, Nx configuration, Docker, generator, contract, and delivery changes. Every browser-bundled `NEXT_PUBLIC_*` variable has its own fixture proving that it invalidates both `web:build` and `web:container` without invalidating API or worker builds. The audit also proves that a documentation-only change does not invalidate the audited targets. The same audit verifies the required-CI contract:
 
 - checkout retains full history;
 - `nx-set-shas` establishes `NX_BASE` and `NX_HEAD`;
@@ -33,7 +33,7 @@ The checked-in fixture verifies relevant positive and negative cases for environ
 - both generator smoke targets remain explicit;
 - the generated-workspace workflow continues to watch generator, template, and Nx configuration paths.
 
-Required source-repository CI runs the audit before delivery checks. Focused Vitest coverage proves that removing a browser environment input or restoring full-workspace CI fails the audit; generated workspaces skip these source-only workflow-contract assertions.
+Required source-repository CI runs the audit before delivery checks. Focused Vitest coverage proves that removing any browser environment input or restoring full-workspace CI fails the audit; generated workspaces skip these source-only workflow-contract assertions.
 
 ## Affected execution policy
 

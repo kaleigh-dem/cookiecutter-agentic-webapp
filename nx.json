@@ -31,6 +31,18 @@
       },
       {
         "env": "NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS"
+      },
+      {
+        "env": "NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT"
+      },
+      {
+        "env": "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT"
+      },
+      {
+        "env": "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+      },
+      {
+        "env": "NEXT_PUBLIC_OTEL_SDK_DISABLED"
       }
     ],
     "imageMetadata": [

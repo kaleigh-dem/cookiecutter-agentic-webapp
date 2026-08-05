@@ -52,9 +52,65 @@
   },
   "scenarios": [
     {
-      "name": "public browser environment changes invalidate browser outputs",
+      "name": "public browser API base URL changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_API_BASE_URL"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser authentication profile changes invalidate browser outputs",
       "change": {
         "env": "NEXT_PUBLIC_AUTHENTICATION_PROFILE"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser authentication session endpoint changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_AUTH_SESSION_ENDPOINT"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser authentication refresh skew changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser telemetry deployment environment changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser telemetry OTLP endpoint changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser telemetry OTLP traces endpoint changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+      },
+      "invalidates": ["web:build", "web:container"],
+      "doesNotInvalidate": ["api:build", "worker:build"]
+    },
+    {
+      "name": "public browser telemetry disable flag changes invalidate browser outputs",
+      "change": {
+        "env": "NEXT_PUBLIC_OTEL_SDK_DISABLED"
       },
       "invalidates": ["web:build", "web:container"],
       "doesNotInvalidate": ["api:build", "worker:build"]
