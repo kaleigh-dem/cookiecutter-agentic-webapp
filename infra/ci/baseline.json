@@ -1,19 +1,56 @@
 {
-  "schemaVersion": 1,
-  "capturedAt": "2026-08-01T14:45:33Z",
+  "schemaVersion": 2,
+  "capturedAt": "2026-08-05",
   "source": {
     "workflow": "CI",
-    "runNumber": 235,
-    "job": "affected"
+    "job": "affected",
+    "selection": "successful pull-request runs attached to exact reviewed head SHAs",
+    "runNumbers": [644, 656, 696, 700]
   },
   "samples": [
     {
-      "totalSeconds": 144,
-      "typecheckSeconds": 11.4,
-      "buildSeconds": 8.6,
-      "e2eSeconds": 6.1,
-      "generatorSmokeSeconds": 27.5,
-      "lintAndTestSeconds": 20.8
+      "runNumber": 644,
+      "runId": 30965090394,
+      "headSha": "ebc1240ab7b5937b27de44747966d3dbbdbee4f4",
+      "totalSeconds": 193.4,
+      "typecheckSeconds": 13.9,
+      "buildSeconds": 11.0,
+      "e2eSeconds": 6.3,
+      "generatorSmokeSeconds": 54.9,
+      "lintAndTestSeconds": 37.5
+    },
+    {
+      "runNumber": 656,
+      "runId": 30969806694,
+      "headSha": "e9e604c0833f295e9c6f61fc9debfb9d679e11f3",
+      "totalSeconds": 175.4,
+      "typecheckSeconds": 12.5,
+      "buildSeconds": 9.7,
+      "e2eSeconds": 0,
+      "generatorSmokeSeconds": 50.5,
+      "lintAndTestSeconds": 3.9
+    },
+    {
+      "runNumber": 696,
+      "runId": 31006817187,
+      "headSha": "0d34ebfb3212e0f9737ae025321ad11155f1d27e",
+      "totalSeconds": 160.4,
+      "typecheckSeconds": 9.3,
+      "buildSeconds": 8.0,
+      "e2eSeconds": 0,
+      "generatorSmokeSeconds": 47.0,
+      "lintAndTestSeconds": 0
+    },
+    {
+      "runNumber": 700,
+      "runId": 31012429841,
+      "headSha": "97e999d5424f569fb80523e474bd0cc4c3c85a47",
+      "totalSeconds": 169.0,
+      "typecheckSeconds": 14.5,
+      "buildSeconds": 11.1,
+      "e2eSeconds": 0,
+      "generatorSmokeSeconds": 49.0,
+      "lintAndTestSeconds": 0
     }
   ],
   "peakConcurrentPullRequests": 1,

@@ -40,14 +40,14 @@ Detailed completed-phase task lists are intentionally omitted. Relevant implemen
 
 ## Execution order
 
-1. Phase 13 is active; P13-01 through P13-03 are complete, and P13-04 is next unless an explicit dependency or incident changes the sequence.
+1. Phase 13 is active; P13-01 through P13-04 are complete, and P13-05 is next unless an explicit dependency or incident changes the sequence.
 2. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 is completed in PR #55 and merge commit `fe8a8644458803ca35d35e4262ccd39a9b02e825`; it adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 is the next planned task.
+Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 is completed in PR #55 and merge commit `fe8a8644458803ca35d35e4262ccd39a9b02e825`; it adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 audits environment, Docker, generator, contract, and delivery cache inputs; adds deterministic invalidation fixtures; records a representative CI sample; moves required typecheck and build to affected execution; and retains explicit generator and generated-workspace coverage. P13-05 is the next planned task.
 
 - [x] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
@@ -67,7 +67,7 @@ Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 an
   - Upload Playwright traces, screenshots, service logs, release plans, and performance reports after failures.
   - Keep deterministic local fallbacks when remote caching is unavailable.
 
-- [ ] **P13-04 Audit Nx cache inputs and affected execution.**
+- [x] **P13-04 Audit Nx cache inputs and affected execution.**
   - Declare environment-sensitive inputs for builds, generated contracts, containers, and delivery tasks.
   - Verify cache invalidation for public browser environment variables and image metadata.
   - Add fixtures proving that relevant environment, configuration, Docker, generator, and contract changes invalidate every required target while unrelated changes do not.

@@ -112,7 +112,7 @@ describe('CI cancellation, caching, and diagnostics', () => {
     expect(performance).toContain('PERFORMANCE_REPORT_PATH');
   });
 
-  it('documents and records only P13-03 completion', async () => {
+  it('retains P13-03 evidence after later roadmap progress', async () => {
     const roadmap = await repositoryFile('docs/TODO.md');
     const adr = await repositoryFile(
       'docs/adr/0015-ci-cancellation-caching-and-diagnostics.md',
@@ -124,7 +124,7 @@ describe('CI cancellation, caching, and diagnostics', () => {
     expect(roadmap).toContain(
       '- [x] **P13-03 Improve CI cancellation, caching, and diagnostics.**',
     );
-    expect(roadmap).toContain('- [ ] **P13-04 Audit Nx cache inputs');
+    expect(roadmap).toContain('- [x] **P13-04 Audit Nx cache inputs');
     expect(adr).toContain('cancel superseded pull-request runs');
     expect(documentation).toContain('BuildKit cache');
     expect(documentation).toContain('deterministic local fallback');
