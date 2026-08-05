@@ -88,6 +88,42 @@ describe('Nx cache input audit', () => {
     }
   });
 
+  it('fails when workspace plugin build omits template upgrade inputs', async () => {
+    if (!hasSourceWorkflowContracts) return;
+
+    const configuration = await loadConfiguration();
+    const mutated = clone(configuration);
+    mutated.projects['tools/workspace-plugin'].targets.build.inputs = [
+      'production',
+      '^production',
+    ];
+
+    const result = auditConfiguration(mutated);
+
+    expect(result.ok).toBe(false);
+    expect(result.failures).toContain(
+      'template upgrade assets invalidate workspace plugin release build: workspace-plugin:build was not invalidated',
+    );
+  });
+
+  it('fails when repository generator defaults are removed', async () => {
+    if (!hasSourceWorkflowContracts) return;
+
+    const configuration = await loadConfiguration();
+    const mutated = clone(configuration);
+    delete mutated.nx.generators;
+
+    const result = auditConfiguration(mutated);
+
+    expect(result.ok).toBe(false);
+    expect(result.failures).toContain(
+      'Nx configuration: Next application generator defaults changed',
+    );
+    expect(result.failures).toContain(
+      'Nx configuration: Nest application generator defaults changed',
+    );
+  });
+
   it('fails when required CI returns to full-workspace typecheck and build', async () => {
     if (!hasSourceWorkflowContracts) return;
 

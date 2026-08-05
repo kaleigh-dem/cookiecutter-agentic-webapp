@@ -94,6 +94,27 @@ function targetInvalidates(change, target, nx, project) {
   return included && !excluded;
 }
 
+function auditGeneratorDefaults(nx) {
+  const nextApplication = nx.generators?.['@nx/next']?.application;
+  const nestApplication = nx.generators?.['@nx/nest']?.application;
+
+  return [
+    {
+      name: 'Next application generator defaults',
+      ok:
+        nextApplication?.appDir === true &&
+        nextApplication?.linter === 'eslint' &&
+        nextApplication?.style === 'css',
+    },
+    {
+      name: 'Nest application generator defaults',
+      ok:
+        nestApplication?.linter === 'eslint' &&
+        nestApplication?.unitTestRunner === 'none',
+    },
+  ];
+}
+
 function auditCiCoverage(ciWorkflow, generatedWorkflow) {
   const checks = [
     {
@@ -174,6 +195,11 @@ export function auditConfiguration({
     );
   }
 
+  const generatorDefaults = auditGeneratorDefaults(nx);
+  for (const check of generatorDefaults) {
+    if (!check.ok) failures.push(`Nx configuration: ${check.name} changed`);
+  }
+
   const ciCoverage = auditCiCoverage(ciWorkflow, generatedWorkflow);
   for (const check of ciCoverage) {
     if (!check.ok) failures.push(`CI coverage: missing ${check.name}`);
@@ -184,6 +210,7 @@ export function auditConfiguration({
     failures,
     scenarioCount: scenarioResults.length,
     scenarioResults,
+    generatorDefaults,
     ciCoverage,
   };
 }

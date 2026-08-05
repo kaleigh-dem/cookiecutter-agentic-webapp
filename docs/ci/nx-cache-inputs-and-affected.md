@@ -12,8 +12,10 @@ P13-04 audits the cache inputs and affected graph used by required CI. The goal 
 - `imageMetadata` contains version, revision, workflow-run, and release-input metadata embedded in production images.
 - `containerCommonFiles` contains the shared container wrapper and `.dockerignore`.
 - `contractGeneration` contains contract source, generator scripts, and OpenAPI inputs, excluding generated outputs.
-- `workspaceGeneration` contains generator implementation and template lifecycle files.
+- `workspaceGeneration` contains generator implementation and template lifecycle files. The cacheable `workspace-plugin:build` target consumes this input because it copies template upgrade assets into the release artifact.
 - `deliveryConfiguration` contains delivery scripts, environment examples, release metadata, performance budgets, the CI baseline, and the image-scan policy.
+
+Repository-level Next and Nest application generator defaults remain declared in `nx.json` so generated applications continue to use the established app-directory, lint, style, and unit-test settings.
 
 Container targets add their own Dockerfile and image-name variables. The API and worker share `infra/docker/Dockerfile.node-service`; the web target uses `infra/docker/Dockerfile.web` and also consumes browser environment inputs. Container and verification targets that produce external side effects or inspect a clean checkout remain non-cacheable.
 
@@ -25,7 +27,7 @@ Run:
 node tools/delivery/nx-cache-audit.mjs
 ```
 
-The checked-in fixture verifies relevant positive and negative cases for environment, Nx configuration, Docker, generator, contract, and delivery changes. Every browser-bundled `NEXT_PUBLIC_*` variable has its own fixture proving that it invalidates both `web:build` and `web:container` without invalidating API or worker builds. The audit also proves that a documentation-only change does not invalidate the audited targets. The same audit verifies the required-CI contract:
+The checked-in fixture verifies relevant positive and negative cases for environment, Nx configuration, Docker, generator, contract, and delivery changes. Every browser-bundled `NEXT_PUBLIC_*` variable has its own fixture proving that it invalidates both `web:build` and `web:container` without invalidating API or worker builds. A template upgrade asset has its own fixture proving that it invalidates the cacheable workspace-plugin release build as well as both generator smoke targets. The audit also proves that a documentation-only change does not invalidate the audited targets and that the repository's Next and Nest generator defaults remain intact. The same audit verifies the required-CI contract:
 
 - checkout retains full history;
 - `nx-set-shas` establishes `NX_BASE` and `NX_HEAD`;
@@ -33,7 +35,7 @@ The checked-in fixture verifies relevant positive and negative cases for environ
 - both generator smoke targets remain explicit;
 - the generated-workspace workflow continues to watch generator, template, and Nx configuration paths.
 
-Required source-repository CI runs the audit before delivery checks. Focused Vitest coverage proves that removing any browser environment input or restoring full-workspace CI fails the audit; generated workspaces skip these source-only workflow-contract assertions.
+Required source-repository CI runs the audit before delivery checks. Focused Vitest coverage proves that removing any browser environment input, removing template inputs from the workspace-plugin build, dropping generator defaults, or restoring full-workspace CI fails the audit; generated workspaces skip these source-only workflow-contract assertions.
 
 ## Affected execution policy
 

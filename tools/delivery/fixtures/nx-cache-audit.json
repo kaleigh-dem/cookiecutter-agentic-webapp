@@ -41,6 +41,10 @@
       "projectRoot": "tools/delivery",
       "target": "performance-check"
     },
+    "workspace-plugin:build": {
+      "projectRoot": "tools/workspace-plugin",
+      "target": "build"
+    },
     "workspace-plugin:generated-output-smoke": {
       "projectRoot": "tools/workspace-plugin",
       "target": "generated-output-smoke"
@@ -201,6 +205,18 @@
       "doesNotInvalidate": ["contracts:generate"]
     },
     {
+      "name": "template upgrade assets invalidate workspace plugin release build",
+      "change": {
+        "file": "tools/template/upgrade.mjs"
+      },
+      "invalidates": [
+        "workspace-plugin:build",
+        "workspace-plugin:generated-output-smoke",
+        "workspace-plugin:initialization-output-smoke"
+      ],
+      "doesNotInvalidate": ["contracts:generate", "delivery:config-check"]
+    },
+    {
       "name": "delivery environment changes invalidate delivery checks",
       "change": {
         "file": "infra/environments/preview.env.example"
@@ -247,6 +263,7 @@
         "contracts:generate-check",
         "delivery:config-check",
         "delivery:performance-check",
+        "workspace-plugin:build",
         "workspace-plugin:generated-output-smoke",
         "workspace-plugin:initialization-output-smoke"
       ]

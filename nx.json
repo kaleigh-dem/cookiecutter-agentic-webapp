@@ -153,5 +153,20 @@
       "cache": false,
       "inputs": ["workspaceGeneration", "sharedGlobals"]
     }
+  },
+  "generators": {
+    "@nx/next": {
+      "application": {
+        "appDir": true,
+        "linter": "eslint",
+        "style": "css"
+      }
+    },
+    "@nx/nest": {
+      "application": {
+        "linter": "eslint",
+        "unitTestRunner": "none"
+      }
+    }
   }
 }
