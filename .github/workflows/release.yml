@@ -167,6 +167,7 @@ jobs:
               echo "${service}_scan_ref=$image" >> "$GITHUB_OUTPUT"
             fi
           done
+
           echo "all_published=$all_published" >> "$GITHUB_OUTPUT"
 
       - name: Build versioned images
