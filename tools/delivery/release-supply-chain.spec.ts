@@ -15,9 +15,15 @@ describe('release image supply chain', () => {
       expect(workflow).toContain(`${service}.trivy.json`);
       expect(workflow).toContain(`--report ${service}=`);
     }
-    expect(workflow.match(/anchore\/sbom-action@v0\.24\.0/g)).toHaveLength(3);
     expect(
-      workflow.match(/aquasecurity\/trivy-action@v0\.36\.0/g),
+      workflow.match(
+        /anchore\/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0\.24\.0/g,
+      ),
+    ).toHaveLength(3);
+    expect(
+      workflow.match(
+        /aquasecurity\/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0\.36\.0/g,
+      ),
     ).toHaveLength(3);
     expect(workflow).toContain('tools/security/image-scan-policy.json');
     expect(workflow).toContain('image-supply-chain-${{ inputs.version }}');
@@ -29,11 +35,17 @@ describe('release image supply chain', () => {
     expect(workflow).toContain('id-token: write');
     expect(workflow).toContain('attestations: write');
     expect(workflow).toContain('artifact-metadata: write');
-    expect(workflow).toContain('sigstore/cosign-installer@v4.1.2');
+    expect(workflow).toContain(
+      'sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2',
+    );
     expect(workflow).toContain('cosign sign --yes "$API_REFERENCE"');
     expect(workflow).toContain('cosign sign --yes "$WORKER_REFERENCE"');
     expect(workflow).toContain('cosign sign --yes "$WEB_REFERENCE"');
-    expect(workflow.match(/actions\/attest@v4/g)).toHaveLength(6);
+    expect(
+      workflow.match(
+        /actions\/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4/g,
+      ),
+    ).toHaveLength(6);
     expect(workflow.match(/push-to-registry: true/g)).toHaveLength(6);
     expect(workflow).toContain(
       'subject-digest: ${{ steps.digests.outputs.api_digest }}',
