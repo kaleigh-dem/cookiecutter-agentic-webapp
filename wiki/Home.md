@@ -66,6 +66,19 @@ Supported profiles can record some product or platform directions without implem
 5. [Learn everyday development](Everyday-Development), [code generation](Code-Generation), and [validation](Validation-and-Testing).
 6. Review [Production Readiness](Production-Readiness) before connecting shared or production environments.
 
+## Current roadmap status
+
+Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/nx-fullstack-platform/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
+
+Phase 13 progress record, updated August 5, 2026:
+
+- **P13-01 — complete:** image and dependency supply-chain artifacts, reviewed in PR #50.
+- **P13-02 — complete:** immutable digest publication and promotion, merged in PR #52 and hardened in PR #53.
+- **P13-03 — in progress:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics are being implemented in draft PR #55.
+- **P13-04 — planned:** audit Nx cache inputs and affected execution after P13-03 completes.
+
+Do not mark P13-03 complete until its implementation, documentation, and applicable exact-head checks have passed and the pull request has merged.
+
 ## Common tasks
 
 | Task                                                    | Page                                                                       |
@@ -81,6 +94,7 @@ Supported profiles can record some product or platform directions without implem
 | Manage PostgreSQL and migrations                        | [Database and Data Management](Database-and-Data-Management)               |
 | Operate background jobs                                 | [Worker and Background Jobs](Worker-and-Background-Jobs)                   |
 | Understand `pnpm check` and agent feedback loops        | [Validation and Testing](Validation-and-Testing)                           |
+| Diagnose retained CI failure evidence                   | [CI Diagnostics](CI-Diagnostics)                                           |
 | Build and test production-shaped images                 | [Containers and Preview Environments](Containers-and-Preview-Environments) |
 | Verify image SBOMs, scans, signatures, and attestations | [Image Supply Chain](Image-Supply-Chain)                                   |
 | Configure repository controls and agent permissions     | [Repository and GitHub Setup](Repository-and-GitHub-Setup)                 |
