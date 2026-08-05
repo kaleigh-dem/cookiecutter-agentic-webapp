@@ -8,7 +8,7 @@ import {
 } from './build-container.mjs';
 
 describe('BuildKit container builds', () => {
-  it('uses an empty deterministic local cache when no restored cache exists', () => {
+  it('uses an uncached deterministic fallback by default', () => {
     const command = createBuildxCommand(
       {
         scope: 'api',
@@ -17,7 +17,7 @@ describe('BuildKit container builds', () => {
         buildArguments: ['SERVICE=api', 'APP_VERSION=1.2.3'],
         context: '.',
       },
-      { cacheRoot: '.cache/example', cacheExists: false },
+      { cacheRoot: '.cache/example', cacheExists: true },
     );
 
     expect(command.arguments_).toEqual([
@@ -32,10 +32,31 @@ describe('BuildKit container builds', () => {
       'SERVICE=api',
       '--build-arg',
       'APP_VERSION=1.2.3',
-      '--cache-to',
-      `type=local,dest=${resolve('.cache/example/api')}.next,mode=max`,
       '.',
     ]);
+    expect(command.cacheEnabled).toBe(false);
+  });
+
+  it('exports an enabled cache even when no restored cache exists', () => {
+    const command = createBuildxCommand(
+      {
+        scope: 'api',
+        file: 'infra/docker/Dockerfile.node-service',
+        tag: 'example/api:test',
+        buildArguments: [],
+      },
+      {
+        cacheRoot: '.cache/example',
+        cacheEnabled: true,
+        cacheExists: false,
+      },
+    );
+
+    expect(command.arguments_).not.toContain('--cache-from');
+    expect(command.arguments_).toContain('--cache-to');
+    expect(command.arguments_).toContain(
+      `type=local,dest=${resolve('.cache/example/api')}.next,mode=max`,
+    );
   });
 
   it('reuses a restored cache and writes a separate next cache', () => {
@@ -47,7 +68,11 @@ describe('BuildKit container builds', () => {
         target: 'runtime',
         buildArguments: [],
       },
-      { cacheRoot: '.cache/example', cacheExists: true },
+      {
+        cacheRoot: '.cache/example',
+        cacheEnabled: true,
+        cacheExists: true,
+      },
     );
 
     expect(command.arguments_).toContain('--cache-from');
