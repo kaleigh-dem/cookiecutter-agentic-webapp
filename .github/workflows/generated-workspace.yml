@@ -59,6 +59,7 @@ jobs:
     timeout-minutes: 45
     env:
       BUILDKIT_CACHE_DIR: ${{ github.workspace }}/.cache/buildkit
+      BUILDKIT_CACHE_ENABLED: 'true'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,6 +73,9 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Restore BuildKit cache
         continue-on-error: true
