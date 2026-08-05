@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AgentTaskExecutionRequestedV2 } from '@agentic-webapp/contracts';
+import type { AgentTaskExecutionRequestedV2 } from '@steadystack/contracts';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';

@@ -30,22 +30,22 @@ const validOptions: InitGeneratorSchema = {
 function createWorkspaceTree(): Tree {
   const tree = createTreeWithEmptyWorkspace();
   writeJson(tree, 'package.json', {
-    name: '@agentic-webapp/source',
+    name: '@steadystack/source',
     scripts: {
       build: 'nx run-many -t build',
       'containers:build': 'old-command',
-      'initialize:workspace': 'nx g @agentic-webapp/workspace-plugin:init',
+      'initialize:workspace': 'nx g @steadystack/workspace-plugin:init',
     },
     devDependencies: {
-      '@agentic-webapp/workspace-plugin': 'workspace:*',
+      '@steadystack/workspace-plugin': 'workspace:*',
     },
   });
   writeJson(tree, 'tools/workspace-plugin/package.json', {
-    name: '@agentic-webapp/workspace-plugin',
+    name: '@steadystack/workspace-plugin',
   });
   writeJson(tree, 'tsconfig.base.json', {
     compilerOptions: {
-      customConditions: ['@agentic-webapp/source'],
+      customConditions: ['@steadystack/source'],
     },
   });
   writeJson(tree, 'tsconfig.json', {
@@ -78,7 +78,7 @@ function createWorkspaceTree(): Tree {
   tree.write(
     'infra/deploy/compose.preview.yaml',
     [
-      'name: agentic-webapp-preview',
+      'name: steadystack-preview',
       'services:',
       '  postgres:',
       '    environment:',
@@ -90,26 +90,26 @@ function createWorkspaceTree(): Tree {
   tree.write(
     'infra/deploy/compose.production.yaml',
     [
-      'name: agentic-webapp-production',
+      'name: steadystack-production',
       'services:',
       '  api:',
-      '    image: ghcr.io/example/agentic-webapp-api:latest',
+      '    image: ghcr.io/example/steadystack-api:latest',
       '    labels:',
-      '      app.agentic-webapp/version: latest',
+      '      app.steadystack/version: latest',
       '',
     ].join('\n'),
   );
   tree.write(
     'packages/database/src/client.ts',
-    "export const applicationName = 'agentic-webapp-database-client';\n",
+    "export const applicationName = 'steadystack-database-client';\n",
   );
   tree.write(
     'packages/observability/src/service.ts',
-    "export const serviceName = 'agentic-webapp-api';\n",
+    "export const serviceName = 'steadystack-api';\n",
   );
   tree.write(
     'README.md',
-    'Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform\n',
+    'Upstream template: https://github.com/kaleigh-dem/steady-stack\n',
   );
   tree.write('.github/CODEOWNERS', `* @${['kaleigh', 'dem'].join('-')}\n`);
   return tree;
@@ -161,7 +161,7 @@ describe('init generator', () => {
         },
         "schemaVersion": 2,
         "upstream": {
-          "repository": "kaleigh-dem/nx-fullstack-platform",
+          "repository": "kaleigh-dem/steady-stack",
         },
       }
     `);
@@ -214,7 +214,7 @@ describe('init generator', () => {
       tree.read('packages/observability/src/service.ts', 'utf-8'),
     ).toContain('customer-portal-api');
     expect(tree.read('README.md', 'utf-8')).toContain(
-      'https://github.com/kaleigh-dem/nx-fullstack-platform',
+      'https://github.com/kaleigh-dem/steady-stack',
     );
     expect(tree.read('.github/CODEOWNERS', 'utf-8')).toContain(
       '/apps/worker/ @acme/platform @acme/security',

@@ -72,11 +72,11 @@ export function verifyRecoveryLabels(labels, expected) {
       expected.revision,
       'Expected revision',
     ),
-    'io.agentic-webapp.release.run-id': requireValue(
+    'io.steadystack.release.run-id': requireValue(
       expected.runId,
       'Expected workflow run ID',
     ),
-    'io.agentic-webapp.release.build-inputs-sha256': requireValue(
+    'io.steadystack.release.build-inputs-sha256': requireValue(
       expected.buildInputsSha256,
       'Expected build-input fingerprint',
     ),

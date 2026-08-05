@@ -5,14 +5,14 @@ import {
   type DatabaseConnection,
   DrizzleAgentTaskExecutionStore,
   PostgresOutboxDelivery,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 import {
   createCorrelationContext,
   createStructuredLogger,
   MetricsRegistry,
   runWithCorrelationContext,
-} from '@agentic-webapp/observability';
-import { startNodeTelemetry } from '@agentic-webapp/observability/telemetry';
+} from '@steadystack/observability';
+import { startNodeTelemetry } from '@steadystack/observability/telemetry';
 
 import { runWorkerLoop } from './delivery/poller';
 import { defaultRetryPolicy } from './delivery/retry-policy';

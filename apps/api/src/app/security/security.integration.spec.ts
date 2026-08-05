@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { InMemoryRateLimitStore } from '@agentic-webapp/backend-rate-limit';
+import { InMemoryRateLimitStore } from '@steadystack/backend-rate-limit';
 import {
   HttpException,
   HttpStatus,

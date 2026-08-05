@@ -16,7 +16,7 @@ export async function seedDevelopmentData(
     .digest('hex');
   const connection = createDatabase({
     connectionString,
-    applicationName: 'agentic-webapp-seed',
+    applicationName: 'steadystack-seed',
     maxConnections: 1,
   });
 

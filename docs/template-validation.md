@@ -26,7 +26,7 @@ Default ports are retained so the generated preview stack exercises the document
 
 1. copies the template into a clean temporary repository without Git history, dependencies, build output, or local environment files;
 2. installs the source workspace with the frozen lockfile and replaces the linked plugin with the packaged release artifact;
-3. invokes `@agentic-webapp/workspace-plugin:preset` from that artifact;
+3. invokes `@steadystack/workspace-plugin:preset` from that artifact;
 4. installs the generated repository again with the rewritten frozen lockfile;
 5. verifies template provenance, generated identity, selected applications, and removal of template-maintainer workflows and scripts;
 6. creates a baseline Git commit and runs `pnpm check` plus the repository-wide identity detector;
@@ -47,7 +47,7 @@ pnpm template:release:pack -- \
   --version "$version" \
   --output dist/template-release
 pnpm template:workspace:e2e -- \
-  --artifact "dist/template-release/agentic-webapp-workspace-plugin-${version}.tgz" \
+  --artifact "dist/template-release/steadystack-workspace-plugin-${version}.tgz" \
   --expected-version "$version"
 ```
 

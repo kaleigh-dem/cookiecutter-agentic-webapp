@@ -1,10 +1,10 @@
-import type { AgentTaskExecutionRequested } from '@agentic-webapp/contracts';
+import type { AgentTaskExecutionRequested } from '@steadystack/contracts';
 
 export {
   agentTaskExecutionRequestedSchema,
   agentTaskExecutionRequestedV1Schema,
   agentTaskExecutionRequestedV2Schema,
-} from '@agentic-webapp/contracts';
+} from '@steadystack/contracts';
 export type ExecuteAgentTaskJobPayload = AgentTaskExecutionRequested;
 
 export const executeAgentTaskQueue = 'agent-tasks' as const;

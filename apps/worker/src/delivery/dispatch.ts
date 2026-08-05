@@ -1,7 +1,7 @@
 import type {
   ClaimedOutboxMessage,
   PostgresOutboxDelivery,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 
 import {
   agentTaskExecutionRequestedV1Schema,

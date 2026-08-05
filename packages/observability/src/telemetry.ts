@@ -50,7 +50,7 @@ interface TelemetryState {
   readonly handles: Map<string, Promise<NodeTelemetryHandle>>;
 }
 
-const telemetryStateKey = '__agenticWebappTelemetryState__' as const;
+const telemetryStateKey = '__steadystackTelemetryState__' as const;
 
 function getTelemetryState(): TelemetryState {
   const globalRecord = globalThis as typeof globalThis & {
@@ -189,7 +189,7 @@ export async function runWithRemoteTrace<T>(
     ? propagation.extract(ROOT_CONTEXT, { traceparent: options.traceParent })
     : context.active();
 
-  return trace.getTracer('@agentic-webapp/observability').startActiveSpan(
+  return trace.getTracer('@steadystack/observability').startActiveSpan(
     options.name,
     {
       kind: SpanKind.CONSUMER,

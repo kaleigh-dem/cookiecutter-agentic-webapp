@@ -11,7 +11,7 @@ Owns the browser-facing Agent Tasks workflow. App Router files compose this pack
 - keep browser code free of Node-only imports and server secrets
 - expose accessible UI behavior for route composition
 
-The route entry point is `apps/web/src/app/agent-tasks/page.tsx`. HTTP types, runtime validators, and the client come from `@agentic-webapp/contracts`; API and domain behavior remain outside this package.
+The route entry point is `apps/web/src/app/agent-tasks/page.tsx`. HTTP types, runtime validators, and the client come from `@steadystack/contracts`; API and domain behavior remain outside this package.
 
 ## Validation
 

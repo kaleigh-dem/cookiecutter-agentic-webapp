@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { startNodeTelemetry } from '@agentic-webapp/observability/telemetry';
+import { startNodeTelemetry } from '@steadystack/observability/telemetry';
 import { parseTrustedProxyHops } from './app/security/rate-limit-provider.js';
 
 async function bootstrap() {

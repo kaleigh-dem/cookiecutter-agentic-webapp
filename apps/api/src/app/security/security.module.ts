@@ -1,11 +1,11 @@
 import {
   createRateLimitRules,
   type RateLimitStore,
-} from '@agentic-webapp/backend-rate-limit';
+} from '@steadystack/backend-rate-limit';
 import {
   createStructuredLogger,
   getCorrelationContext,
-} from '@agentic-webapp/observability';
+} from '@steadystack/observability';
 import {
   type ArgumentsHost,
   type CanActivate,

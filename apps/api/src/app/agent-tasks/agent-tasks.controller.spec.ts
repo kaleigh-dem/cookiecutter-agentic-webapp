@@ -1,7 +1,7 @@
 import {
   CreateAgentTask,
   GetAgentTask,
-} from '@agentic-webapp/backend-agent-task';
+} from '@steadystack/backend-agent-task';
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 

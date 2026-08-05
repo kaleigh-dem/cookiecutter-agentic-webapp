@@ -7,7 +7,7 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -37,27 +37,6 @@ jobs:
 
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5
 
-      # BEGIN STEADYSTACK BOOTSTRAP
-      - name: Check out the PR branch head
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent/steadystack-rebrand'
-        run: |
-          git checkout --detach "${{ github.event.pull_request.head.sha }}"
-
-      - name: Materialize the archived SteadyStack tree
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent/steadystack-rebrand'
-        run: node tools/template/commit-steadystack-rebrand.mjs
-
-      - name: Commit and expose the complete migration tree
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent/steadystack-rebrand'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add --all
-          git commit -m "refactor: adopt SteadyStack project identity"
-          echo "STEADYSTACK_COMMIT_SHA=$(git rev-parse HEAD)"
-          echo "STEADYSTACK_TREE_SHA=$(git rev-parse 'HEAD^{tree}')"
-          git push origin "HEAD:${{ github.head_ref }}"
-      # END STEADYSTACK BOOTSTRAP
 
       - run: pnpm telemetry:check
       - run: pnpm contracts:check
@@ -72,7 +51,7 @@ jobs:
           mkdir -p "$CI_DIAGNOSTICS_DIR"
           node tools/delivery/release-plan.mjs \
             --environment preview \
-            --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
+            --image-prefix "ghcr.io/${{ github.repository_owner }}/steadystack" \
             --version 0.0.0-ci \
             --output "$CI_DIAGNOSTICS_DIR/release-plan.json"
       - name: Typecheck and build affected projects
@@ -88,7 +67,7 @@ jobs:
             --version "$version" \
             --output "$release_directory"
           pnpm template:release:smoke -- \
-            --artifact "$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" \
+            --artifact "$release_directory/steadystack-workspace-plugin-${version}.tgz" \
             --expected-version "$version"
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm nx affected -t e2e --parallel=1

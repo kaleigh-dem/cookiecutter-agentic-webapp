@@ -4,12 +4,12 @@ Universal HTTP contract artifacts shared by the API and browser applications.
 
 ## Entry points
 
-- `@agentic-webapp/contracts` — universal runtime validators and public schema types
-- `@agentic-webapp/contracts/server` — generated schema, operation, and success-response aliases for server presentation code
-- `@agentic-webapp/contracts/client` — generated dependency-free fetch client for browser and server consumers
-- `@agentic-webapp/contracts/openapi` — low-level generated OpenAPI `paths`, `operations`, and `components` types
-- `@agentic-webapp/contracts/openapi.json` — deterministic bundled OpenAPI document
-- `@agentic-webapp/contracts/runtime` — generated Zod schemas for HTTP request locations and responses
+- `@steadystack/contracts` — universal runtime validators and public schema types
+- `@steadystack/contracts/server` — generated schema, operation, and success-response aliases for server presentation code
+- `@steadystack/contracts/client` — generated dependency-free fetch client for browser and server consumers
+- `@steadystack/contracts/openapi` — low-level generated OpenAPI `paths`, `operations`, and `components` types
+- `@steadystack/contracts/openapi.json` — deterministic bundled OpenAPI document
+- `@steadystack/contracts/runtime` — generated Zod schemas for HTTP request locations and responses
 
 ## Workflow
 

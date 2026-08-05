@@ -1,4 +1,4 @@
-name: agentic-webapp-preview
+name: steadystack-preview
 
 services:
   postgres:

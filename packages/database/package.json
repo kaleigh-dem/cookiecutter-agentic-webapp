@@ -1,5 +1,5 @@
 {
-  "name": "@agentic-webapp/database",
+  "name": "@steadystack/database",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -32,9 +32,9 @@
     }
   },
   "dependencies": {
-    "@agentic-webapp/backend-agent-task": "workspace:*",
-    "@agentic-webapp/backend-rate-limit": "workspace:*",
-    "@agentic-webapp/contracts": "workspace:*",
+    "@steadystack/backend-agent-task": "workspace:*",
+    "@steadystack/backend-rate-limit": "workspace:*",
+    "@steadystack/contracts": "workspace:*",
     "drizzle-orm": "0.45.2",
     "pg": "8.22.0"
   },

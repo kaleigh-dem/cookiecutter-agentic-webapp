@@ -10,9 +10,9 @@ describe('preset generator', () => {
   it('records template provenance and removes maintainer-only tooling', async () => {
     const tree = createTreeWithEmptyWorkspace();
     writeJson(tree, 'package.json', {
-      name: '@agentic-webapp/source',
+      name: '@steadystack/source',
       scripts: {
-        'initialize:workspace': 'nx g @agentic-webapp/workspace-plugin:preset',
+        'initialize:workspace': 'nx g @steadystack/workspace-plugin:preset',
         'template:release:prepare': 'node tools/template/release.mjs prepare',
         'template:release:verify': 'node tools/template/release.mjs verify',
         'template:release:pack': 'node tools/template/release.mjs pack',
@@ -25,7 +25,7 @@ describe('preset generator', () => {
       },
     });
     writeJson(tree, 'tools/workspace-plugin/package.json', {
-      name: '@agentic-webapp/workspace-plugin',
+      name: '@steadystack/workspace-plugin',
       private: false,
       publishConfig: { access: 'public' },
     });

@@ -1,7 +1,7 @@
 import type {
   AgentTaskExecutionRecord,
   AgentTaskExecutionStore,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 
 import { classifyJobFailure, PermanentJobError } from '../failure';
 import type {

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
-    "title": "Agentic Webapp API",
+    "title": "SteadyStack API",
     "version": "0.3.0",
     "description": "The canonical HTTP contract for the API application."
   },

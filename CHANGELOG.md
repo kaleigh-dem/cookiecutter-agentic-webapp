@@ -4,6 +4,10 @@ All notable template changes are documented in this file. Template releases foll
 
 ## [Unreleased]
 
+### Changed
+
+- Adopt the SteadyStack public identity across packages, generators, upgrades, release artifacts, generated-workspace metadata, workflows, runtime defaults, documentation, and future repository links.
+
 ### Added
 
 - A complete PostgreSQL-backed asynchronous Agent Task workflow with leased outbox claims, fenced idempotent execution, bounded retries, dead-letter inspection and replay, worker readiness, metrics, and graceful shutdown.

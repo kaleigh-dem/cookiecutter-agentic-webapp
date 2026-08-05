@@ -119,7 +119,7 @@ Every Nx project uses three tag dimensions:
 - `type:app`, `type:domain`, `type:feature`, `type:job`, `type:ui`, `type:contract`, `type:config`, `type:data-access`, or `type:util`
 - `runtime:browser`, `runtime:node`, or a universal runtime tag
 
-The executable constraints live in [`eslint.config.mjs`](https://github.com/kaleigh-dem/nx-fullstack-platform/blob/main/eslint.config.mjs). See [Architecture](Architecture) for the enforced direction.
+The executable constraints live in [`eslint.config.mjs`](https://github.com/kaleigh-dem/steady-stack/blob/main/eslint.config.mjs). See [Architecture](Architecture) for the enforced direction.
 
 ## Related pages
 

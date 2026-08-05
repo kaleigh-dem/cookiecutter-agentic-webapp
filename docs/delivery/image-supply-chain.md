@@ -73,7 +73,7 @@ Set the repository, image name, and digest from the release manifest:
 
 ```bash
 REPOSITORY=OWNER/REPOSITORY
-IMAGE=ghcr.io/OWNER/agentic-webapp-api
+IMAGE=ghcr.io/OWNER/steadystack-api
 DIGEST=sha256:REPLACE_WITH_PUBLISHED_DIGEST
 REFERENCE="$IMAGE@$DIGEST"
 ```

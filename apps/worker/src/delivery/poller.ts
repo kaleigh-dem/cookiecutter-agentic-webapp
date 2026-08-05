@@ -1,12 +1,12 @@
 import type {
   ClaimedOutboxMessage,
   PostgresOutboxDelivery,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 import {
   createCorrelationContext,
   runWithCorrelationContext,
   type CorrelationContext,
-} from '@agentic-webapp/observability';
+} from '@steadystack/observability';
 
 import { classifyJobFailure } from '../jobs/failure';
 import {

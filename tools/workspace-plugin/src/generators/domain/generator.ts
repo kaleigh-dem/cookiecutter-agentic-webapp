@@ -15,7 +15,7 @@ export default async function domainGenerator(
   const projectRoot = `packages/backend/${name.fileName}`;
 
   createLibraryProject(tree, {
-    importPath: `@agentic-webapp/backend-${name.fileName}`,
+    importPath: `@steadystack/backend-${name.fileName}`,
     projectName: `backend-${name.fileName}`,
     projectRoot,
     tags: ['scope:backend', 'type:domain', 'runtime:node'],

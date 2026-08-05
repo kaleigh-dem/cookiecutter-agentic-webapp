@@ -39,7 +39,7 @@ importers:
         specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
-      '@agentic-webapp/workspace-plugin':
+      '@steadystack/workspace-plugin':
         specifier: workspace:*
         version: link:tools/workspace-plugin
       '@eslint/js':
@@ -123,19 +123,19 @@ importers:
 
   apps/api:
     dependencies:
-      '@agentic-webapp/backend-agent-task':
+      '@steadystack/backend-agent-task':
         specifier: workspace:*
         version: link:../../packages/backend/agent-task
-      '@agentic-webapp/backend-rate-limit':
+      '@steadystack/backend-rate-limit':
         specifier: workspace:*
         version: link:../../packages/backend/rate-limit
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@agentic-webapp/database':
+      '@steadystack/database':
         specifier: workspace:*
         version: link:../../packages/database
-      '@agentic-webapp/observability':
+      '@steadystack/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@nestjs/common':
@@ -159,13 +159,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@agentic-webapp/ui':
+      '@steadystack/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@agentic-webapp/web-feature-agent-tasks':
+      '@steadystack/web-feature-agent-tasks':
         specifier: workspace:*
         version: link:../../packages/web/features/agent-tasks
       '@opentelemetry/api':
@@ -210,19 +210,19 @@ importers:
 
   apps/worker:
     dependencies:
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@agentic-webapp/database':
+      '@steadystack/database':
         specifier: workspace:*
         version: link:../../packages/database
-      '@agentic-webapp/observability':
+      '@steadystack/observability':
         specifier: workspace:*
         version: link:../../packages/observability
 
   packages/backend/agent-task:
     dependencies:
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../../contracts
 
@@ -240,13 +240,13 @@ importers:
 
   packages/database:
     dependencies:
-      '@agentic-webapp/backend-agent-task':
+      '@steadystack/backend-agent-task':
         specifier: workspace:*
         version: link:../backend/agent-task
-      '@agentic-webapp/backend-rate-limit':
+      '@steadystack/backend-rate-limit':
         specifier: workspace:*
         version: link:../backend/rate-limit
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../contracts
       drizzle-orm:
@@ -304,7 +304,7 @@ importers:
 
   packages/web/features/agent-tasks:
     dependencies:
-      '@agentic-webapp/contracts':
+      '@steadystack/contracts':
         specifier: workspace:*
         version: link:../../../contracts
       react:

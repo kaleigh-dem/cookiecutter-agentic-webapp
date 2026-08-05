@@ -2,11 +2,11 @@ import type {
   AgentTask,
   AgentTaskRepository,
   AgentTaskStatus,
-} from '@agentic-webapp/backend-agent-task';
+} from '@steadystack/backend-agent-task';
 import {
   agentTaskExecutionRequestedV2Schema,
   type AgentTaskExecutionRequestedV2,
-} from '@agentic-webapp/contracts';
+} from '@steadystack/contracts';
 import { eq } from 'drizzle-orm';
 
 import type { Database } from '../client';

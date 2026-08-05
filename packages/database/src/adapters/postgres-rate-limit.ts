@@ -2,7 +2,7 @@ import type {
   RateLimitExceeded,
   RateLimitRule,
   RateLimitStore,
-} from '@agentic-webapp/backend-rate-limit';
+} from '@steadystack/backend-rate-limit';
 import type { Pool, PoolClient } from 'pg';
 
 interface RateLimitRow {

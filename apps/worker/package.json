@@ -1,10 +1,10 @@
 {
-  "name": "@agentic-webapp/worker",
+  "name": "@steadystack/worker",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@agentic-webapp/contracts": "workspace:*",
-    "@agentic-webapp/database": "workspace:*",
-    "@agentic-webapp/observability": "workspace:*"
+    "@steadystack/contracts": "workspace:*",
+    "@steadystack/database": "workspace:*",
+    "@steadystack/observability": "workspace:*"
   }
 }

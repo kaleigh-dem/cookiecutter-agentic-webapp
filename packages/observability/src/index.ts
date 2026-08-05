@@ -149,7 +149,7 @@ export class MetricsRegistry {
   private readonly counters = new Map<string, number>();
   private readonly durations = new Map<string, DurationAggregate>();
   private readonly gauges = new Map<string, number>();
-  private readonly meter = metrics.getMeter('@agentic-webapp/observability');
+  private readonly meter = metrics.getMeter('@steadystack/observability');
   private readonly exportedCounters = new Map<string, Counter>();
   private readonly exportedDurations = new Map<string, Histogram>();
   private readonly exportedGauges = new Map<string, ObservableGauge>();

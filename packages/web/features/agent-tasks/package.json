@@ -1,5 +1,5 @@
 {
-  "name": "@agentic-webapp/web-feature-agent-tasks",
+  "name": "@steadystack/web-feature-agent-tasks",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -12,7 +12,7 @@
     }
   },
   "dependencies": {
-    "@agentic-webapp/contracts": "workspace:*",
+    "@steadystack/contracts": "workspace:*",
     "react": "^19.0.0"
   }
 }

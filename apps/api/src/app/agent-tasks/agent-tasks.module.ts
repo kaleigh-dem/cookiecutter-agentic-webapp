@@ -3,12 +3,12 @@ import {
   CreateAgentTask,
   GetAgentTask,
   type AgentTaskRepository,
-} from '@agentic-webapp/backend-agent-task';
+} from '@steadystack/backend-agent-task';
 import {
   createDatabase,
   DrizzleAgentTaskRepository,
   type DatabaseConnection,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 import { Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common';
 
 import { AgentTasksController } from './agent-tasks.controller';
@@ -18,8 +18,8 @@ export class ApiDatabaseConnection implements OnModuleDestroy {
   public readonly value: DatabaseConnection = createDatabase({
     connectionString:
       process.env.DATABASE_URL ??
-      'postgresql://postgres:postgres@localhost:5432/agentic_webapp',
-    applicationName: 'agentic-webapp-api',
+      'postgresql://postgres:postgres@localhost:5432/steadystack',
+    applicationName: 'steadystack-api',
   });
 
   public async onModuleDestroy(): Promise<void> {

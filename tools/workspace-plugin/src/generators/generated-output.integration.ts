@@ -153,7 +153,7 @@ async function main(): Promise<void> {
   const workspaceRoot = process.cwd();
   const initialGitState = await captureGitState(workspaceRoot);
   const temporaryRoot = await mkdtemp(
-    path.join(os.tmpdir(), 'agentic-webapp-generators-'),
+    path.join(os.tmpdir(), 'steadystack-generators-'),
   );
 
   let primaryError: unknown;
@@ -170,7 +170,7 @@ async function main(): Promise<void> {
       temporaryRoot,
     );
 
-    const generator = '@agentic-webapp/workspace-plugin';
+    const generator = '@steadystack/workspace-plugin';
     await run(
       'pnpm',
       ['nx', 'g', `${generator}:domain`, 'smoke-domain'],

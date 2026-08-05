@@ -14,7 +14,7 @@ export function createDatabase(options: DatabaseOptions) {
     connectionString: options.connectionString,
     max: options.maxConnections ?? 10,
     application_name:
-      options.applicationName ?? 'agentic-webapp-database-client',
+      options.applicationName ?? 'steadystack-database-client',
   };
   const pool = new Pool(poolConfig);
   const database = drizzle(pool, { schema });

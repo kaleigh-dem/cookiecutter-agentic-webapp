@@ -1,6 +1,6 @@
-# Nx Fullstack Platform: Agentic Web Application Template
+# SteadyStack
 
-Nx Fullstack Platform is a production-minded TypeScript web-application template designed to become the foundation for many different products that are built and maintained substantially by AI and coding agents under human ownership.
+SteadyStack is a production-minded TypeScript web-application template designed to become the foundation for many different products that are built and maintained substantially by AI and coding agents under human ownership.
 
 The workspace includes a Next.js web application, NestJS API, PostgreSQL-backed worker, shared contracts, validated configuration, deterministic generators, and production-shaped delivery controls in one Nx monorepo. Its defining goal is not simply to provide these technologies together. It is to make the repository legible, constrained, and verifiable enough that an agent can enter with no prior conversation history, find the correct change boundary, create approved structure, receive fast feedback, and produce a reviewable handoff.
 
@@ -68,7 +68,7 @@ Supported profiles can record some product or platform directions without implem
 
 ## Current roadmap status
 
-Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/nx-fullstack-platform/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
+Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/steady-stack/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
 
 Phase 13 progress record, updated August 5, 2026:
 

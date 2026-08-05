@@ -124,7 +124,7 @@ async function main(): Promise<void> {
   const workspaceRoot = process.cwd();
   const initialGitState = await captureGitState(workspaceRoot);
   const temporaryRoot = await mkdtemp(
-    path.join(os.tmpdir(), 'agentic-webapp-init-'),
+    path.join(os.tmpdir(), 'steadystack-init-'),
   );
   let primaryError: unknown;
 
@@ -180,7 +180,7 @@ async function main(): Promise<void> {
     assert.match(first['workspace.template.json'] ?? '', /"ai": true/);
     assert.match(
       first['workspace.template.json'] ?? '',
-      /"repository": "kaleigh-dem\/nx-fullstack-platform"/,
+      /"repository": "kaleigh-dem\/steady-stack"/,
     );
     assert.match(
       first['workspace.template.json'] ?? '',
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
     assert.match(first['.env.example'] ?? '', /localhost:55432\/smoke_app/);
     assert.match(
       first['README.md'] ?? '',
-      /kaleigh-dem\/nx-fullstack-platform/,
+      /kaleigh-dem\/steady-stack/,
     );
     assert.equal(first['.github/workflows/generated-workspace.yml'], undefined);
     assert.equal(first['.github/workflows/template-release.yml'], undefined);

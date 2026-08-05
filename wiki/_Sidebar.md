@@ -1,4 +1,4 @@
-# Nx Fullstack Platform
+# SteadyStack
 
 **Start**
 
@@ -31,4 +31,4 @@
 **Reference**
 
 - [Documentation Audit](Documentation-Audit)
-- [Source repository](https://github.com/kaleigh-dem/nx-fullstack-platform)
+- [Source repository](https://github.com/kaleigh-dem/steady-stack)

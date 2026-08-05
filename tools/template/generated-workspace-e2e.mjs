@@ -126,7 +126,7 @@ function composeArguments() {
 async function installReleasedPlugin(workspace, artifact, expectedVersion) {
   const pluginPath = path.join(
     workspace,
-    'node_modules/@agentic-webapp/workspace-plugin',
+    'node_modules/@steadystack/workspace-plugin',
   );
   await rm(pluginPath, { force: true, recursive: true });
   await mkdir(pluginPath, { recursive: true });
@@ -137,7 +137,7 @@ async function installReleasedPlugin(workspace, artifact, expectedVersion) {
   );
 
   const packageJson = await readJson(path.join(pluginPath, 'package.json'));
-  assert.equal(packageJson.name, '@agentic-webapp/workspace-plugin');
+  assert.equal(packageJson.name, '@steadystack/workspace-plugin');
   assert.equal(packageJson.version, expectedVersion);
   assert.equal(packageJson.private, false);
 }
@@ -161,7 +161,7 @@ async function assertGeneratedContract(workspace, expectedVersion) {
 
   assert.equal(manifest.schemaVersion, 2);
   assert.deepEqual(manifest.upstream, {
-    repository: 'kaleigh-dem/nx-fullstack-platform',
+    repository: 'kaleigh-dem/steady-stack',
     version: expectedVersion,
   });
   assert.deepEqual(manifest.application, {
@@ -318,7 +318,7 @@ async function main() {
         'exec',
         'nx',
         'g',
-        '@agentic-webapp/workspace-plugin:preset',
+        '@steadystack/workspace-plugin:preset',
         'generated-ci',
         '--displayName=Generated Workspace CI',
         '--packageScope=@generated-ci',

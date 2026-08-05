@@ -36,7 +36,7 @@ pnpm install --frozen-lockfile
 pnpm template:identity:check
 ```
 
-The canonical schema is [`tools/workspace-plugin/src/generators/init/schema.json`](https://github.com/kaleigh-dem/nx-fullstack-platform/blob/main/tools/workspace-plugin/src/generators/init/schema.json).
+The canonical schema is [`tools/workspace-plugin/src/generators/init/schema.json`](https://github.com/kaleigh-dem/steady-stack/blob/main/tools/workspace-plugin/src/generators/init/schema.json).
 
 ## Identity choices
 

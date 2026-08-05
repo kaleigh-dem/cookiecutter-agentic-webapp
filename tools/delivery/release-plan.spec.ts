@@ -8,7 +8,7 @@ describe('release plan', () => {
     (environment) => {
       const plan = createReleasePlan({
         environment,
-        imagePrefix: 'registry.example.com/agentic-webapp',
+        imagePrefix: 'registry.example.com/steadystack',
         version: environment === 'preview' ? '1.2.3-rc.1' : '1.2.3',
       });
       const smokeStep = plan.orderedSteps.find(

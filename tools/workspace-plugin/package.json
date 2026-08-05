@@ -1,12 +1,12 @@
 {
-  "name": "@agentic-webapp/workspace-plugin",
+  "name": "@steadystack/workspace-plugin",
   "version": "0.2.0",
   "private": false,
-  "description": "Nx preset, generators, and upgrade tooling for the agentic web application template",
+  "description": "Nx preset, generators, and upgrade tooling for SteadyStack",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kaleigh-dem/nx-fullstack-platform.git",
+    "url": "git+https://github.com/kaleigh-dem/steady-stack.git",
     "directory": "tools/workspace-plugin"
   },
   "generators": "./generators.json",

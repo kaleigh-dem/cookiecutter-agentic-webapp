@@ -1,8 +1,8 @@
 import type {
   ClaimedOutboxMessage,
   PostgresOutboxDelivery,
-} from '@agentic-webapp/database';
-import { getCorrelationContext } from '@agentic-webapp/observability';
+} from '@steadystack/database';
+import { getCorrelationContext } from '@steadystack/observability';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PermanentJobError, RetryableJobError } from '../jobs/failure';

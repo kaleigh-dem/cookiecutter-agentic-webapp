@@ -5,7 +5,7 @@ const path = require('path');
 const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../..'),
-  transpilePackages: ['@agentic-webapp/contracts', '@agentic-webapp/ui'],
+  transpilePackages: ['@steadystack/contracts', '@steadystack/ui'],
   turbopack: {
     root: path.join(__dirname, '../..'),
   },

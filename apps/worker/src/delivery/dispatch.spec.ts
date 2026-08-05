@@ -1,4 +1,4 @@
-import type { ClaimedOutboxMessage } from '@agentic-webapp/database';
+import type { ClaimedOutboxMessage } from '@steadystack/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import type {

@@ -37,14 +37,14 @@ const preservedUpstreamPaths = new Set([
 ]);
 
 const templateIdentity = {
-  className: 'AgenticWebapp',
-  displayName: 'Agentic Webapp',
-  packageScope: '@agentic-webapp',
-  propertyName: 'agenticWebapp',
-  repository: 'kaleigh-dem/nx-fullstack-platform',
-  slug: 'agentic-webapp',
-  snakeName: 'agentic_webapp',
-  upperSnakeName: 'AGENTIC_WEBAPP',
+  className: 'SteadyStack',
+  displayName: 'SteadyStack',
+  packageScope: '@steadystack',
+  propertyName: 'steadystack',
+  repository: 'kaleigh-dem/steady-stack',
+  slug: 'steadystack',
+  snakeName: 'steadystack',
+  upperSnakeName: 'STEADYSTACK',
 } as const;
 
 const upstreamRepositorySentinel = '__UPSTREAM_TEMPLATE_REPOSITORY__';
