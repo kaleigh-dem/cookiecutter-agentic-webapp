@@ -13,10 +13,12 @@ The repository must remain usable without a hosted cache service. Local and gene
 
 1. CI, Delivery, Security, and Generated workspace use a concurrency group keyed by workflow and pull-request number. They cancel superseded pull-request runs, but do not cancel `main`, scheduled, or manually dispatched runs.
 2. Production container targets use `docker buildx build --load` through `tools/delivery/build-container.mjs`.
+   - Local execution is uncached by default and remains the deterministic fallback for Docker installations that use the default driver.
+   - Cache-capable CI jobs install the Docker container Buildx driver and explicitly set `BUILDKIT_CACHE_ENABLED=true`.
    - Every service uses a separate local BuildKit cache scope.
-   - A build imports the current cache only when it exists and exports to a separate next directory before atomically replacing the current cache.
-   - The default cache root is `.cache/buildkit`; local execution with an empty directory is the deterministic fallback.
-3. Delivery and generated-workspace CI persist `.cache/buildkit` with the official GitHub cache action. Cache restore failures are non-blocking, so an unavailable remote cache produces a normal uncached BuildKit build rather than a different command or a failed workflow.
+   - An enabled build imports the current cache only when it exists and exports to a separate next directory before atomically replacing the current cache.
+   - The cache root defaults to `.cache/buildkit` when caching is enabled.
+3. Delivery and generated-workspace CI persist `.cache/buildkit` with the official GitHub cache action. Cache restore failures are non-blocking, so an unavailable remote cache produces a normal build with an empty local cache rather than a different Dockerfile, target, or build input.
 4. Playwright retains traces, screenshots, video, and an HTML report only when useful for failures.
 5. CI failure artifacts use stable diagnostic directories and retain, when produced:
    - Playwright results and reports;
@@ -29,7 +31,7 @@ The repository must remain usable without a hosted cache service. Local and gene
 ## Consequences
 
 - New commits stop obsolete pull-request validation while protected branch and scheduled runs remain complete.
-- Warm Docker layers can be reused across CI runs, and the same build command works without GitHub cache access.
-- The cache is an optimization only. Deleting `.cache/buildkit` must not change the image produced from the same source and build arguments.
+- Warm Docker layers can be reused across CI runs, while the same container target remains usable with the uncached local fallback.
+- The cache is an optimization only. Disabling it or deleting `.cache/buildkit` must not change the image produced from the same source and build arguments.
 - Failures retain enough evidence for browser, service, performance, generated-workspace, and release-plan investigation.
 - Cache-input completeness for all Nx and environment-sensitive tasks remains P13-04; this decision does not introduce Nx Cloud or broaden affected execution.
