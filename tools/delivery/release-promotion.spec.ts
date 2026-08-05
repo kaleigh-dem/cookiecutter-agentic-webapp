@@ -25,6 +25,7 @@ describe('immutable release promotion', () => {
       'environment:\n        description: Release environment',
     );
     expect(workflow).toContain('release-manifest.mjs create');
+    expect(workflow).toContain('--auth-session-refresh-skew-seconds');
     expect(workflow).toContain('release-plan.preview.json');
     expect(workflow).toContain('release-images-${{ inputs.version }}');
     expect(workflow).toContain(

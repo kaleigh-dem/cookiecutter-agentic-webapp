@@ -96,6 +96,7 @@ jobs:
             --api-base-url "$NEXT_PUBLIC_API_BASE_URL" \
             --authentication-profile "$NEXT_PUBLIC_AUTHENTICATION_PROFILE" \
             --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \
+            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS" \
             --output "$RUNNER_TEMP/release-inputs.json"
           rm "$RUNNER_TEMP/release-inputs.json"
 
@@ -302,6 +303,7 @@ jobs:
             --api-base-url "$NEXT_PUBLIC_API_BASE_URL" \
             --authentication-profile "$NEXT_PUBLIC_AUTHENTICATION_PROFILE" \
             --auth-session-endpoint "$NEXT_PUBLIC_AUTH_SESSION_ENDPOINT" \
+            --auth-session-refresh-skew-seconds "$NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS" \
             --output "$RELEASE_EVIDENCE_DIRECTORY/release-manifest.json"
           node tools/delivery/release-manifest.mjs export-env \
             --manifest "$RELEASE_EVIDENCE_DIRECTORY/release-manifest.json" \

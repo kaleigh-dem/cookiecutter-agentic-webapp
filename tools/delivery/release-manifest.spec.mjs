@@ -22,6 +22,7 @@ function sampleManifest() {
       apiBaseUrl: 'https://api.example.com',
       authenticationProfile: 'oidc',
       authSessionEndpoint: '/auth/session/access-token',
+      authSessionRefreshSkewSeconds: '30',
     },
     images: {
       api: {
@@ -83,6 +84,15 @@ describe('release manifests', () => {
         },
       }),
     ).toThrow('missing the web image');
+    expect(() =>
+      validateReleaseManifest({
+        ...manifest,
+        build: {
+          ...manifest.build,
+          authSessionRefreshSkewSeconds: '301',
+        },
+      }),
+    ).toThrow('between 0 and 300');
   });
 
   it('exports only validated immutable references for deployment', () => {
@@ -93,6 +103,7 @@ describe('release manifests', () => {
     expect(entries.APP_VERSION).toBe('1.2.3');
     expect(entries.API_IMAGE).toContain('@sha256:');
     expect(entries.NEXT_PUBLIC_API_BASE_URL).toBe('https://api.example.com');
+    expect(entries.NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS).toBe('30');
     expect(imageEnvironment).toContain(`API_IMAGE=${entries.API_IMAGE}`);
     expect(imageEnvironment).not.toContain('NEXT_PUBLIC_API_BASE_URL');
   });

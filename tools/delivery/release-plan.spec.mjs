@@ -18,6 +18,7 @@ function sampleManifest() {
       apiBaseUrl: 'https://api.example.com',
       authenticationProfile: 'oidc',
       authSessionEndpoint: '/auth/session/access-token',
+      authSessionRefreshSkewSeconds: '30',
     },
     images: {
       api: {

@@ -38,6 +38,19 @@ function requireString(value, label) {
   return value.trim();
 }
 
+function validateRefreshSkewSeconds(value) {
+  const normalized = requireString(
+    value,
+    'Build authentication refresh skew seconds',
+  );
+  if (!/^(?:0|[1-9]\d{0,2})$/u.test(normalized) || Number(normalized) > 300) {
+    throw new Error(
+      'Build authentication refresh skew seconds must be an integer between 0 and 300.',
+    );
+  }
+  return normalized;
+}
+
 function validateImageName(value, service) {
   const name = requireString(value, `${service} image name`);
   if (!name.startsWith('ghcr.io/')) {
@@ -104,10 +117,15 @@ function validateBuildConfiguration(build) {
     );
   }
 
+  const authSessionRefreshSkewSeconds = validateRefreshSkewSeconds(
+    build.authSessionRefreshSkewSeconds,
+  );
+
   return {
     apiBaseUrl,
     authenticationProfile,
     authSessionEndpoint,
+    authSessionRefreshSkewSeconds,
   };
 }
 
@@ -241,6 +259,8 @@ export function releaseEnvironmentEntries(manifest) {
     NEXT_PUBLIC_API_BASE_URL: normalized.build.apiBaseUrl,
     NEXT_PUBLIC_AUTHENTICATION_PROFILE: normalized.build.authenticationProfile,
     NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: normalized.build.authSessionEndpoint,
+    NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS:
+      normalized.build.authSessionRefreshSkewSeconds,
   };
 }
 
@@ -280,6 +300,8 @@ async function createCommand(values) {
       apiBaseUrl: values['api-base-url'],
       authenticationProfile: values['authentication-profile'],
       authSessionEndpoint: values['auth-session-endpoint'],
+      authSessionRefreshSkewSeconds:
+        values['auth-session-refresh-skew-seconds'],
     },
     images: Object.fromEntries(
       RELEASE_SERVICES.map((service) => [

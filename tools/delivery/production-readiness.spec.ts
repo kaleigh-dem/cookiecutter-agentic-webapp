@@ -19,6 +19,7 @@ const validProduction = {
   NEXT_PUBLIC_API_BASE_URL: 'https://api.internal',
   NEXT_PUBLIC_AUTHENTICATION_PROFILE: 'oidc',
   NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: '/auth/session/access-token',
+  NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: '30',
   API_RATE_LIMIT_STORE: 'postgres',
   API_RATE_LIMIT_ANONYMOUS_MAX: '60',
   API_RATE_LIMIT_AUTHENTICATED_MAX: '120',
@@ -288,10 +289,12 @@ describe('production readiness validation', () => {
         NEXT_PUBLIC_AUTHENTICATION_PROFILE: 'session',
         NEXT_PUBLIC_AUTH_SESSION_ENDPOINT:
           validProduction.NEXT_PUBLIC_AUTH_SESSION_ENDPOINT,
+        NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS: '45',
       }),
     ).toEqual([
       'APP_VERSION does not match the release image build configuration.',
       'NEXT_PUBLIC_AUTHENTICATION_PROFILE does not match the release image build configuration.',
+      'NEXT_PUBLIC_AUTH_SESSION_REFRESH_SKEW_SECONDS does not match the release image build configuration.',
     ]);
   });
 
