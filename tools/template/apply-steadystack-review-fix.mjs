@@ -1,8 +1,4 @@
-import {
-  readFileSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const authenticationFiles = [
   'infra/environments/production.env.example',
@@ -121,23 +117,3 @@ const forbiddenPatterns = [`;
     .replace(constantsBefore, constantsAfter)
     .replace(patternsBefore, patternsAfter);
 });
-
-update('.github/workflows/ci.yml', (content) => {
-  const start = '      # BEGIN STEADYSTACK REVIEW FIX\n';
-  const end = '      # END STEADYSTACK REVIEW FIX\n';
-  const startIndex = content.indexOf(start);
-  const endIndex = content.indexOf(end, startIndex);
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error('Temporary CI materialization block was not found.');
-  }
-  const cleaned = content.slice(0, startIndex) + content.slice(endIndex + end.length);
-  return cleaned
-    .replace(
-      '    branches: [main, agent/steadystack-rebrand]',
-      '    branches: [main]',
-    )
-    .replace('  contents: write', '  contents: read');
-});
-
-unlinkSync('tools/template/apply-steadystack-review-fix.mjs');
-unlinkSync('.github/workflows/steadystack-review-fix.yml');
