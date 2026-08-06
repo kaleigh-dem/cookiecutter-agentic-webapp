@@ -180,6 +180,12 @@ template-v<VERSION>
 
 Each release includes a workspace-plugin tarball containing the public preset, upgrade binary, migrations, and ownership assets. Generated repositories record the originating release in `workspace.template.json` under `upstream.version`.
 
+### Current SteadyStack identity
+
+PR #61 established the canonical `@steadystack` package scope, `@steadystack/workspace-plugin`, `steadystack-upgrade`, `steadystack-workspace-plugin-<VERSION>.tgz`, and `kaleigh-dem/steady-stack` repository identity.
+
+Use those names for all new workspaces and current upgrade procedures. No end-user identity-transition page is published because there were no released generated users that needed to migrate from the earlier development identity. Maintainer-only historical mapping remains in `docs/steadystack-migration.md`.
+
 ### Upgrade ownership classes
 
 | Class             | Behavior                                                                                                  |

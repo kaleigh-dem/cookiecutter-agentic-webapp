@@ -49,9 +49,7 @@ Override with `API_IMAGE`, `WORKER_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `GITH
 
 ## BuildKit cache behavior
 
-> This behavior is being implemented in draft PR #55. Confirm the final environment-variable and workflow names against the merged implementation.
-
-Container targets use `docker buildx build --load`. Local execution remains uncached by default. Cache-capable CI jobs explicitly set `BUILDKIT_CACHE_ENABLED=true` and use service-scoped caches. Delivery restores `.cache/buildkit`; Generated workspace currently sets `BUILDKIT_CACHE_DIR` to the sibling path `../buildkit-cache` so the cache remains outside the temporary generated repository.
+PR #55 implemented cache-aware container builds. Container targets use `docker buildx build --load`. Local execution remains uncached by default. Cache-capable CI jobs explicitly set `BUILDKIT_CACHE_ENABLED=true` and use service-scoped caches. Delivery restores `.cache/buildkit`; Generated workspace sets `BUILDKIT_CACHE_DIR` to the sibling path `../buildkit-cache` so the cache remains outside the temporary generated repository.
 
 When cache is enabled, the build imports a service cache only when it exists, exports into a separate next directory, and replaces the current cache only after a successful build. GitHub Actions cache restore is non-blocking.
 
@@ -157,8 +155,6 @@ curl --fail http://localhost:4001/metrics
 ```
 
 ## Retained Delivery diagnostics
-
-> These artifact names are prepared for draft PR #55 and must remain aligned with the merged workflow.
 
 A failed Delivery run captures preview Compose output in `service-logs.txt` and writes machine-readable load-test output to `performance-report.json` when produced. GitHub Actions uploads them as:
 

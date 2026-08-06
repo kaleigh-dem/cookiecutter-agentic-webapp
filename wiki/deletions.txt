@@ -1,0 +1,3 @@
+# Reviewed rendered-wiki page deletions.
+# Each entry must be a top-level Markdown filename that is absent from wiki/.
+SteadyStack-Identity-Migration.md

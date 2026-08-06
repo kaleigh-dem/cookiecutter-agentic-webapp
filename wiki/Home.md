@@ -70,14 +70,22 @@ Supported profiles can record some product or platform directions without implem
 
 Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/steady-stack/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
 
-Phase 13 progress record, updated August 5, 2026:
+Current Phase 13 status:
 
 - **P13-01 — complete:** image and dependency supply-chain artifacts, reviewed in PR #50.
 - **P13-02 — complete:** immutable digest publication and promotion, merged in PR #52 and hardened in PR #53.
-- **P13-03 — in progress:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics are being implemented in draft PR #55.
-- **P13-04 — planned:** audit Nx cache inputs and affected execution after P13-03 completes.
+- **P13-03 — complete:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics, merged in PR #55.
+- **P13-04 — complete:** Nx cache-input auditing and affected execution, merged in PR #59.
+- **P13-05 — next:** documentation integrity checks.
+- **P13-06 — planned:** release metadata and rollback-evidence validation.
 
-Do not mark P13-03 complete until its implementation, documentation, and applicable exact-head checks have passed and the pull request has merged.
+Use `docs/TODO.md` for sequencing, acceptance criteria, and future status changes.
+
+## SteadyStack identity
+
+PR #61 established the SteadyStack public identity across the repository, package scope, plugin, upgrade executable, release artifact, generated-workspace provenance, workflows, and documentation. New workspaces use `kaleigh-dem/steady-stack`, while generated products choose and retain their own application identity.
+
+The repository had no released generated users before SteadyStack became the canonical public identity, so the end-user wiki documents only the current names. Historical rename notes remain in `docs/steadystack-migration.md` for maintainers.
 
 ## Common tasks
 
