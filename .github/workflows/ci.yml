@@ -39,7 +39,7 @@ jobs:
           git commit -m "fix: remove legacy authentication branding"
           echo "FINAL_COMMIT_SHA=$(git rev-parse HEAD)"
           echo "FINAL_TREE_SHA=$(git rev-parse HEAD^{tree})"
-          git push --force origin "HEAD:agent/steadystack-review-fix-final"
+          git push --force origin "HEAD:refs/heads/agent/steadystack-review-fix-final"
       # END STEADYSTACK REVIEW FIX
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
