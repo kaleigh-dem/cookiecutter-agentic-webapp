@@ -394,7 +394,6 @@ pnpm check
 - [Quick Start](Quick-Start)
 - [Validation and Testing](Validation-and-Testing)
 - [CI Diagnostics](CI-Diagnostics)
-- [SteadyStack Identity Migration](SteadyStack-Identity-Migration)
 - [Releases and Upgrades](Releases-and-Upgrades)
 
 ## Next steps
