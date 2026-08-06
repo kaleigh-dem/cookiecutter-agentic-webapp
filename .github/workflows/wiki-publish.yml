@@ -61,6 +61,7 @@ jobs:
               'Containers-and-Preview-Environments.md',
               'Troubleshooting.md',
               'CI-Diagnostics.md',
+              'SteadyStack-Identity-Migration.md',
               '_Sidebar.md',
           }
           missing = sorted(name for name in required if not (wiki / name).is_file())
