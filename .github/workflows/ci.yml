@@ -25,21 +25,26 @@ jobs:
           fetch-depth: 0
 
       # BEGIN STEADYSTACK REVIEW FIX
-      - name: Materialize source-only fix from reviewed head
+      - name: Materialize generator fix blobs
         run: |
           cp tools/template/apply-steadystack-review-fix.mjs "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
           git reset --hard e5705e6e246b97c7fb97ed000eea479b81b85ab9
           node "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
+          cp tools/workspace-plugin/src/generators/init/generator.ts "$RUNNER_TEMP/generator.ts"
+          cp tools/workspace-plugin/src/generators/init/generator.spec.ts "$RUNNER_TEMP/generator.spec.ts"
+          git checkout --orphan steadystack-review-blobs
+          git rm -rf .
+          mkdir -p tools/workspace-plugin/src/generators/init
+          cp "$RUNNER_TEMP/generator.ts" tools/workspace-plugin/src/generators/init/generator.ts
+          cp "$RUNNER_TEMP/generator.spec.ts" tools/workspace-plugin/src/generators/init/generator.spec.ts
 
-      - name: Commit and expose clean source tree
+      - name: Commit and expose generator blobs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "fix: remove legacy authentication branding"
-          echo "FINAL_COMMIT_SHA=$(git rev-parse HEAD)"
-          echo "FINAL_TREE_SHA=$(git rev-parse HEAD^{tree})"
-          git push --force origin "HEAD:refs/heads/agent/steadystack-review-fix-final"
+          git commit -m "chore: expose SteadyStack generator fix blobs"
+          git push --force origin "HEAD:refs/heads/agent/steadystack-review-blobs"
       # END STEADYSTACK REVIEW FIX
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
