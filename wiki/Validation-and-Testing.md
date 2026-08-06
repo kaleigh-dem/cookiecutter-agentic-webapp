@@ -214,9 +214,7 @@ The local `live-agent-task` profile additionally checks worker liveness, readine
 
 ## CI concurrency and retained failure evidence
 
-> This behavior is being implemented in draft PR #55. Use the exact workflow and artifact names only after they match the merged implementation.
-
-Required workflows cancel an older in-progress run only when a newer commit supersedes it on the same pull request. `main`, scheduled, and manually dispatched runs remain protected from this cancellation rule. A cancelled run is not a passing result; reviewers must verify checks for the exact pull-request head SHA.
+PR #55 implemented pull-request-only cancellation, cache-aware container builds, and retained failure evidence. Required workflows cancel an older in-progress run only when a newer commit supersedes it on the same pull request. `main`, scheduled, and manually dispatched runs remain protected from this cancellation rule. A cancelled run is not a passing result; reviewers must verify checks for the exact pull-request head SHA.
 
 After a failure, use the retained artifact that matches the workflow:
 
