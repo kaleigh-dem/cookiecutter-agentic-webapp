@@ -30,5 +30,6 @@
 
 **Reference**
 
+- [SteadyStack Identity Migration](SteadyStack-Identity-Migration)
 - [Documentation Audit](Documentation-Audit)
 - [Source repository](https://github.com/kaleigh-dem/steady-stack)
