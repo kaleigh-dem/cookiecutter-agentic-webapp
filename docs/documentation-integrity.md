@@ -21,9 +21,13 @@ pnpm docs:check
 
 Commit `docs/architecture/project-graph.md` with the source change. The file is generated from `pnpm nx graph --file=...`; do not edit it manually.
 
+## Scope
+
+The content and topology audit is specific to the reviewed upstream template package, `@steadystack/source`. Initialization intentionally removes template-maintainer workflows and release documents, replaces the public identity with the adopting product identity, and can remove projects through profile selection. An initialized downstream workspace therefore runs the checker’s deterministic unit tests but skips the upstream repository audit. Adopting teams can extend the inherited validation command with product-specific documentation rules.
+
 ## What is validated
 
-The audit checks:
+The upstream audit checks:
 
 - relative Markdown links and linked files;
 - repository paths written in inline code;
@@ -34,7 +38,7 @@ The audit checks:
 - byte-for-byte agreement between the committed Mermaid diagram and the current Nx project graph;
 - roadmap and ADR evidence for changes to generator output or architectural boundaries.
 
-External URLs and section anchors are not fetched. Their availability and prose quality remain review responsibilities.
+External URLs and section anchors are not fetched. Their availability and prose quality remain review responsibilities. Explicit generator examples and untracked runtime environment files are recognized as examples rather than repository artifacts.
 
 ## Change-evidence gate
 
