@@ -130,7 +130,13 @@ update('.github/workflows/ci.yml', (content) => {
   if (startIndex < 0 || endIndex < 0) {
     throw new Error('Temporary CI materialization block was not found.');
   }
-  return content.slice(0, startIndex) + content.slice(endIndex + end.length);
+  const cleaned = content.slice(0, startIndex) + content.slice(endIndex + end.length);
+  return cleaned
+    .replace(
+      '    branches: [main, agent/steadystack-rebrand]',
+      '    branches: [main]',
+    )
+    .replace('  contents: write', '  contents: read');
 });
 
 unlinkSync('tools/template/apply-steadystack-review-fix.mjs');
