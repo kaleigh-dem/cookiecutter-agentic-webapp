@@ -1,13 +1,18 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const UPSTREAM_PACKAGE_NAME = '@steadystack/source';
+const ARCHITECTURE_PATH = 'docs/architecture/project-graph.md';
+
 const ROOT_SCRIPT_BUILT_INS = new Set([
   'add',
+  'approve-builds',
   'audit',
+  'create',
   'dlx',
   'exec',
   'install',
@@ -25,6 +30,8 @@ const NX_BUILT_INS = new Set([
   'daemon',
   'exec',
   'format',
+  'format:check',
+  'format:write',
   'g',
   'generate',
   'graph',
@@ -36,8 +43,11 @@ const NX_BUILT_INS = new Set([
   'show',
   'sync',
   'sync:check',
-  'format:check',
-  'format:write',
+]);
+
+const DOCUMENTED_GENERATOR_EXAMPLES = new Set([
+  'backend-billing',
+  'web-feature-account-settings',
 ]);
 
 const REPOSITORY_PATH_PREFIXES = [
@@ -106,8 +116,6 @@ const LEGACY_IDENTITY_PATTERNS = [
   /agentic-webapp-workspace-plugin\b/gi,
   /kaleigh-dem\/nx-fullstack-platform\b/gi,
   /nx-fullstack-platform\.wiki\.git\b/gi,
-  /Agentic Webapp Nx Template/gi,
-  /NX AGENTIC TEMPLATE/g,
 ];
 
 const LEGACY_IDENTITY_ALLOWLIST = new Set([
@@ -127,6 +135,19 @@ function normalizePath(value) {
   return value.replaceAll('\\', '/').replace(/^\.\//, '');
 }
 
+function git(root, args, options = {}) {
+  return execFileSync('git', args, {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 20 * 1024 * 1024,
+    ...options,
+  });
+}
+
+export function shouldAuditWorkspace(packageJson) {
+  return packageJson.name === UPSTREAM_PACKAGE_NAME;
+}
+
 function stripMarkdownDestination(value) {
   let destination = value.trim();
   if (destination.startsWith('<') && destination.endsWith('>')) {
@@ -135,11 +156,10 @@ function stripMarkdownDestination(value) {
   const titleMatch = destination.match(/^(\S+)(?:\s+["'(].*)$/);
   if (titleMatch) destination = titleMatch[1];
   try {
-    destination = decodeURIComponent(destination);
+    return decodeURIComponent(destination);
   } catch {
-    // Keep malformed percent escapes intact so the missing-link report is useful.
+    return destination;
   }
-  return destination;
 }
 
 function isExternalDestination(destination) {
@@ -150,11 +170,11 @@ function isExternalDestination(destination) {
   );
 }
 
-function removeAnchorAndQuery(destination) {
+function withoutAnchorOrQuery(destination) {
   return destination.split('#', 1)[0].split('?', 1)[0];
 }
 
-function pathExistsInTrackedFiles(candidate, trackedFiles) {
+function pathExists(candidate, trackedFiles) {
   const normalized = normalizePath(candidate).replace(/\/$/, '');
   return (
     trackedFiles.has(normalized) ||
@@ -162,23 +182,23 @@ function pathExistsInTrackedFiles(candidate, trackedFiles) {
   );
 }
 
-function resolveMarkdownDestination(markdownPath, destination, trackedFiles) {
-  const cleaned = removeAnchorAndQuery(stripMarkdownDestination(destination));
-  if (!cleaned || isExternalDestination(cleaned)) return null;
-
-  const baseDirectory = path.posix.dirname(markdownPath);
-  let candidate = normalizePath(
-    path.posix.normalize(path.posix.join(baseDirectory, cleaned)),
+function resolveMarkdownDestination(markdownPath, rawDestination, trackedFiles) {
+  const destination = withoutAnchorOrQuery(
+    stripMarkdownDestination(rawDestination),
   );
+  if (!destination || isExternalDestination(destination)) return null;
 
-  if (pathExistsInTrackedFiles(candidate, trackedFiles)) return candidate;
+  const directory = path.posix.dirname(markdownPath);
+  let candidate = normalizePath(
+    path.posix.normalize(path.posix.join(directory, destination)),
+  );
+  if (pathExists(candidate, trackedFiles)) return candidate;
+
   if (!path.posix.extname(candidate)) {
-    if (pathExistsInTrackedFiles(`${candidate}.md`, trackedFiles)) {
-      return `${candidate}.md`;
-    }
+    if (pathExists(`${candidate}.md`, trackedFiles)) return `${candidate}.md`;
     if (markdownPath.startsWith('wiki/')) {
-      candidate = normalizePath(path.posix.join('wiki', cleaned));
-      if (pathExistsInTrackedFiles(`${candidate}.md`, trackedFiles)) {
+      candidate = normalizePath(path.posix.join('wiki', destination));
+      if (pathExists(`${candidate}.md`, trackedFiles)) {
         return `${candidate}.md`;
       }
     }
@@ -188,16 +208,17 @@ function resolveMarkdownDestination(markdownPath, destination, trackedFiles) {
 
 function extractMarkdownLinks(markdown) {
   const links = [];
-  const inlinePattern = /(?<!!)\[[^\]]*\]\(([^)]+)\)/g;
-  for (const match of markdown.matchAll(inlinePattern)) links.push(match[1]);
-
-  const referencePattern = /^\s*\[[^\]]+\]:\s*(\S+)/gm;
-  for (const match of markdown.matchAll(referencePattern)) links.push(match[1]);
+  for (const match of markdown.matchAll(/(?<!!)\[[^\]]*\]\(([^)]+)\)/g)) {
+    links.push(match[1]);
+  }
+  for (const match of markdown.matchAll(/^\s*\[[^\]]+\]:\s*(\S+)/gm)) {
+    links.push(match[1]);
+  }
   return links;
 }
 
 function looksLikeRepositoryPath(value) {
-  const candidate = value.replace(/[.,;:]$/, '');
+  const candidate = withoutAnchorOrQuery(value.replace(/[.,;:]$/, ''));
   if (candidate.includes('://')) return false;
   if (/[<>{}*]/.test(candidate) || /\s/.test(candidate)) return false;
   if (REPOSITORY_ROOT_FILES.has(candidate)) return true;
@@ -206,19 +227,28 @@ function looksLikeRepositoryPath(value) {
   );
 }
 
+function isExpectedUntrackedRuntimePath(value) {
+  return (
+    /(?:^|\/)\.env$/.test(value) ||
+    /infra\/environments\/[^/]+\.env$/.test(value) ||
+    value.startsWith('test-output/')
+  );
+}
+
 function extractReferencedRepositoryPaths(markdown) {
-  const paths = [];
+  const referencedPaths = [];
   for (const match of markdown.matchAll(/`([^`\n]+)`/g)) {
-    const candidate = match[1].trim().replace(/[.,;:]$/, '');
-    if (looksLikeRepositoryPath(candidate)) paths.push(candidate);
+    const candidate = withoutAnchorOrQuery(
+      match[1].trim().replace(/[.,;:]$/, ''),
+    );
+    if (looksLikeRepositoryPath(candidate)) referencedPaths.push(candidate);
   }
-  return paths;
+  return referencedPaths;
 }
 
 function extractFencedBlocks(markdown) {
   const blocks = [];
-  const pattern = /^```([^\n]*)\n([\s\S]*?)^```\s*$/gm;
-  for (const match of markdown.matchAll(pattern)) {
+  for (const match of markdown.matchAll(/^```([^\n]*)\n([\s\S]*?)^```\s*$/gm)) {
     blocks.push({
       language: match[1].trim().toLowerCase(),
       content: match[2],
@@ -227,7 +257,7 @@ function extractFencedBlocks(markdown) {
   return blocks;
 }
 
-function commandLinesFromBlock(content) {
+function commandLines(content) {
   const commands = [];
   let current = '';
   for (const rawLine of content.split('\n')) {
@@ -236,10 +266,10 @@ function commandLinesFromBlock(content) {
     current = current ? `${current} ${line}` : line;
     if (current.endsWith('\\')) {
       current = current.slice(0, -1).trimEnd();
-      continue;
+    } else {
+      commands.push(current);
+      current = '';
     }
-    commands.push(current);
-    current = '';
   }
   if (current) commands.push(current);
   return commands;
@@ -256,6 +286,7 @@ function validatePnpmCommand(command, packageJson, graph) {
   const words = shellWords(command);
   const pnpmIndex = words.findIndex((word) => word === 'pnpm');
   if (pnpmIndex < 0 || !words[pnpmIndex + 1]) return [];
+  if (words.includes('--filter')) return [];
 
   let index = pnpmIndex + 1;
   while (words[index]?.startsWith('-')) index += 1;
@@ -273,15 +304,16 @@ function validatePnpmCommand(command, packageJson, graph) {
       }
       return [`unknown Nx command: ${nxAction}`];
     }
-    if (nxAction === 'run') {
-      const targetSpec = words[index + 2];
-      if (!targetSpec || /[<$[{]/.test(targetSpec)) return [];
-      const [projectName, targetName] = targetSpec.split(':');
-      const project = graph.nodes?.[projectName];
-      if (!project) return [`unknown Nx project: ${projectName}`];
-      if (targetName && !project.data?.targets?.[targetName]) {
-        return [`unknown Nx target: ${targetSpec}`];
-      }
+    if (nxAction !== 'run') return [];
+
+    const targetSpec = words[index + 2];
+    if (!targetSpec || /[<$[{]/.test(targetSpec)) return [];
+    const [projectName, targetName] = targetSpec.split(':');
+    if (DOCUMENTED_GENERATOR_EXAMPLES.has(projectName)) return [];
+    const project = graph.nodes?.[projectName];
+    if (!project) return [`unknown Nx project: ${projectName}`];
+    if (targetName && !project.data?.targets?.[targetName]) {
+      return [`unknown Nx target: ${targetSpec}`];
     }
     return [];
   }
@@ -298,25 +330,23 @@ function validateNodeCommand(command, trackedFiles) {
   const nodeIndex = words.findIndex((word) => word === 'node');
   if (nodeIndex < 0) return [];
   const script = words.slice(nodeIndex + 1).find((word) => !word.startsWith('-'));
-  if (!script || /[<$[{]/.test(script) || script === '-e' || script === '-') {
+  if (!script || script === '-' || script === '-e' || /[<$[{]/.test(script)) {
     return [];
   }
   const normalized = normalizePath(script.replace(/["';]$/g, ''));
   if (!/\.(?:c?js|mjs|ts)$/.test(normalized)) return [];
-  return pathExistsInTrackedFiles(normalized, trackedFiles)
+  return pathExists(normalized, trackedFiles)
     ? []
     : [`missing Node script: ${normalized}`];
 }
 
 function isEnvironmentName(value) {
-  return /^[A-Z][A-Z0-9_]+$/.test(value);
+  return /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$/.test(value);
 }
 
 function isDocumentedEnvironmentName(value) {
   return (
-    value === 'DATABASE_URL' ||
-    value === 'LOG_LEVEL' ||
-    value === 'NODE_ENV' ||
+    ['DATABASE_URL', 'LOG_LEVEL', 'NODE_ENV'].includes(value) ||
     ENVIRONMENT_PREFIXES.some((prefix) => value.startsWith(prefix))
   );
 }
@@ -339,10 +369,10 @@ function extractEnvironmentCatalog(files) {
     /\b(?:env|secrets|vars)\.([A-Z][A-Z0-9_]+)/g,
   ];
 
-  for (const [file, { content }] of files) {
+  for (const [file, entry] of files) {
     if (file.endsWith('.md')) continue;
     for (const pattern of patterns) {
-      for (const match of content.matchAll(pattern)) catalog.add(match[1]);
+      for (const match of entry.content.matchAll(pattern)) catalog.add(match[1]);
     }
   }
   return catalog;
@@ -351,12 +381,11 @@ function extractEnvironmentCatalog(files) {
 function extractDocumentedEnvironmentNames(markdown) {
   const names = [];
   for (const block of extractFencedBlocks(markdown)) {
-    if (['dotenv', 'env'].includes(block.language)) {
-      for (const match of block.content.matchAll(
-        /^\s*([A-Z][A-Z0-9_]+)\s*=/gm,
-      )) {
-        names.push(match[1]);
-      }
+    if (!['dotenv', 'env'].includes(block.language)) continue;
+    for (const match of block.content.matchAll(
+      /^\s*([A-Z][A-Z0-9_]+)\s*=/gm,
+    )) {
+      names.push(match[1]);
     }
   }
   for (const match of markdown.matchAll(/`([A-Z][A-Z0-9_]+)`/g)) {
@@ -408,8 +437,10 @@ function auditAuthenticationDescriptions(files, failures) {
 
   for (const file of AUTHENTICATION_DOCUMENTS) {
     const content = files.get(file)?.content;
-    if (!content) continue;
-    if (/draft PR #|being implemented in draft|prepared for Phase/i.test(content)) {
+    if (
+      content &&
+      /draft PR #|being implemented in draft|prepared for Phase/i.test(content)
+    ) {
       failures.push(`${file}: contains stale draft authentication status language`);
     }
   }
@@ -466,8 +497,8 @@ export function renderArchitectureDiagram(graph) {
     'flowchart LR',
   ];
 
-  for (const [group, groupNodes] of [...groups.entries()].sort(([a], [b]) =>
-    a.localeCompare(b),
+  for (const [group, groupNodes] of [...groups.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
   )) {
     lines.push(
       `  subgraph ${sanitizeMermaidId(`group_${group}`)}["${escapeMermaidLabel(group)}"]`,
@@ -526,35 +557,26 @@ function unwrapGraphJson(parsed) {
 }
 
 async function createProjectGraph(root) {
-  const temporaryDirectory = await mkdir(
+  const temporaryDirectory = await mkdtemp(
     path.join(os.tmpdir(), 'steadystack-docs-'),
-    { recursive: true },
-  ).then(() => path.join(os.tmpdir(), 'steadystack-docs-'));
-  const output = path.join(
-    temporaryDirectory,
-    `project-graph-${process.pid}.json`,
   );
+  const output = path.join(temporaryDirectory, 'project-graph.json');
   const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-  const result = spawnSync(command, ['nx', 'graph', `--file=${output}`], {
-    cwd: root,
-    encoding: 'utf8',
-    env: { ...process.env, NX_DAEMON: 'false' },
-  });
-  if (result.status !== 0) {
-    throw new Error(
-      `Unable to export the Nx project graph.\n${result.stdout ?? ''}${result.stderr ?? ''}`,
-    );
+  try {
+    const result = spawnSync(command, ['nx', 'graph', `--file=${output}`], {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, NX_DAEMON: 'false' },
+    });
+    if (result.status !== 0) {
+      throw new Error(
+        `Unable to export the Nx project graph.\n${result.stdout ?? ''}${result.stderr ?? ''}`,
+      );
+    }
+    return unwrapGraphJson(JSON.parse(await readFile(output, 'utf8')));
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
   }
-  return unwrapGraphJson(JSON.parse(await readFile(output, 'utf8')));
-}
-
-function git(root, args, options = {}) {
-  return execFileSync('git', args, {
-    cwd: root,
-    encoding: 'utf8',
-    maxBuffer: 20 * 1024 * 1024,
-    ...options,
-  });
 }
 
 async function loadTrackedFiles(root) {
@@ -568,22 +590,25 @@ async function loadTrackedFiles(root) {
       const content = await readFile(path.join(root, file), 'utf8');
       if (!content.includes('\0')) files.set(file, { content });
     } catch {
-      // Binary and unreadable tracked files are irrelevant to documentation checks.
+      // Binary and unreadable tracked files do not participate in this audit.
     }
   }
   return files;
 }
 
 function changedFiles(root, base, head) {
-  const output = git(root, ['diff', '--name-status', '-z', base, head]);
-  const fields = output.split('\0').filter(Boolean);
+  const fields = git(root, ['diff', '--name-status', '-z', base, head])
+    .split('\0')
+    .filter(Boolean);
   const changes = [];
   for (let index = 0; index < fields.length; ) {
     const status = fields[index++];
     if (status.startsWith('R') || status.startsWith('C')) {
-      const previous = normalizePath(fields[index++]);
-      const file = normalizePath(fields[index++]);
-      changes.push({ status: status[0], previous, file });
+      changes.push({
+        status: status[0],
+        previous: normalizePath(fields[index++]),
+        file: normalizePath(fields[index++]),
+      });
     } else {
       changes.push({ status: status[0], file: normalizePath(fields[index++]) });
     }
@@ -601,13 +626,8 @@ function readJsonAtRevision(root, revision, file) {
 
 function projectBoundaryChanged(root, base, head, change) {
   if (!change.file.endsWith('project.json')) return false;
-  if (
-    change.status === 'A' ||
-    change.status === 'D' ||
-    change.status === 'R'
-  ) {
-    return true;
-  }
+  if (['A', 'D', 'R'].includes(change.status)) return true;
+
   const before = readJsonAtRevision(root, base, change.file);
   const after = readJsonAtRevision(root, head, change.file);
   if (!before || !after) return true;
@@ -632,8 +652,8 @@ export function auditChangeEvidence({ changes, boundaryChanges = new Set() }) {
         change.file,
       ) || boundaryChanges.has(change.file),
   );
-
   if (!generatorChanged && !architectureChanged) return [];
+
   const failures = [];
   if (!changed.has('docs/TODO.md')) {
     failures.push('generator or architecture changes require docs/TODO.md');
@@ -654,6 +674,7 @@ function resolveDiffRange(root) {
   const base = process.env.DOCS_INTEGRITY_BASE || process.env.NX_BASE;
   const head = process.env.DOCS_INTEGRITY_HEAD || process.env.NX_HEAD || 'HEAD';
   if (base) return { base, head };
+
   try {
     const originMain = git(root, [
       'rev-parse',
@@ -665,7 +686,7 @@ function resolveDiffRange(root) {
       return { base: originMain, head: current };
     }
   } catch {
-    // A local source archive may have no origin/main; skip only the diff-based gate.
+    // Source archives may not have origin/main; only the diff gate is skipped.
   }
   return null;
 }
@@ -682,32 +703,38 @@ export function auditDocumentation({
 
   for (const [file, entry] of files) {
     if (!file.endsWith('.md')) continue;
+
     for (const destination of extractMarkdownLinks(entry.content)) {
       const resolved = resolveMarkdownDestination(
         file,
         destination,
         trackedFiles,
       );
-      if (resolved && !pathExistsInTrackedFiles(resolved, trackedFiles)) {
+      if (resolved && !pathExists(resolved, trackedFiles)) {
         failures.push(`${file}: broken internal link: ${destination}`);
       }
     }
+
     for (const referencedPath of extractReferencedRepositoryPaths(
       entry.content,
     )) {
-      if (!pathExistsInTrackedFiles(referencedPath, trackedFiles)) {
+      if (
+        !pathExists(referencedPath, trackedFiles) &&
+        !isExpectedUntrackedRuntimePath(referencedPath)
+      ) {
         failures.push(
           `${file}: missing referenced repository path: ${referencedPath}`,
         );
       }
     }
+
     for (const block of extractFencedBlocks(entry.content)) {
       if (
-        !['bash', 'console', 'sh', 'shell', 'zsh', ''].includes(block.language)
+        !['', 'bash', 'console', 'sh', 'shell', 'zsh'].includes(block.language)
       ) {
         continue;
       }
-      for (const command of commandLinesFromBlock(block.content)) {
+      for (const command of commandLines(block.content)) {
         if (
           !/(^|\s)pnpm\s/.test(command) &&
           !/(^|\s)node\s/.test(command)
@@ -726,6 +753,7 @@ export function auditDocumentation({
         }
       }
     }
+
     for (const environmentName of extractDocumentedEnvironmentNames(
       entry.content,
     )) {
@@ -747,29 +775,8 @@ export function auditDocumentation({
   return [...new Set(failures)].sort();
 }
 
-async function writeArchitecture(root, graph) {
-  const packageJson = JSON.parse(
-    await readFile(path.join(root, 'package.json'), 'utf8'),
-  );
-  if (packageJson.name !== '@steadystack/source') {
-    process.stdout.write(
-      'Skipping the upstream topology artifact in an initialized downstream workspace.\n',
-    );
-    return;
-  }
-  const destination = path.join(root, 'docs/architecture/project-graph.md');
-  await writeFile(destination, renderArchitectureDiagram(graph), 'utf8');
-  process.stdout.write(
-    `Wrote ${normalizePath(path.relative(root, destination))}.\n`,
-  );
-}
-
 async function checkArchitecture(root, graph, failures) {
-  const packageJson = JSON.parse(
-    await readFile(path.join(root, 'package.json'), 'utf8'),
-  );
-  if (packageJson.name !== '@steadystack/source') return;
-  const destination = path.join(root, 'docs/architecture/project-graph.md');
+  const destination = path.join(root, ARCHITECTURE_PATH);
   const expected = renderArchitectureDiagram(graph);
   const actual = existsSync(destination)
     ? await readFile(destination, 'utf8')
@@ -786,15 +793,44 @@ async function checkArchitecture(root, graph, failures) {
     );
   }
   failures.push(
-    'docs/architecture/project-graph.md is stale; run `pnpm docs:architecture`',
+    `${ARCHITECTURE_PATH} is stale; run \`pnpm docs:architecture\``,
   );
 }
 
+async function writeArchitecture(root) {
+  const packageJson = JSON.parse(
+    await readFile(path.join(root, 'package.json'), 'utf8'),
+  );
+  if (!shouldAuditWorkspace(packageJson)) {
+    process.stdout.write(
+      'Skipping the upstream architecture artifact in an initialized downstream workspace.\n',
+    );
+    return;
+  }
+
+  const destination = path.join(root, ARCHITECTURE_PATH);
+  await writeFile(
+    destination,
+    renderArchitectureDiagram(await createProjectGraph(root)),
+    'utf8',
+  );
+  process.stdout.write(`Wrote ${ARCHITECTURE_PATH}.\n`);
+}
+
 export async function checkWorkspace(root) {
+  const packageJson = JSON.parse(
+    await readFile(path.join(root, 'package.json'), 'utf8'),
+  );
+  if (!shouldAuditWorkspace(packageJson)) {
+    process.stdout.write(
+      'Skipping the upstream repository documentation audit in an initialized downstream workspace.\n',
+    );
+    return [];
+  }
+
   const files = await loadTrackedFiles(root);
-  const packageJson = JSON.parse(files.get('package.json')?.content ?? '{}');
   const graph = await createProjectGraph(root);
-  const evidenceFailures = [];
+  const changeEvidence = [];
   const range = resolveDiffRange(root);
   if (range) {
     const changes = changedFiles(root, range.base, range.head);
@@ -805,7 +841,7 @@ export async function checkWorkspace(root) {
         )
         .map((change) => change.file),
     );
-    evidenceFailures.push(
+    changeEvidence.push(
       ...auditChangeEvidence({ changes, boundaryChanges }).map(
         (failure) => `change evidence: ${failure}`,
       ),
@@ -816,7 +852,7 @@ export async function checkWorkspace(root) {
     files,
     packageJson,
     graph,
-    changeEvidence: evidenceFailures,
+    changeEvidence,
   });
   await checkArchitecture(root, graph, failures);
   return [...new Set(failures)].sort();
@@ -826,7 +862,7 @@ async function main() {
   const command = process.argv[2] ?? 'check';
   const root = path.resolve(process.argv[3] ?? '.');
   if (command === 'write-architecture') {
-    await writeArchitecture(root, await createProjectGraph(root));
+    await writeArchitecture(root);
     return;
   }
   if (command !== 'check') {
