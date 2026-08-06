@@ -25,25 +25,26 @@ jobs:
           fetch-depth: 0
 
       # BEGIN STEADYSTACK REVIEW FIX
-      - name: Materialize generator fix blobs
+      - name: Materialize review fix blobs
         run: |
           cp tools/template/apply-steadystack-review-fix.mjs "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
           git reset --hard e5705e6e246b97c7fb97ed000eea479b81b85ab9
           node "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
-          cp tools/workspace-plugin/src/generators/init/generator.ts "$RUNNER_TEMP/generator.ts"
-          cp tools/workspace-plugin/src/generators/init/generator.spec.ts "$RUNNER_TEMP/generator.spec.ts"
+          mkdir -p "$RUNNER_TEMP/steadystack-review-files"
+          while IFS= read -r file; do
+            mkdir -p "$RUNNER_TEMP/steadystack-review-files/$(dirname "$file")"
+            cp "$file" "$RUNNER_TEMP/steadystack-review-files/$file"
+          done < <(git diff --name-only e5705e6e246b97c7fb97ed000eea479b81b85ab9)
           git checkout --orphan steadystack-review-blobs
           git rm -rf .
-          mkdir -p tools/workspace-plugin/src/generators/init
-          cp "$RUNNER_TEMP/generator.ts" tools/workspace-plugin/src/generators/init/generator.ts
-          cp "$RUNNER_TEMP/generator.spec.ts" tools/workspace-plugin/src/generators/init/generator.spec.ts
+          cp -a "$RUNNER_TEMP/steadystack-review-files/." .
 
-      - name: Commit and expose generator blobs
+      - name: Commit and expose review fix blobs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "chore: expose SteadyStack generator fix blobs"
+          git commit -m "chore: expose SteadyStack review fix blobs"
           git push --force origin "HEAD:refs/heads/agent/steadystack-review-blobs"
       # END STEADYSTACK REVIEW FIX
 
