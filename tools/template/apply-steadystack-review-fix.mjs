@@ -122,5 +122,16 @@ const forbiddenPatterns = [`;
     .replace(patternsBefore, patternsAfter);
 });
 
+update('.github/workflows/ci.yml', (content) => {
+  const start = '      # BEGIN STEADYSTACK REVIEW FIX\n';
+  const end = '      # END STEADYSTACK REVIEW FIX\n';
+  const startIndex = content.indexOf(start);
+  const endIndex = content.indexOf(end, startIndex);
+  if (startIndex < 0 || endIndex < 0) {
+    throw new Error('Temporary CI materialization block was not found.');
+  }
+  return content.slice(0, startIndex) + content.slice(endIndex + end.length);
+});
+
 unlinkSync('tools/template/apply-steadystack-review-fix.mjs');
 unlinkSync('.github/workflows/steadystack-review-fix.yml');
