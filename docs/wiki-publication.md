@@ -65,10 +65,10 @@ git push origin HEAD
 Verify the rendered wiki, not only the checked-in source:
 
 - every `_Sidebar` link resolves;
-- Home links to Agentic Development Model and SteadyStack Identity Migration;
+- Home links to Agentic Development Model;
 - the source-repository links target `kaleigh-dem/steady-stack`;
+- Home and Releases and Upgrades use the current SteadyStack repository, package, plugin, upgrade, and artifact names;
 - Image Supply Chain and Releases and Upgrades describe supply-chain evidence and immutable digest promotion;
-- SteadyStack Identity Migration shows current package, upgrade, artifact, and repository names;
 - Authentication and Authorization, Database and Data Management, Worker and Background Jobs, Containers and Preview Environments, Troubleshooting, and CI Diagnostics exist;
 - any page that existed only in the prior rendered wiki remains present unless a separately reviewed deletion approved its removal.
 
