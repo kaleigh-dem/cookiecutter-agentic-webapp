@@ -19,7 +19,7 @@ The wiki was derived from implementation and maintained repository documents, in
 - performance budget and smoke-test implementation
 - merged PR #50 supply-chain evidence, PR #52 immutable promotion, PR #55 CI diagnostics, PR #59 cache-input auditing, and PR #61 SteadyStack identity rebrand
 
-The hidden GitHub wiki Git repository is not exposed through the ordinary repository contents API and does not support the main repository's pull-request workflow. Reviewed source is maintained under `wiki/`. After a reviewed wiki change reaches `main`, `.github/workflows/wiki-publish.yml` synchronizes it to `steady-stack.wiki.git` while preserving wiki-only pages and refusing deletions. `docs/wiki-publication.md` documents the manual fallback.
+The hidden GitHub wiki Git repository is not exposed through the ordinary repository contents API and does not support the main repository's pull-request workflow. Reviewed source is maintained under `wiki/`. After a reviewed wiki change reaches `main`, `.github/workflows/wiki-publish.yml` synchronizes it to `steady-stack.wiki.git`, preserves wiki-only pages except those explicitly listed in `wiki/deletions.txt`, and rejects every unapproved deletion. `docs/wiki-publication.md` documents the manual fallback.
 
 ## Final information architecture
 
@@ -168,6 +168,10 @@ pnpm nx run database:test
 SteadyStack is the canonical repository-owned identity. Current package manifests, generator guidance, upgrade commands, release artifacts, repository links, wiki publication, authentication defaults, and generated-workspace provenance use the SteadyStack forms. Generated products choose and retain their own application identity.
 
 The repository had no released generated users before the SteadyStack public identity became canonical. For that reason, the end-user wiki documents only current names and does not publish a separate identity-transition guide. Historical mapping and compatibility details remain in `docs/steadystack-migration.md` for maintainers.
+
+### Reviewed rendered-wiki deletions
+
+Checked-in Markdown remains the authoritative reviewed page set. Pages that exist only in the rendered wiki are preserved by default. A rendered page is deleted only when its top-level `.md` filename is listed in `wiki/deletions.txt`, the corresponding reviewed source is absent, navigation no longer references it, and no unapproved deletion is staged. The manifest remains as an auditable, idempotent record.
 
 ### Agentic compatibility versus optional product AI
 
