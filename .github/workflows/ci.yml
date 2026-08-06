@@ -3,11 +3,11 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, agent/steadystack-rebrand]
+    branches: [main]
 
 permissions:
   actions: read
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -23,30 +23,6 @@ jobs:
         with:
           filter: tree:0
           fetch-depth: 0
-
-      # BEGIN STEADYSTACK REVIEW FIX
-      - name: Materialize review fix blobs
-        run: |
-          cp tools/template/apply-steadystack-review-fix.mjs "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
-          git reset --hard e5705e6e246b97c7fb97ed000eea479b81b85ab9
-          node "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
-          mkdir -p "$RUNNER_TEMP/steadystack-review-files"
-          while IFS= read -r file; do
-            mkdir -p "$RUNNER_TEMP/steadystack-review-files/$(dirname "$file")"
-            cp "$file" "$RUNNER_TEMP/steadystack-review-files/$file"
-          done < <(git diff --name-only e5705e6e246b97c7fb97ed000eea479b81b85ab9)
-          git checkout --orphan steadystack-review-blobs
-          git rm -rf .
-          cp -a "$RUNNER_TEMP/steadystack-review-files/." .
-
-      - name: Commit and expose review fix blobs
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: expose SteadyStack review fix blobs"
-          git push --force origin "HEAD:refs/heads/agent/steadystack-review-blobs"
-      # END STEADYSTACK REVIEW FIX
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
