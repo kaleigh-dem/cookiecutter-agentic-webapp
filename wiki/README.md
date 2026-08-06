@@ -19,4 +19,4 @@ The workflow can also be dispatched manually as **Publish reviewed wiki**.
 
 Use the checked-in procedure in [`docs/wiki-publication.md`](https://github.com/kaleigh-dem/steady-stack/blob/main/docs/wiki-publication.md) only when automated publication cannot push to the hidden wiki repository.
 
-Do not delete wiki-only pages while synchronizing reviewed source. Inspect the rendered wiki after publication and verify every sidebar link, the SteadyStack identity migration page, operational pages, and source-repository links.
+Do not delete wiki-only pages while synchronizing reviewed source. Inspect the rendered wiki after publication and verify every sidebar link, current SteadyStack names on Home and Releases and Upgrades, operational pages, and source-repository links.
