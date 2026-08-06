@@ -13,13 +13,13 @@ The wiki was derived from implementation and maintained repository documents, in
 - root `README.md`, `AGENTS.md`, `.mcp.json`, `package.json`, `nx.json`, `.env.example`, Compose
 - application and database `project.json` files
 - workspace plugin generator registry, schemas, shared utilities, and implementations
-- GitHub Actions CI, Security, Delivery, Generated workspace, image release, and digest promotion workflows
-- getting started, initialization, architecture, authentication, rate limiting, database, worker, delivery, production readiness, upgrade, release, validation, runtime, security, and runbook documentation
+- GitHub Actions CI, Security, Delivery, Generated workspace, image release, digest promotion, and wiki publication workflows
+- getting started, initialization, architecture, authentication, rate limiting, database, worker, delivery, production readiness, upgrade, release, validation, runtime, security, migration, and runbook documentation
 - nested `AGENTS.md` files for web, API, worker, contracts, database, Agent Task domain, web feature, and worker job
 - performance budget and smoke-test implementation
-- merged PR #50 image supply-chain implementation and open PR #52 immutable digest-promotion branch
+- merged PR #50 supply-chain evidence, PR #52 immutable promotion, PR #55 CI diagnostics, PR #59 cache-input auditing, and PR #61 SteadyStack identity migration
 
-The repository connector could not expose the hidden GitHub wiki Git repository through the ordinary contents API, even after its first page was created. This reviewed source is therefore maintained under `wiki/` in the main repository and can be synchronized to the wiki Git repository after review. GitHub wiki repositories do not expose the normal pull-request workflow through the connected interface.
+The hidden GitHub wiki Git repository is not exposed through the ordinary repository contents API and does not support the main repository's pull-request workflow. Reviewed source is maintained under `wiki/`. After a reviewed wiki change reaches `main`, `.github/workflows/wiki-publish.yml` synchronizes it to `steady-stack.wiki.git` while preserving wiki-only pages and refusing deletions. `docs/wiki-publication.md` documents the manual fallback.
 
 ## Final information architecture
 
@@ -35,16 +35,18 @@ The repository connector could not expose the hidden GitHub wiki Git repository 
 10. Database and Data Management
 11. Worker and Background Jobs
 12. Validation and Testing
-13. Containers and Preview Environments
-14. Repository and GitHub Setup
-15. Image Supply Chain
-16. Production Readiness
-17. Releases and Upgrades
-18. Troubleshooting
-19. Documentation Audit
-20. `_Sidebar` and `_Footer`
+13. CI Diagnostics
+14. Containers and Preview Environments
+15. Repository and GitHub Setup
+16. Image Supply Chain
+17. Production Readiness
+18. Releases and Upgrades
+19. Troubleshooting
+20. SteadyStack Identity Migration
+21. Documentation Audit
+22. `_Sidebar` and `_Footer`
 
-Naming uses title case for page headings and hyphenated GitHub Wiki filenames. Cross-links use wiki page slugs. Repository file links point at stable `main` paths and explain the file’s role.
+Naming uses title case for page headings and hyphenated GitHub Wiki filenames. Cross-links use wiki page slugs. Repository file links point at stable `main` paths and explain the file's role.
 
 ## Coverage matrix
 
@@ -62,12 +64,14 @@ Naming uses title case for page headings and hyphenated GitHub Wiki filenames. C
 | PostgreSQL, migrations, seed, reset, backups                              | Database and Data Management        |
 | Outbox, leasing, retries, replay, metrics, drain                          | Worker and Background Jobs          |
 | `pnpm check`, focused commands, budgets, clean tree                       | Validation and Testing              |
+| Cancellation, failure artifacts, traces, logs, cache fallback             | CI Diagnostics                      |
 | Images, preview, smoke, performance, cleanup                              | Containers and Preview Environments |
 | Repository controls, environments, permissions, retention                 | Repository and GitHub Setup         |
 | SBOMs, Trivy, policy, signatures, attestations, digests                   | Image Supply Chain                  |
 | Governance, secrets, identity, data, operations, evidence                 | Production Readiness                |
 | Release artifacts, provenance, upgrade walkthrough                        | Releases and Upgrades               |
 | Symptom-based diagnostics                                                 | Troubleshooting                     |
+| Canonical public identity, consumer migration, integration checks         | SteadyStack Identity Migration      |
 | Audit, discrepancies, verified commands, gaps                             | Documentation Audit                 |
 
 ## Verified commands
@@ -161,9 +165,15 @@ pnpm nx run database:test
 
 ## Discrepancies and important reconciliations
 
+### SteadyStack public identity
+
+SteadyStack is the canonical repository-owned identity. Current package manifests, generator guidance, upgrade commands, release artifacts, repository links, wiki publication, authentication defaults, and generated-workspace provenance use the SteadyStack forms. Existing generated products retain their own application identity when their upstream provenance changes.
+
+The exact historical mapping and compatibility inventory are maintained in `docs/steadystack-migration.md`. The wiki presents current commands and links, while [SteadyStack Identity Migration](SteadyStack-Identity-Migration) explains consumer upgrades and external integration checks.
+
 ### Agentic compatibility versus optional product AI
 
-Agentic compatibility is a baseline repository property implemented through `AGENTS.md`, Nx graph and MCP context, generators, executable boundaries, validation, and upgrades. The `ai` initialization flag only records product intent to add AI-powered application features. The wiki now states this distinction explicitly.
+Agentic compatibility is a baseline repository property implemented through `AGENTS.md`, Nx graph and MCP context, generators, executable boundaries, validation, and upgrades. The `ai` initialization flag only records product intent to add AI-powered application features. The wiki states this distinction explicitly.
 
 ### Worker operations port exposure
 
@@ -179,11 +189,11 @@ pnpm preview:up
 pnpm preview:smoke
 ```
 
-The `preview:up` implementation itself builds images and runs smoke after startup. The wiki explains that the explicit build and smoke commands are useful for isolation/repetition but are redundant in the shortest path.
+The `preview:up` implementation itself builds images and runs smoke after startup. The wiki explains that the explicit build and smoke commands are useful for isolation or repetition but are redundant in the shortest path.
 
 ### Image publication, promotion, and deployment are separate
 
-The digest-promotion implementation changes the release model from optional mutable-tag publication to one-time image publication plus read-only production promotion. The wiki documents that `Release images` publishes once, `Promote release digests` approves exact digests, and the adopting platform performs deployment. Neither workflow deploys the service.
+The digest-promotion implementation uses one-time image publication plus read-only production promotion. The wiki documents that `Release images` publishes once, `Promote release digests` approves exact digests, and the adopting platform performs deployment. Neither workflow deploys the service.
 
 ### Redis and Kubernetes profile status
 
@@ -192,6 +202,10 @@ Both are valid initialization metadata, but Redis delivery and organization-spec
 ### OIDC/session completeness
 
 The repository implements an OIDC API verifier and browser credential adapter. Provider login/callback/logout and the secure server-session credential endpoint remain adopter-owned. The wiki preserves this distinction.
+
+### CI cancellation, cache, and failure evidence
+
+PR #55 completed pull-request-only cancellation, optional BuildKit cache reuse, and retained diagnostics. Delivery uses `.cache/buildkit`; Generated workspace stores cache state outside its temporary source copy at `../buildkit-cache`. Cache failure affects speed, not correctness. Failure bundles are retained for 14 days.
 
 ### Artifact retention is bounded
 
@@ -205,10 +219,11 @@ The supply-chain artifact defaults to 30-day retention and the production promot
 
 | Existing content                    | Disposition                                                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Root README                         | Reframed around the agentic-development thesis while retaining concise platform and operating guidance.            |
-| `docs/agentic-development.md`       | Added as the repository-local source for agent workflow, control surfaces, approval boundaries, and anti-patterns. |
+| Root README                         | Reframed around the agentic-development thesis and SteadyStack identity while retaining concise operating guidance. |
+| `docs/agentic-development.md`       | Repository-local source for agent workflow, control surfaces, approval boundaries, and anti-patterns.             |
 | `docs/getting-started.md`           | Expanded for agent-ready onboarding and merged into Quick Start, Profiles, Production Readiness.                   |
 | `docs/template-initialization.md`   | Merged into Profiles and Releases/Upgrades.                                                                        |
+| `docs/steadystack-migration.md`     | Source for canonical identity, compatibility, consumer migration, and integration verification.                    |
 | Architecture docs and ADR summaries | Reorganized into Repository Tour and Architecture.                                                                 |
 | Auth docs                           | Merged into Authentication and Authorization, with local/production separation.                                    |
 | Database docs                       | Expanded into task-based database page.                                                                            |
@@ -218,7 +233,7 @@ The supply-chain artifact defaults to 30-day retention and the production promot
 | Workspace plugin README             | Reframed as the deterministic structural write API for humans and coding agents.                                   |
 | Template release/upgrade docs       | Split by generated-workspace user tasks; maintainer procedures labeled.                                            |
 | Runbooks                            | Summarized and linked conceptually from Production Readiness and Troubleshooting.                                  |
-| Existing first wiki page            | Replaced by the authored Home source; its exact remote content could not be retrieved through the available API.   |
+| Existing first wiki page            | Replaced by the authored Home source; its exact remote content could not be retrieved through the contents API.    |
 
 No source documentation should be deleted solely because it is represented in the wiki; repository-local docs remain versioned evidence and implementation-adjacent references.
 
@@ -310,7 +325,7 @@ Needed information:
 
 The page set provides a direct path to:
 
-- understand the template's agentic-development purpose and approval model
+- understand SteadyStack's agentic-development purpose and approval model
 - configure a safe agent access and repository governance model
 - create and initialize a workspace
 - run it locally
@@ -319,13 +334,15 @@ The page set provides a direct path to:
 - understand synchronous and asynchronous architecture
 - build and validate the preview environment
 - identify production replacement points
+- migrate consumers and external integrations to the SteadyStack identity
 - perform a dry-run and applied upgrade
-- diagnose the required common symptoms
+- diagnose common runtime, delivery, and CI symptoms
 
-Runtime execution should still be repeated in the generated repository’s CI and target environment because documentation verification cannot replace the repository’s own test and delivery contracts.
+Runtime execution should still be repeated in the generated repository's CI and target environment because documentation verification cannot replace the repository's own test and delivery contracts.
 
 ## Related pages
 
+- [SteadyStack Identity Migration](SteadyStack-Identity-Migration)
 - [Agentic Development Model](Agentic-Development-Model)
 - [Home](Home)
 - [Production Readiness](Production-Readiness)
