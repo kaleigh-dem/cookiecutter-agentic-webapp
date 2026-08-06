@@ -1,0 +1,33 @@
+{
+  "name": "documentation",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/documentation",
+  "projectType": "library",
+  "tags": ["scope:tooling", "type:tooling", "runtime:node"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint tools/documentation"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "{projectRoot}/**/*",
+        "{workspaceRoot}/**/*.md",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/nx.json",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/**/project.json"
+      ],
+      "options": {
+        "commands": [
+          "node --test tools/documentation/documentation-integrity.spec.mjs",
+          "node tools/documentation/documentation-integrity.mjs check"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}
