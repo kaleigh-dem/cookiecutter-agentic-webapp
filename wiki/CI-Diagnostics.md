@@ -1,8 +1,6 @@
 # CI Diagnostics
 
-> **Implementation status:** This page is prepared for Phase 13 task P13-03 in draft PR #55. Artifact names and commands below match that draft's current implementation. Confirm them against the merged workflow before removing this notice.
-
-Use this page when a required GitHub Actions run is cancelled, fails without enough console context, or behaves differently from a local run.
+Use this page when a required GitHub Actions run is cancelled, fails without enough console context, or behaves differently from a local run. The cancellation, BuildKit cache, and retained-artifact behavior described here was completed in PR #55.
 
 ## Concurrency and cancellation
 
@@ -29,7 +27,7 @@ Artifacts are uploaded only after failure and only when the workflow produced ma
 | Generated-workspace lifecycle failure              | `generated-workspace-diagnostics-<run_id>-<run_attempt>` | the failed step's generated workspace output and test-output bundle                |
 | Security policy failure                            | no dedicated failure bundle                              | failing Security job output and the focused local security command                 |
 
-The P13-03 implementation retains these failure artifacts for 14 days. Download evidence before rerunning or closing a long-running investigation.
+The workflows retain these failure artifacts for 14 days. Download evidence before rerunning or closing a long-running investigation.
 
 ## Download an artifact
 
