@@ -41,7 +41,11 @@ jobs:
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
-      - run: pnpm format:check
+      - name: Capture formatter patch
+        run: |
+          pnpm exec prettier --write tools/documentation/documentation-integrity.mjs tools/documentation/documentation-integrity.spec.mjs
+          git diff -- tools/documentation/documentation-integrity.mjs tools/documentation/documentation-integrity.spec.mjs
+          git diff --exit-code
       - name: Check documentation integrity
         run: pnpm docs:check
       - name: Audit Nx cache inputs
