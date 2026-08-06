@@ -70,14 +70,22 @@ Supported profiles can record some product or platform directions without implem
 
 Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/steady-stack/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
 
-Phase 13 progress record, updated August 5, 2026:
+Current Phase 13 status:
 
 - **P13-01 — complete:** image and dependency supply-chain artifacts, reviewed in PR #50.
 - **P13-02 — complete:** immutable digest publication and promotion, merged in PR #52 and hardened in PR #53.
-- **P13-03 — in progress:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics are being implemented in draft PR #55.
-- **P13-04 — planned:** audit Nx cache inputs and affected execution after P13-03 completes.
+- **P13-03 — complete:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics, merged in PR #55.
+- **P13-04 — complete:** Nx cache-input auditing and affected execution, merged in PR #59.
+- **P13-05 — next:** documentation integrity checks.
+- **P13-06 — planned:** release metadata and rollback-evidence validation.
 
-Do not mark P13-03 complete until its implementation, documentation, and applicable exact-head checks have passed and the pull request has merged.
+Use `docs/TODO.md` for sequencing, acceptance criteria, and future status changes.
+
+## SteadyStack identity
+
+PR #61 established the SteadyStack public identity across the repository, package scope, plugin, upgrade executable, release artifact, generated-workspace provenance, workflows, and documentation. New workspaces use `kaleigh-dem/steady-stack`, while existing generated products retain their own application identity.
+
+See [SteadyStack Identity Migration](SteadyStack-Identity-Migration) for canonical names, upgrade steps, compatibility boundaries, and external integration checks.
 
 ## Common tasks
 
@@ -98,6 +106,7 @@ Do not mark P13-03 complete until its implementation, documentation, and applica
 | Build and test production-shaped images                 | [Containers and Preview Environments](Containers-and-Preview-Environments) |
 | Verify image SBOMs, scans, signatures, and attestations | [Image Supply Chain](Image-Supply-Chain)                                   |
 | Configure repository controls and agent permissions     | [Repository and GitHub Setup](Repository-and-GitHub-Setup)                 |
+| Migrate to the SteadyStack public identity              | [SteadyStack Identity Migration](SteadyStack-Identity-Migration)           |
 | Prepare for launch                                      | [Production Readiness](Production-Readiness)                               |
 | Upgrade a generated repository                          | [Releases and Upgrades](Releases-and-Upgrades)                             |
 | Diagnose a failure                                      | [Troubleshooting](Troubleshooting)                                         |
