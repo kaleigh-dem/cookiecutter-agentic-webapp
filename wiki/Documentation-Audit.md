@@ -217,23 +217,23 @@ The supply-chain artifact defaults to 30-day retention and the production promot
 
 ## Existing documentation disposition
 
-| Existing content                    | Disposition                                                                                                        |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Existing content                    | Disposition                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Root README                         | Reframed around the agentic-development thesis and SteadyStack identity while retaining concise operating guidance. |
-| `docs/agentic-development.md`       | Repository-local source for agent workflow, control surfaces, approval boundaries, and anti-patterns.             |
-| `docs/getting-started.md`           | Expanded for agent-ready onboarding and merged into Quick Start, Profiles, Production Readiness.                   |
-| `docs/template-initialization.md`   | Merged into Profiles and Releases/Upgrades.                                                                        |
-| `docs/steadystack-migration.md`     | Source for canonical identity, compatibility, consumer migration, and integration verification.                    |
-| Architecture docs and ADR summaries | Reorganized into Repository Tour and Architecture.                                                                 |
-| Auth docs                           | Merged into Authentication and Authorization, with local/production separation.                                    |
-| Database docs                       | Expanded into task-based database page.                                                                            |
-| Worker docs                         | Merged into operations-focused worker page.                                                                        |
-| Delivery docs                       | Merged into Containers/Preview, Image Supply Chain, Repository/GitHub Setup, Releases, and Production Readiness.   |
-| Generated project checklist         | Expanded with agent-readiness governance and reorganized into launch checklist with automated/human distinction.   |
-| Workspace plugin README             | Reframed as the deterministic structural write API for humans and coding agents.                                   |
-| Template release/upgrade docs       | Split by generated-workspace user tasks; maintainer procedures labeled.                                            |
-| Runbooks                            | Summarized and linked conceptually from Production Readiness and Troubleshooting.                                  |
-| Existing first wiki page            | Replaced by the authored Home source; its exact remote content could not be retrieved through the contents API.    |
+| `docs/agentic-development.md`       | Repository-local source for agent workflow, control surfaces, approval boundaries, and anti-patterns.               |
+| `docs/getting-started.md`           | Expanded for agent-ready onboarding and merged into Quick Start, Profiles, Production Readiness.                    |
+| `docs/template-initialization.md`   | Merged into Profiles and Releases/Upgrades.                                                                         |
+| `docs/steadystack-migration.md`     | Source for canonical identity, compatibility, consumer migration, and integration verification.                     |
+| Architecture docs and ADR summaries | Reorganized into Repository Tour and Architecture.                                                                  |
+| Auth docs                           | Merged into Authentication and Authorization, with local/production separation.                                     |
+| Database docs                       | Expanded into task-based database page.                                                                             |
+| Worker docs                         | Merged into operations-focused worker page.                                                                         |
+| Delivery docs                       | Merged into Containers/Preview, Image Supply Chain, Repository/GitHub Setup, Releases, and Production Readiness.    |
+| Generated project checklist         | Expanded with agent-readiness governance and reorganized into launch checklist with automated/human distinction.    |
+| Workspace plugin README             | Reframed as the deterministic structural write API for humans and coding agents.                                    |
+| Template release/upgrade docs       | Split by generated-workspace user tasks; maintainer procedures labeled.                                             |
+| Runbooks                            | Summarized and linked conceptually from Production Readiness and Troubleshooting.                                   |
+| Existing first wiki page            | Replaced by the authored Home source; its exact remote content could not be retrieved through the contents API.     |
 
 No source documentation should be deleted solely because it is represented in the wiki; repository-local docs remain versioned evidence and implementation-adjacent references.
 
