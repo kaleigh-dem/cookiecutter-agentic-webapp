@@ -25,16 +25,13 @@ jobs:
           fetch-depth: 0
 
       # BEGIN STEADYSTACK REVIEW FIX
-      - name: Checkout exact source head
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
+      - name: Materialize source-only fix from reviewed head
+        run: |
+          cp tools/template/apply-steadystack-review-fix.mjs "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
+          git reset --hard e5705e6e246b97c7fb97ed000eea479b81b85ab9
+          node "$RUNNER_TEMP/apply-steadystack-review-fix.mjs"
 
-      - name: Apply requested SteadyStack review fixes
-        run: node tools/template/apply-steadystack-review-fix.mjs
-
-      - name: Commit and push the SteadyStack review fix
+      - name: Commit and expose clean source tree
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -42,7 +39,7 @@ jobs:
           git commit -m "fix: remove legacy authentication branding"
           echo "FINAL_COMMIT_SHA=$(git rev-parse HEAD)"
           echo "FINAL_TREE_SHA=$(git rev-parse HEAD^{tree})"
-          git push origin "HEAD:agent/steadystack-rebrand"
+          git push --force origin "HEAD:agent/steadystack-review-fix-final"
       # END STEADYSTACK REVIEW FIX
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
