@@ -83,9 +83,9 @@ Use `docs/TODO.md` for sequencing, acceptance criteria, and future status change
 
 ## SteadyStack identity
 
-PR #61 established the SteadyStack public identity across the repository, package scope, plugin, upgrade executable, release artifact, generated-workspace provenance, workflows, and documentation. New workspaces use `kaleigh-dem/steady-stack`, while existing generated products retain their own application identity.
+PR #61 established the SteadyStack public identity across the repository, package scope, plugin, upgrade executable, release artifact, generated-workspace provenance, workflows, and documentation. New workspaces use `kaleigh-dem/steady-stack`, while generated products choose and retain their own application identity.
 
-See [SteadyStack Identity Migration](SteadyStack-Identity-Migration) for canonical names, upgrade steps, compatibility boundaries, and external integration checks.
+The repository had no released generated users before SteadyStack became the canonical public identity, so the end-user wiki documents only the current names. Historical rename notes remain in `docs/steadystack-migration.md` for maintainers.
 
 ## Common tasks
 
@@ -106,7 +106,6 @@ See [SteadyStack Identity Migration](SteadyStack-Identity-Migration) for canonic
 | Build and test production-shaped images                 | [Containers and Preview Environments](Containers-and-Preview-Environments) |
 | Verify image SBOMs, scans, signatures, and attestations | [Image Supply Chain](Image-Supply-Chain)                                   |
 | Configure repository controls and agent permissions     | [Repository and GitHub Setup](Repository-and-GitHub-Setup)                 |
-| Migrate to the SteadyStack public identity              | [SteadyStack Identity Migration](SteadyStack-Identity-Migration)           |
 | Prepare for launch                                      | [Production Readiness](Production-Readiness)                               |
 | Upgrade a generated repository                          | [Releases and Upgrades](Releases-and-Upgrades)                             |
 | Diagnose a failure                                      | [Troubleshooting](Troubleshooting)                                         |
