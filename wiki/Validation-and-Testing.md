@@ -30,14 +30,15 @@ pnpm check
 2. `pnpm contracts:check`
 3. `pnpm contracts:compat`
 4. `pnpm format:check`
-5. `pnpm security:secrets`
-6. `pnpm security:audit`
-7. `pnpm security:licenses`
-8. `pnpm delivery:check`
-9. `pnpm lint`
-10. `pnpm typecheck`
-11. `pnpm test`
-12. `pnpm build`
+5. `pnpm docs:check`
+6. `pnpm security:secrets`
+7. `pnpm security:audit`
+8. `pnpm security:licenses`
+9. `pnpm delivery:check`
+10. `pnpm lint`
+11. `pnpm typecheck`
+12. `pnpm test`
+13. `pnpm build`
 
 The command stops at the first failing stage.
 
@@ -72,6 +73,23 @@ pnpm format:check
 ```
 
 Use `pnpm format` to apply fixes.
+
+### Documentation integrity
+
+```bash
+pnpm docs:check
+```
+
+Validates internal links, repository paths, root and Nx commands, documented environment-variable names, current SteadyStack identity and authentication descriptions, the committed Nx project-graph diagram, and required roadmap-plus-ADR evidence for generator or architectural-boundary changes.
+
+After changing the Nx project inventory or dependency graph, regenerate and review the diagram:
+
+```bash
+pnpm docs:architecture
+pnpm docs:check
+```
+
+See the repository-local `docs/documentation-integrity.md` for the exact checked surfaces and failure remediation.
 
 ### Security policy
 
@@ -168,6 +186,13 @@ Affected validation:
 pnpm affected
 ```
 
+Documentation integrity:
+
+```bash
+pnpm docs:check
+pnpm docs:architecture
+```
+
 Security integration without cache:
 
 ```bash
@@ -218,7 +243,7 @@ PR #55 implemented pull-request-only cancellation, cache-aware container builds,
 
 After a failure, use the retained artifact that matches the workflow:
 
-- `ci-failure-<run_id>-<run_attempt>` for Playwright evidence and the generated CI release plan;
+- `ci-failure-<run_id>-<run_attempt>` for Playwright evidence, the generated CI release plan, and the expected project-graph Markdown when documentation graph validation fails;
 - `delivery-failure-<run_id>-<run_attempt>` for preview service logs and performance JSON;
 - `generated-workspace-diagnostics-<run_id>-<run_attempt>` for the generated repository's diagnostic bundle.
 
