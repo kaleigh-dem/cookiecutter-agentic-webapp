@@ -3,11 +3,11 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, agent/steadystack-rebrand]
 
 permissions:
   actions: read
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -25,16 +25,16 @@ jobs:
           fetch-depth: 0
 
       # BEGIN STEADYSTACK REVIEW FIX
-      - name: Checkout exact pull-request head
+      - name: Checkout exact source head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Apply requested SteadyStack review fixes
         run: node tools/template/apply-steadystack-review-fix.mjs
 
-      - name: Commit and expose the SteadyStack review fix
+      - name: Commit and push the SteadyStack review fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
