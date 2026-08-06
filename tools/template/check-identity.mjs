@@ -18,12 +18,18 @@ const templateUpperIdentity = 'STEADYSTACK';
 const upstreamRepository = 'kaleigh-dem/steady-stack';
 const upstreamUrl = `https://github.com/${upstreamRepository}`;
 const personalCodeowner = `@${['kaleigh', 'dem'].join('-')}`;
+const formerOidcAudience = ['agentic', 'api'].join('-');
+const formerSessionCookie = ['agentic', 'access', 'token'].join('_');
+const formerHeroLabel = ['NX', 'AGENTIC', 'TEMPLATE'].join(' ');
 
 const forbiddenPatterns = [
   ['template package scope', templatePackageScope],
   ['template technical identity', templateTechnicalIdentity],
   ['template display or class identity', templateDisplayIdentity],
   ['template upper-snake identity', templateUpperIdentity],
+  ['former OIDC audience', formerOidcAudience],
+  ['former session cookie', formerSessionCookie],
+  ['former hero label', formerHeroLabel],
   ['personal CODEOWNER', personalCodeowner],
 ];
 

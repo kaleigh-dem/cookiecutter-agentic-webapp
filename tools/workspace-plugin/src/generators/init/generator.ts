@@ -333,6 +333,11 @@ function rewriteIdentityContent(
     : content.replaceAll(templateIdentity.repository, generatedRepository);
 
   const replacements: ReadonlyArray<readonly [string, string]> = [
+    [`${templateIdentity.slug}-api`, `${options.applicationSlug}-api`],
+    [
+      `${templateIdentity.slug}_access_token`,
+      `${generatedSnakeName}_access_token`,
+    ],
     [templateIdentity.packageScope, options.packageScope],
     [templateIdentity.upperSnakeName, generatedUpperSnakeName],
     [templateIdentity.displayName, options.displayName],

@@ -17,7 +17,7 @@ import {
 } from './oidc-access-token-verifier';
 
 const ISSUER = 'https://identity.example.com/tenant';
-const AUDIENCE = 'agentic-api';
+const AUDIENCE = 'steadystack-api';
 const JWKS_URI = 'https://identity.example.com/tenant/keys';
 
 function keyPair(kid: string): {

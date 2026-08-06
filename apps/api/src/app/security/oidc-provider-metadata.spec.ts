@@ -21,7 +21,7 @@ function accessToken(): string {
 function config(): OidcVerifierConfig {
   return {
     issuer: ISSUER,
-    audiences: ['agentic-api'],
+    audiences: ['steadystack-api'],
     allowedAlgorithms: new Set(['RS256']),
     clockSkewSeconds: 60,
     discoveryCacheTtlMs: 60_000,

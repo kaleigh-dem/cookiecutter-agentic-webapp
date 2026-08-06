@@ -16,7 +16,7 @@ Set these values in the API environment:
 ```dotenv
 AUTH_ACCESS_TOKEN_VERIFIER=oidc
 AUTH_OIDC_ISSUER=https://identity.example.com/tenant
-AUTH_OIDC_AUDIENCE=agentic-api
+AUTH_OIDC_AUDIENCE=steadystack-api
 ```
 
 `AUTH_OIDC_ISSUER` must be the exact HTTPS issuer string carried in access tokens and returned by the provider discovery document. `AUTH_OIDC_AUDIENCE` accepts one or more comma-separated audiences; at least one must appear in the token `aud` claim.

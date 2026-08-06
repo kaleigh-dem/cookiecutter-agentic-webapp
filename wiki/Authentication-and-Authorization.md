@@ -71,7 +71,7 @@ A reload obtains a new token from the secure session.
 ```dotenv
 AUTH_ACCESS_TOKEN_VERIFIER=oidc
 AUTH_OIDC_ISSUER=https://identity.example.com/tenant
-AUTH_OIDC_AUDIENCE=agentic-api
+AUTH_OIDC_AUDIENCE=steadystack-api
 AUTH_OIDC_ALLOWED_ALGORITHMS=RS256
 AUTH_OIDC_CLOCK_SKEW_SECONDS=60
 ```

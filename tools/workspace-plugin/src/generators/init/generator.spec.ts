@@ -69,6 +69,8 @@ function createWorkspaceTree(): Tree {
       'API_PORT=4000',
       'WEB_ORIGIN=http://localhost:3000',
       'NEXT_PUBLIC_API_BASE_URL=http://localhost:4000',
+      'AUTH_OIDC_AUDIENCE=steadystack-api',
+      'AUTH_SESSION_COOKIE_NAME=steadystack_access_token',
       'DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app',
       'OTEL_EXPORTER_OTLP_ENDPOINT=',
       'NEXT_PUBLIC_OTEL_EXPORTER_OTLP_ENDPOINT=',
@@ -228,6 +230,12 @@ describe('init generator', () => {
     );
     expect(tree.read('.env.example', 'utf-8')).toContain(
       'AUTH_ACCESS_TOKEN_VERIFIER=oidc',
+    );
+    expect(tree.read('.env.example', 'utf-8')).toContain(
+      'AUTH_OIDC_AUDIENCE=customer-portal-api',
+    );
+    expect(tree.read('.env.example', 'utf-8')).toContain(
+      'AUTH_SESSION_COOKIE_NAME=customer_portal_access_token',
     );
     expect(tree.read('.env.example', 'utf-8')).toContain(
       'DATABASE_URL=postgresql://postgres:postgres@localhost:55432/customer_portal',

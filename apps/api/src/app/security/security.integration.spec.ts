@@ -33,7 +33,7 @@ import {
 } from './security.module';
 
 const ISSUER = 'https://identity.example.com/tenant';
-const AUDIENCE = 'agentic-api';
+const AUDIENCE = 'steadystack-api';
 const JWKS_URI = 'https://identity.example.com/tenant/keys';
 const NOW_MS = Date.parse('2026-08-03T20:00:00.000Z');
 
