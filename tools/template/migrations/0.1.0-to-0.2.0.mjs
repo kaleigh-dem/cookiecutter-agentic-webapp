@@ -44,7 +44,7 @@ Download the workspace-plugin tarball attached to the target template release an
 
 \`\`\`bash
 pnpm add --save-dev ./downloaded-workspace-plugin-<version>.tgz
-pnpm exec agentic-webapp-upgrade --to <version> --dry-run
+pnpm exec steadystack-upgrade --to <version> --dry-run
 \`\`\`
 
 The command defaults to dry-run mode. Review the migration list, ownership class, action, and any conflicts in the JSON report.
@@ -54,7 +54,7 @@ The command defaults to dry-run mode. Review the migration list, ownership class
 Commit or stash current work, then run:
 
 \`\`\`bash
-pnpm exec agentic-webapp-upgrade --to <version> --apply
+pnpm exec steadystack-upgrade --to <version> --apply
 pnpm check
 \`\`\`
 

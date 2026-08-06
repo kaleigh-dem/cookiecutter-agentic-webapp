@@ -1,4 +1,4 @@
-import type { AgentTaskExecutionRequested } from '@agentic-webapp/contracts';
+import type { AgentTaskExecutionRequested } from '@steadystack/contracts';
 import {
   integer,
   jsonb,

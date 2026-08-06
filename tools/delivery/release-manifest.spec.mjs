@@ -26,15 +26,15 @@ function sampleManifest() {
     },
     images: {
       api: {
-        name: 'ghcr.io/example/agentic-webapp-api',
+        name: 'ghcr.io/example/steadystack-api',
         digest: `sha256:${'a'.repeat(64)}`,
       },
       worker: {
-        name: 'ghcr.io/example/agentic-webapp-worker',
+        name: 'ghcr.io/example/steadystack-worker',
         digest: `sha256:${'b'.repeat(64)}`,
       },
       web: {
-        name: 'ghcr.io/example/agentic-webapp-web',
+        name: 'ghcr.io/example/steadystack-web',
         digest: `sha256:${'c'.repeat(64)}`,
       },
     },
@@ -48,7 +48,7 @@ describe('release manifests', () => {
     expect(manifest.source.environment).toBe('preview');
     expect(manifest.source.ref).toBe('refs/heads/main');
     expect(manifest.images.api.reference).toBe(
-      `ghcr.io/example/agentic-webapp-api@sha256:${'a'.repeat(64)}`,
+      `ghcr.io/example/steadystack-api@sha256:${'a'.repeat(64)}`,
     );
     expect(manifest.images.worker.reference).toContain('@sha256:');
     expect(manifest.images.web.reference).toContain('@sha256:');

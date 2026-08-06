@@ -5,22 +5,22 @@ import {
   CreateAgentTask,
   GetAgentTask,
   type AgentTask,
-} from '@agentic-webapp/backend-agent-task';
+} from '@steadystack/backend-agent-task';
 import type {
   AgentTaskResponse,
   CreateAgentTaskRequest,
   CreateAgentTaskSuccessResponse,
   GetAgentTaskSuccessResponse,
-} from '@agentic-webapp/contracts/server';
+} from '@steadystack/contracts/server';
 import {
   createAgentTaskHttpContract,
   getAgentTaskHttpContract,
-} from '@agentic-webapp/contracts/runtime';
+} from '@steadystack/contracts/runtime';
 import {
   createCorrelationContext,
   getCorrelationContext,
-} from '@agentic-webapp/observability';
-import { getActiveTraceParent } from '@agentic-webapp/observability/telemetry';
+} from '@steadystack/observability';
+import { getActiveTraceParent } from '@steadystack/observability/telemetry';
 import {
   BadRequestException,
   Body,

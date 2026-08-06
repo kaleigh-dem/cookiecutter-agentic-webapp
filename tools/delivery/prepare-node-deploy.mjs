@@ -302,7 +302,7 @@ async function main() {
     'pnpm',
     [
       '--filter',
-      `@agentic-webapp/${serviceName}`,
+      `@steadystack/${serviceName}`,
       'deploy',
       '--prod',
       '--legacy',

@@ -296,8 +296,11 @@ async function packagePlugin(version, outputDirectory) {
   const packaged = {
     ...pluginPackage,
     private: false,
+    // The 0.2.0 artifact publicly exposed agentic-webapp-upgrade. Keep a
+    // deprecated alias so previously generated workspaces can reach the new runner.
     bin: {
-      'agentic-webapp-upgrade': './bin/agentic-webapp-upgrade.mjs',
+      'steadystack-upgrade': './bin/steadystack-upgrade.mjs',
+      'agentic-webapp-upgrade': './bin/steadystack-upgrade.mjs',
     },
     files: ['bin', 'dist', 'generators.json', 'README.md'],
   };
@@ -306,7 +309,7 @@ async function packagePlugin(version, outputDirectory) {
   run('npm', ['pack', '--pack-destination', outputRoot], { cwd: stageRoot });
   const tarball = path.join(
     outputRoot,
-    `agentic-webapp-workspace-plugin-${version}.tgz`,
+    `steadystack-workspace-plugin-${version}.tgz`,
   );
   console.log(tarball);
   return tarball;
@@ -316,7 +319,7 @@ async function verifyRelease(version) {
   const state = await assertVersionConsistency(version);
   await extractReleaseNotes(state.version);
   const packageName = state.pluginPackage.name;
-  if (packageName !== '@agentic-webapp/workspace-plugin') {
+  if (packageName !== '@steadystack/workspace-plugin') {
     throw new Error(`Unexpected release package name: ${packageName}`);
   }
   if (state.pluginPackage.private === true) {

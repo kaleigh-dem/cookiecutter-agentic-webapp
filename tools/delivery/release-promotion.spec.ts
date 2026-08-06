@@ -45,9 +45,9 @@ describe('immutable release promotion', () => {
       );
     }
     for (const dockerfile of [nodeDockerfile, webDockerfile]) {
-      expect(dockerfile).toContain('io.agentic-webapp.release.run-id');
+      expect(dockerfile).toContain('io.steadystack.release.run-id');
       expect(dockerfile).toContain(
-        'io.agentic-webapp.release.build-inputs-sha256',
+        'io.steadystack.release.build-inputs-sha256',
       );
     }
     expect(workflow).toContain('if [ "$GITHUB_RUN_ATTEMPT" = \'1\' ]; then');

@@ -1,4 +1,4 @@
-name: agentic-webapp-production
+name: steadystack-production
 
 services:
   api:
@@ -47,7 +47,7 @@ services:
       retries: 12
       start_period: 20s
     labels:
-      app.agentic-webapp/version: ${APP_VERSION}
+      app.steadystack/version: ${APP_VERSION}
 
   worker:
     image: ${WORKER_IMAGE}
@@ -60,7 +60,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_SERVICE_VERSION: ${APP_VERSION}
     labels:
-      app.agentic-webapp/version: ${APP_VERSION}
+      app.steadystack/version: ${APP_VERSION}
 
   web:
     image: ${WEB_IMAGE}
@@ -84,4 +84,4 @@ services:
       retries: 12
       start_period: 20s
     labels:
-      app.agentic-webapp/version: ${APP_VERSION}
+      app.steadystack/version: ${APP_VERSION}

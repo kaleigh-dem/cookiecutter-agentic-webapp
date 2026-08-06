@@ -1,11 +1,11 @@
 {
-  "name": "@agentic-webapp/web",
+  "name": "@steadystack/web",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@agentic-webapp/contracts": "workspace:*",
-    "@agentic-webapp/ui": "workspace:*",
-    "@agentic-webapp/web-feature-agent-tasks": "workspace:*",
+    "@steadystack/contracts": "workspace:*",
+    "@steadystack/ui": "workspace:*",
+    "@steadystack/web-feature-agent-tasks": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/api-logs": "0.221.0",
     "@opentelemetry/exporter-trace-otlp-http": "0.221.0",

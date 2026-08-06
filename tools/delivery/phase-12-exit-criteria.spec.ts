@@ -5,28 +5,28 @@ import { describe, expect, it } from 'vitest';
 
 // This phase gate intentionally composes the public template generator with delivery validation.
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import initGenerator from '@agentic-webapp/workspace-plugin/src/generators/init/generator';
+import initGenerator from '@steadystack/workspace-plugin/src/generators/init/generator';
 import { parseEnvironmentFile } from './environment.mjs';
 import { validateProductionReadiness } from './production-readiness.mjs';
 
 function createTemplateTree(): Tree {
   const tree = createTreeWithEmptyWorkspace();
   writeJson(tree, 'package.json', {
-    name: '@agentic-webapp/source',
+    name: '@steadystack/source',
     scripts: {
       build: 'nx run-many -t build',
       'containers:build': 'old-command',
-      'initialize:workspace': 'nx g @agentic-webapp/workspace-plugin:init',
+      'initialize:workspace': 'nx g @steadystack/workspace-plugin:init',
     },
     devDependencies: {
-      '@agentic-webapp/workspace-plugin': 'workspace:*',
+      '@steadystack/workspace-plugin': 'workspace:*',
     },
   });
   writeJson(tree, 'tools/workspace-plugin/package.json', {
-    name: '@agentic-webapp/workspace-plugin',
+    name: '@steadystack/workspace-plugin',
   });
   writeJson(tree, 'tsconfig.base.json', {
-    compilerOptions: { customConditions: ['@agentic-webapp/source'] },
+    compilerOptions: { customConditions: ['@steadystack/source'] },
   });
   writeJson(tree, 'tsconfig.json', {
     files: [],
@@ -69,7 +69,7 @@ function createTemplateTree(): Tree {
   tree.write(
     'infra/deploy/compose.preview.yaml',
     [
-      'name: agentic-webapp-preview',
+      'name: steadystack-preview',
       'services:',
       '  postgres:',
       '    environment:',
@@ -80,16 +80,16 @@ function createTemplateTree(): Tree {
   tree.write(
     'infra/deploy/compose.production.yaml',
     [
-      'name: agentic-webapp-production',
+      'name: steadystack-production',
       'services:',
       '  api:',
-      '    image: ghcr.io/example/agentic-webapp-api:latest',
+      '    image: ghcr.io/example/steadystack-api:latest',
       '',
     ].join('\n'),
   );
   tree.write(
     'README.md',
-    'Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform\n',
+    'Upstream template: https://github.com/kaleigh-dem/steady-stack\n',
   );
   tree.write('.github/CODEOWNERS', '* @template-owner\n');
   return tree;

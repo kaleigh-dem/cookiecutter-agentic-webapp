@@ -1,8 +1,8 @@
 import {
   createCorrelationContext,
   runWithCorrelationContext,
-} from '@agentic-webapp/observability';
-import { runWithRemoteTrace } from '@agentic-webapp/observability/telemetry';
+} from '@steadystack/observability';
+import { runWithRemoteTrace } from '@steadystack/observability/telemetry';
 
 import {
   agentTaskExecutionRequestedSchema,

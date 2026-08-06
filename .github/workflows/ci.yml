@@ -50,7 +50,7 @@ jobs:
           mkdir -p "$CI_DIAGNOSTICS_DIR"
           node tools/delivery/release-plan.mjs \
             --environment preview \
-            --image-prefix "ghcr.io/${{ github.repository_owner }}/agentic-webapp" \
+            --image-prefix "ghcr.io/${{ github.repository_owner }}/steadystack" \
             --version 0.0.0-ci \
             --output "$CI_DIAGNOSTICS_DIR/release-plan.json"
       - name: Typecheck and build affected projects
@@ -66,7 +66,7 @@ jobs:
             --version "$version" \
             --output "$release_directory"
           pnpm template:release:smoke -- \
-            --artifact "$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" \
+            --artifact "$release_directory/steadystack-workspace-plugin-${version}.tgz" \
             --expected-version "$version"
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm nx affected -t e2e --parallel=1

@@ -1,7 +1,4 @@
-import {
-  CreateAgentTask,
-  GetAgentTask,
-} from '@agentic-webapp/backend-agent-task';
+import { CreateAgentTask, GetAgentTask } from '@steadystack/backend-agent-task';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 

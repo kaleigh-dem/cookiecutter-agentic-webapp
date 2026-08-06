@@ -1,6 +1,6 @@
 'use client';
 
-import { createApiClient } from '@agentic-webapp/contracts/client';
+import { createApiClient } from '@steadystack/contracts/client';
 import { type FormEvent, useMemo, useState } from 'react';
 
 import {

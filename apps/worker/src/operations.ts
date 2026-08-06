@@ -1,7 +1,7 @@
 import {
   checkDependencies,
   type DependencyProbe,
-} from '@agentic-webapp/observability';
+} from '@steadystack/observability';
 import { createServer, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 

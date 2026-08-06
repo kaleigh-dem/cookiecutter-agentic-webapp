@@ -1,5 +1,5 @@
-import type { GetHealthSuccessResponse } from '@agentic-webapp/contracts/server';
-import { getHealthHttpContract } from '@agentic-webapp/contracts/runtime';
+import type { GetHealthSuccessResponse } from '@steadystack/contracts/server';
+import { getHealthHttpContract } from '@steadystack/contracts/runtime';
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
 
 import { AppService } from './app.service';

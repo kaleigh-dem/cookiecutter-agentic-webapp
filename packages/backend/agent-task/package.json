@@ -1,5 +1,5 @@
 {
-  "name": "@agentic-webapp/backend-agent-task",
+  "name": "@steadystack/backend-agent-task",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -12,6 +12,6 @@
     }
   },
   "dependencies": {
-    "@agentic-webapp/contracts": "workspace:*"
+    "@steadystack/contracts": "workspace:*"
   }
 }

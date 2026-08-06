@@ -1,6 +1,6 @@
 # Rate limiting
 
-Framework-free rate-limit policy construction and the `RateLimitStore` port. The API composes this boundary with an in-memory development adapter or the PostgreSQL adapter exported by `@agentic-webapp/database`.
+Framework-free rate-limit policy construction and the `RateLimitStore` port. The API composes this boundary with an in-memory development adapter or the PostgreSQL adapter exported by `@steadystack/database`.
 
 ## Policy model
 

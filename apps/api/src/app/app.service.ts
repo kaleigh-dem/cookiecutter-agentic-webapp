@@ -1,4 +1,4 @@
-import type { GetHealthSuccessResponse } from '@agentic-webapp/contracts/server';
+import type { GetHealthSuccessResponse } from '@steadystack/contracts/server';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

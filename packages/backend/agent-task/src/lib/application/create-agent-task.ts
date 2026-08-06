@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   agentTaskExecutionRequestedV2Schema,
   type AgentTaskExecutionRequestedV2,
-} from '@agentic-webapp/contracts';
+} from '@steadystack/contracts';
 
 import { createAgentTask, type AgentTask } from '../domain/agent-task';
 import type { AgentTaskRepository } from './agent-task-repository';

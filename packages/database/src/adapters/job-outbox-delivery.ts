@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import type { AgentTaskExecutionRequested } from '@agentic-webapp/contracts';
+import type { AgentTaskExecutionRequested } from '@steadystack/contracts';
 import type { Pool } from 'pg';
 
 const MAX_BATCH_SIZE = 100;

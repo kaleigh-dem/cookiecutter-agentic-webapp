@@ -4,7 +4,7 @@ import {
   createCorrelationContext,
   createStructuredLogger,
   runWithCorrelationContext,
-} from '@agentic-webapp/observability';
+} from '@steadystack/observability';
 import {
   Controller,
   Get,

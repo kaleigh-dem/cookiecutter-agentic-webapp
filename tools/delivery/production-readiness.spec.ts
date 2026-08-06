@@ -28,7 +28,7 @@ const validProduction = {
   API_RATE_LIMIT_WINDOW_MS: '60000',
   API_TRUSTED_PROXY_HOPS: '1',
   AUTH_ACCESS_TOKEN_VERIFIER: 'oidc',
-  AUTH_OIDC_AUDIENCE: 'agentic-api',
+  AUTH_OIDC_AUDIENCE: 'steadystack-api',
   AUTH_OIDC_ISSUER: 'https://identity.internal/tenant',
   BACKUP_OWNER: 'platform-operations',
   OTEL_EXPORTER_OTLP_ENDPOINT: 'https://otel.internal',

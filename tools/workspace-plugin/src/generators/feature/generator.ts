@@ -16,7 +16,7 @@ export default async function featureGenerator(
 
   createLibraryProject(tree, {
     dependencies: { react: '^19.0.0' },
-    importPath: `@agentic-webapp/web-feature-${name.fileName}`,
+    importPath: `@steadystack/web-feature-${name.fileName}`,
     jsx: true,
     projectName: `web-feature-${name.fileName}`,
     projectRoot,

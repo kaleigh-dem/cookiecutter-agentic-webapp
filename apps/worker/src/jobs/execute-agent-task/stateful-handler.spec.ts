@@ -1,7 +1,7 @@
 import type {
   AgentTaskExecutionRecord,
   AgentTaskExecutionStore,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PermanentJobError, RetryableJobError } from '../failure';

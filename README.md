@@ -1,8 +1,8 @@
-# Agentic Webapp Nx Template
+# SteadyStack
 
 A production-minded Nx monorepo template designed to become the foundation for many TypeScript web applications that are built and maintained substantially by humans and coding agents.
 
-> Upstream template: https://github.com/kaleigh-dem/nx-fullstack-platform. Generated workspaces use their configured identity throughout.
+> Upstream template: https://github.com/kaleigh-dem/steady-stack. Generated workspaces use their configured identity throughout.
 
 ## Primary goal
 
@@ -59,7 +59,7 @@ Nx supplies the project graph, generators, architectural boundary enforcement, c
 
 ```bash
 npx create-nx-workspace@23.1.1 my-workspace \
-  --template kaleigh-dem/nx-fullstack-platform
+  --template kaleigh-dem/steady-stack
 ```
 
 After installing dependencies, replace the template identity and record the generated repository's profiles:
@@ -101,7 +101,7 @@ An agent's completion statement is not evidence by itself. Review the diff, gene
 
 ## Template releases
 
-Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball with the public `preset` entry point and the `agentic-webapp-upgrade` command. CI validates generation, a previous-release upgrade fixture, and a differently named generated repository through frozen installation, validation, migrations, seed data, production images, preview smoke tests, performance budgets, deterministic teardown, identity checks, and Git-cleanliness checks before publication.
+Template releases use semantic versions and `template-v<version>` tags. Each GitHub Release contains an installable workspace-plugin tarball with the public `preset` entry point and the `steadystack-upgrade` command. CI validates generation, a previous-release upgrade fixture, and a differently named generated repository through frozen installation, validation, migrations, seed data, production images, preview smoke tests, performance budgets, deterministic teardown, identity checks, and Git-cleanliness checks before publication.
 
 See `docs/template-releases.md` for versioning and publishing, `docs/template-validation.md` for the generated-workspace lifecycle, and `docs/template-upgrades.md` for downstream migrations.
 
@@ -111,8 +111,8 @@ Install the target release artifact temporarily and preview its ordered migratio
 
 ```bash
 TARGET_VERSION=0.2.0
-pnpm add --save-dev "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
-pnpm exec agentic-webapp-upgrade --to "$TARGET_VERSION" --dry-run
+pnpm add --save-dev "./steadystack-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm exec steadystack-upgrade --to "$TARGET_VERSION" --dry-run
 ```
 
 After reviewing ownership classes and conflicts, rerun with `--apply`, execute `pnpm check`, and commit the upgrade separately from application changes. Applied migrations synchronize the repository-local `pnpm template:upgrade` command.

@@ -32,7 +32,7 @@ The database CLI loads the repository-root `.env` file through Node.js before va
 
 ## Boundaries
 
-The package exports the database client from `@agentic-webapp/database` and schema definitions from `@agentic-webapp/database/schema`. Application use cases should depend on domain-facing repository and storage ports. Schema imports belong only in persistence adapters, migrations, database operations, and focused integration tests.
+The package exports the database client from `@steadystack/database` and schema definitions from `@steadystack/database/schema`. Application use cases should depend on domain-facing repository and storage ports. Schema imports belong only in persistence adapters, migrations, database operations, and focused integration tests.
 
 The Agent Task create use case writes the task and versioned outbox event in one transaction. Worker delivery claims rows with leases and ownership tokens; acknowledgement, renewal, retry, and terminal failure updates remain fenced. Rate-limit counters use atomic PostgreSQL updates shared by independent API replicas.
 

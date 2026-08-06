@@ -66,7 +66,7 @@ The API remains configured independently:
 ```dotenv
 AUTH_ACCESS_TOKEN_VERIFIER=oidc
 AUTH_OIDC_ISSUER=https://identity.example.com/tenant
-AUTH_OIDC_AUDIENCE=agentic-api
+AUTH_OIDC_AUDIENCE=steadystack-api
 ```
 
 The browser adapter obtains credentials; the API verifier validates them. Provider-specific login, callback, logout, and secure-session routes belong in the generated application's web server and must conform to the credential endpoint contract above.

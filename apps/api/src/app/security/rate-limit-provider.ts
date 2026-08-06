@@ -2,12 +2,12 @@ import {
   InMemoryRateLimitStore,
   type RateLimitPolicyConfiguration,
   type RateLimitStore,
-} from '@agentic-webapp/backend-rate-limit';
+} from '@steadystack/backend-rate-limit';
 import {
   createDatabase,
   PostgresRateLimitStore,
   type DatabaseConnection,
-} from '@agentic-webapp/database';
+} from '@steadystack/database';
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 
 export const RATE_LIMIT_STORE = Symbol('RATE_LIMIT_STORE');
@@ -129,7 +129,7 @@ export class EnvironmentRateLimitProvider implements OnModuleDestroy {
     }
     this.connection = createDatabase({
       connectionString,
-      applicationName: 'agentic-webapp-api-rate-limit',
+      applicationName: 'steadystack-api-rate-limit',
       maxConnections: 5,
     });
     this.store = new PostgresRateLimitStore(this.connection.pool);

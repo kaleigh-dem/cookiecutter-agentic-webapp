@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Agentic Webapp',
+  title: 'SteadyStack',
   description: 'An Nx template for large agent-operated web applications.',
 };
 

@@ -4,7 +4,7 @@ import {
   type ExecutionContext,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { createAgentTaskHttpContract } from '@agentic-webapp/contracts/runtime';
+import { createAgentTaskHttpContract } from '@steadystack/contracts/runtime';
 import { lastValueFrom, of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 

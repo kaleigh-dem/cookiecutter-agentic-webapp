@@ -1,5 +1,5 @@
 {
-  "name": "@agentic-webapp/backend-rate-limit",
+  "name": "@steadystack/backend-rate-limit",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",

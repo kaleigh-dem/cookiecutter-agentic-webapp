@@ -32,9 +32,9 @@ pnpm contracts:compat
 2. Give the operation a stable TypeScript-safe `operationId`.
 3. Reuse component schemas instead of defining duplicate request or response shapes.
 4. Run contract generation.
-5. Implement the NestJS presentation boundary using types from `@agentic-webapp/contracts/server`.
-6. Apply the operation contract from `@agentic-webapp/contracts/runtime` at the Nest route boundary.
-7. Call the operation from browser code through `@agentic-webapp/contracts/client`.
+5. Implement the NestJS presentation boundary using types from `@steadystack/contracts/server`.
+6. Apply the operation contract from `@steadystack/contracts/runtime` at the Nest route boundary.
+7. Call the operation from browser code through `@steadystack/contracts/client`.
 8. Add positive and negative API, client, and compatibility tests.
 9. Update the compatibility baseline only after the new contract has been reviewed.
 
@@ -82,7 +82,7 @@ Mark deprecated operations and fields with `deprecated: true`, document their re
 
 ## Consumer boundaries
 
-- API controllers and adapters may import `@agentic-webapp/contracts/server` and `@agentic-webapp/contracts/runtime`.
-- Browser features may import `@agentic-webapp/contracts/client` and universal runtime validators from `@agentic-webapp/contracts`.
+- API controllers and adapters may import `@steadystack/contracts/server` and `@steadystack/contracts/runtime`.
+- Browser features may import `@steadystack/contracts/client` and universal runtime validators from `@steadystack/contracts`.
 - Browser features must not declare local request or response interfaces that duplicate the OpenAPI source.
 - Contracts must not import API, web, worker, database, or framework projects.

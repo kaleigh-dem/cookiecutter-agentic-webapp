@@ -376,7 +376,7 @@ pnpm template:identity:check
 **Diagnose:**
 
 ```bash
-pnpm exec agentic-webapp-upgrade --to "<TARGET_VERSION>" --dry-run
+pnpm exec steadystack-upgrade --to "<TARGET_VERSION>" --dry-run
 git status --short
 ```
 
@@ -385,7 +385,7 @@ git status --short
 **Verify:**
 
 ```bash
-pnpm exec agentic-webapp-upgrade --to "<TARGET_VERSION>" --dry-run
+pnpm exec steadystack-upgrade --to "<TARGET_VERSION>" --dry-run
 pnpm check
 ```
 

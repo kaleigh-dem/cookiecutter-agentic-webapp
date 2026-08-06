@@ -47,9 +47,9 @@ jobs:
     timeout-minutes: 45
     env:
       APP_VERSION: ${{ inputs.version }}
-      API_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-api:${{ inputs.version }}
-      WORKER_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-worker:${{ inputs.version }}
-      WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/agentic-webapp-web:${{ inputs.version }}
+      API_IMAGE: ghcr.io/${{ github.repository_owner }}/steadystack-api:${{ inputs.version }}
+      WORKER_IMAGE: ghcr.io/${{ github.repository_owner }}/steadystack-worker:${{ inputs.version }}
+      WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/steadystack-web:${{ inputs.version }}
       NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_base_url }}
       NEXT_PUBLIC_AUTHENTICATION_PROFILE: ${{ inputs.authentication_profile }}
       NEXT_PUBLIC_AUTH_SESSION_ENDPOINT: ${{ inputs.auth_session_endpoint }}

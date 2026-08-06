@@ -22,15 +22,15 @@ function sampleManifest() {
     },
     images: {
       api: {
-        name: 'ghcr.io/example/agentic-webapp-api',
+        name: 'ghcr.io/example/steadystack-api',
         digest: `sha256:${'a'.repeat(64)}`,
       },
       worker: {
-        name: 'ghcr.io/example/agentic-webapp-worker',
+        name: 'ghcr.io/example/steadystack-worker',
         digest: `sha256:${'b'.repeat(64)}`,
       },
       web: {
-        name: 'ghcr.io/example/agentic-webapp-web',
+        name: 'ghcr.io/example/steadystack-web',
         digest: `sha256:${'c'.repeat(64)}`,
       },
     },
@@ -47,7 +47,7 @@ describe('release planning', () => {
   it('orders migrations before service deployment', () => {
     const plan = createReleasePlan({
       environment: 'production',
-      imagePrefix: 'ghcr.io/example/agentic-webapp',
+      imagePrefix: 'ghcr.io/example/steadystack',
       version: '1.2.3',
     });
     const identifiers = plan.orderedSteps.map((step) => step.id);
@@ -58,7 +58,7 @@ describe('release planning', () => {
     expect(identifiers.indexOf('apply-migrations')).toBeLessThan(
       identifiers.indexOf('deploy-services'),
     );
-    expect(plan.images.api).toBe('ghcr.io/example/agentic-webapp/api:1.2.3');
+    expect(plan.images.api).toBe('ghcr.io/example/steadystack/api:1.2.3');
   });
 
   it('records immutable manifest digests in preview and production plans', () => {

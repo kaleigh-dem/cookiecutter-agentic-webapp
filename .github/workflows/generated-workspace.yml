@@ -98,7 +98,7 @@ jobs:
             --version "$version" \
             --output "$release_directory"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "path=$release_directory/agentic-webapp-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
+          echo "path=$release_directory/steadystack-workspace-plugin-${version}.tgz" >> "$GITHUB_OUTPUT"
 
       - name: Validate generated workspace lifecycle
         env:

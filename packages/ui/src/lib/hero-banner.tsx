@@ -16,7 +16,7 @@ export function HeroBanner({ title, description }: HeroBannerProps) {
       }}
     >
       <p style={{ margin: 0, fontWeight: 700, letterSpacing: '0.08em' }}>
-        NX AGENTIC TEMPLATE
+        SteadyStack
       </p>
       <h1
         style={{ marginBottom: '0.75rem', fontSize: 'clamp(2rem, 7vw, 4rem)' }}

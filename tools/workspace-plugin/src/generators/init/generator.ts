@@ -27,24 +27,26 @@ const ignoredIdentitySegments = new Set([
   'node_modules',
   'test-output',
 ]);
+const preservedTemplateSourcePaths = new Set([
+  'tools/workspace-plugin/src/generators/init/generator.ts',
+  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
+  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  'tools/template/check-identity.mjs',
+  'tools/workspace-plugin/src/generators/preset/generator.spec.ts',
+]);
 const preservedUpstreamPaths = new Set([
   'README.md',
   'workspace.template.json',
   'docs/template-initialization.md',
-  'tools/workspace-plugin/src/generators/init/generator.ts',
-  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
-  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  ...preservedTemplateSourcePaths,
 ]);
 
 const templateIdentity = {
-  className: 'AgenticWebapp',
-  displayName: 'Agentic Webapp',
-  packageScope: '@agentic-webapp',
-  propertyName: 'agenticWebapp',
-  repository: 'kaleigh-dem/nx-fullstack-platform',
-  slug: 'agentic-webapp',
-  snakeName: 'agentic_webapp',
-  upperSnakeName: 'AGENTIC_WEBAPP',
+  displayName: 'SteadyStack',
+  packageScope: '@steadystack',
+  repository: 'kaleigh-dem/steady-stack',
+  slug: 'steadystack',
+  upperSnakeName: 'STEADYSTACK',
 } as const;
 
 const upstreamRepositorySentinel = '__UPSTREAM_TEMPLATE_REPOSITORY__';
@@ -109,18 +111,6 @@ function defaultDisplayName(applicationSlug: string): string {
     .split('-')
     .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
     .join(' ');
-}
-
-function className(applicationSlug: string): string {
-  return applicationSlug
-    .split('-')
-    .map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`)
-    .join('');
-}
-
-function propertyName(applicationSlug: string): string {
-  const normalizedClassName = className(applicationSlug);
-  return `${normalizedClassName[0]?.toLowerCase() ?? ''}${normalizedClassName.slice(1)}`;
 }
 
 export function normalizeInitOptions(
@@ -331,8 +321,6 @@ function rewriteIdentityContent(
   options: NormalizedInitOptions,
   preserveUpstreamRepository: boolean,
 ): string {
-  const generatedClassName = className(options.applicationSlug);
-  const generatedPropertyName = propertyName(options.applicationSlug);
   const generatedSnakeName = options.applicationSlug.replaceAll('-', '_');
   const generatedUpperSnakeName = generatedSnakeName.toUpperCase();
   const generatedRepository = `${options.repositoryOwner}/${options.applicationSlug}`;
@@ -345,12 +333,14 @@ function rewriteIdentityContent(
     : content.replaceAll(templateIdentity.repository, generatedRepository);
 
   const replacements: ReadonlyArray<readonly [string, string]> = [
+    [`${templateIdentity.slug}-api`, `${options.applicationSlug}-api`],
+    [
+      `${templateIdentity.slug}_access_token`,
+      `${generatedSnakeName}_access_token`,
+    ],
     [templateIdentity.packageScope, options.packageScope],
-    [templateIdentity.displayName, options.displayName],
-    [templateIdentity.className, generatedClassName],
-    [templateIdentity.propertyName, generatedPropertyName],
     [templateIdentity.upperSnakeName, generatedUpperSnakeName],
-    [templateIdentity.snakeName, generatedSnakeName],
+    [templateIdentity.displayName, options.displayName],
     [templateIdentity.slug, options.applicationSlug],
   ];
 
@@ -370,6 +360,10 @@ export function rewriteWorkspaceIdentity(
   options: NormalizedInitOptions,
 ): void {
   for (const path of listTreeFiles(tree)) {
+    if (preservedTemplateSourcePaths.has(path)) {
+      continue;
+    }
+
     const content = tree.read(path);
     if (!content || isBinary(content)) {
       continue;

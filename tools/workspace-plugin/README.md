@@ -25,12 +25,12 @@ Replace the example target version with the release being evaluated.
 The equivalent Nx form is:
 
 ```bash
-pnpm nx g @agentic-webapp/workspace-plugin:<generator> <name>
+pnpm nx g @steadystack/workspace-plugin:<generator> <name>
 ```
 
 Use `preset` as the public entry point when consuming a released tarball. The lower-level `init` generator remains available for local compatibility, while `preset` records the originating template version, retains downstream upgrade tooling, and removes template-maintainer release tooling from the generated repository.
 
-The release package also exposes the `agentic-webapp-upgrade` binary. It reads `workspace.template.json`, defaults to a dry run, applies ordered version migrations, reports ownership classes and conflicts, and synchronizes the repository-local upgrade runner after a successful apply.
+The release package also exposes the `steadystack-upgrade` binary. It reads `workspace.template.json`, defaults to a dry run, applies ordered version migrations, reports ownership classes and conflicts, and synchronizes the repository-local upgrade runner after a successful apply.
 
 After initialization, use the configured package scope in the equivalent Nx form. The root generator scripts are rewritten automatically.
 

@@ -5,9 +5,9 @@ This directory contains the reviewable files changed by this GitHub Wiki update.
 After approval, apply these files over the existing wiki checkout from an authenticated workstation:
 
 ```bash
-git clone https://github.com/kaleigh-dem/nx-fullstack-platform.wiki.git
-cd nx-fullstack-platform.wiki
-cp ../nx-fullstack-platform/wiki/*.md .
+git clone https://github.com/kaleigh-dem/steady-stack.wiki.git
+cd steady-stack.wiki
+cp ../steady-stack/wiki/*.md .
 git add -A
 git diff --check
 git commit -m "docs: update supply-chain and release wiki guidance"

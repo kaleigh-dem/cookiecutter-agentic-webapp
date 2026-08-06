@@ -11,34 +11,40 @@ const ignoredSegments = new Set([
   'test-output',
 ]);
 
-const templateSlug = ['agentic', 'webapp'].join('-');
-const templateSnakeName = ['agentic', 'webapp'].join('_');
-const templateUpperSnakeName = templateSnakeName.toUpperCase();
-const templateClassName = ['Agentic', 'Webapp'].join('');
-const templatePropertyName = ['agentic', 'Webapp'].join('');
-const upstreamRepository = [
-  ['kaleigh', 'dem'].join('-'),
-  ['nx', 'fullstack', 'platform'].join('-'),
-].join('/');
+const templatePackageScope = '@steadystack';
+const templateTechnicalIdentity = 'steadystack';
+const templateDisplayIdentity = 'SteadyStack';
+const templateUpperIdentity = 'STEADYSTACK';
+const upstreamRepository = 'kaleigh-dem/steady-stack';
 const upstreamUrl = `https://github.com/${upstreamRepository}`;
 const personalCodeowner = `@${['kaleigh', 'dem'].join('-')}`;
+const formerOidcAudience = ['agentic', 'api'].join('-');
+const formerSessionCookie = ['agentic', 'access', 'token'].join('_');
+const formerHeroLabel = ['NX', 'AGENTIC', 'TEMPLATE'].join(' ');
 
 const forbiddenPatterns = [
-  ['template package scope or slug', templateSlug],
-  ['template snake-case identity', templateSnakeName],
-  ['template upper-snake identity', templateUpperSnakeName],
-  ['template class identity', templateClassName],
-  ['template property identity', templatePropertyName],
+  ['template package scope', templatePackageScope],
+  ['template technical identity', templateTechnicalIdentity],
+  ['template display or class identity', templateDisplayIdentity],
+  ['template upper-snake identity', templateUpperIdentity],
+  ['former OIDC audience', formerOidcAudience],
+  ['former session cookie', formerSessionCookie],
+  ['former hero label', formerHeroLabel],
   ['personal CODEOWNER', personalCodeowner],
 ];
 
+const allowedTemplateSourcePaths = new Set([
+  'tools/workspace-plugin/src/generators/init/generator.ts',
+  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
+  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  'tools/workspace-plugin/src/generators/preset/generator.spec.ts',
+  'tools/template/check-identity.mjs',
+]);
 const allowedUpstreamPaths = new Set([
   'README.md',
   'workspace.template.json',
   'docs/template-initialization.md',
-  'tools/workspace-plugin/src/generators/init/generator.ts',
-  'tools/workspace-plugin/src/generators/init/generator.spec.ts',
-  'tools/workspace-plugin/src/generators/init-output.integration.ts',
+  ...allowedTemplateSourcePaths,
 ]);
 
 function isIgnored(relativePath) {
@@ -73,8 +79,9 @@ async function listFiles(root, directory = '') {
   return files;
 }
 
-function removeAllowedUpstreamReferences(relativePath, content) {
+function removeAllowedTemplateReferences(relativePath, content) {
   const normalizedPath = relativePath.split(path.sep).join('/');
+  if (allowedTemplateSourcePaths.has(normalizedPath)) return '';
   if (!allowedUpstreamPaths.has(normalizedPath)) return content;
 
   return content.replaceAll(upstreamUrl, '').replaceAll(upstreamRepository, '');
@@ -95,7 +102,7 @@ async function main() {
     const bytes = await readFile(path.join(root, relativePath));
     if (isBinary(bytes)) continue;
 
-    const content = removeAllowedUpstreamReferences(
+    const content = removeAllowedTemplateReferences(
       relativePath,
       bytes.toString('utf-8'),
     );
@@ -106,6 +113,7 @@ async function main() {
           findings.push(
             `${relativePath.split(path.sep).join('/')}:${index + 1}: ${label}`,
           );
+          break;
         }
       }
     }

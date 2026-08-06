@@ -63,7 +63,7 @@ try {
         private: true,
         packageManager: 'pnpm@10.13.1',
         devDependencies: {
-          '@agentic-webapp/workspace-plugin': `file:${artifact}`,
+          '@steadystack/workspace-plugin': `file:${artifact}`,
           '@nx/devkit': '23.1.0',
           nx: '23.1.0',
         },
@@ -86,7 +86,7 @@ try {
     'exec',
     'nx',
     'g',
-    '@agentic-webapp/workspace-plugin:preset',
+    '@steadystack/workspace-plugin:preset',
     'smoke-app',
     '--displayName=Smoke App',
     '--packageScope=@smoke',
@@ -137,6 +137,7 @@ try {
     'utf-8',
   );
 
+  // Exercise the deprecated 0.2.0 alias once; apply through the canonical command below.
   const dryRun = JSON.parse(
     capture(workspace, 'pnpm', [
       'exec',
@@ -167,7 +168,7 @@ try {
 
   run(workspace, 'pnpm', [
     'exec',
-    'agentic-webapp-upgrade',
+    'steadystack-upgrade',
     '--workspace',
     legacyWorkspace,
     '--to',

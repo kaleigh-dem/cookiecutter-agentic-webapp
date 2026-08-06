@@ -26,7 +26,7 @@ Expected results:
 - `pnpm --version` reports `10.13.1` or another compatible 10.x version; use the pinned version for reproducible results.
 - Docker and Compose return version information without a daemon connection error.
 
-The enforced versions are defined in [`package.json`](https://github.com/kaleigh-dem/nx-fullstack-platform/blob/main/package.json) and `.node-version`.
+The enforced versions are defined in [`package.json`](https://github.com/kaleigh-dem/steady-stack/blob/main/package.json) and `.node-version`.
 
 ## 2. Create the workspace
 
@@ -34,14 +34,14 @@ From the directory that will contain the new repository:
 
 ```bash
 npx create-nx-workspace@23.1.1 <WORKSPACE_NAME> \
-  --template kaleigh-dem/nx-fullstack-platform
+  --template kaleigh-dem/steady-stack
 ```
 
 Concrete example:
 
 ```bash
 npx create-nx-workspace@23.1.1 customer-portal \
-  --template kaleigh-dem/nx-fullstack-platform
+  --template kaleigh-dem/steady-stack
 ```
 
 Then enter the workspace:

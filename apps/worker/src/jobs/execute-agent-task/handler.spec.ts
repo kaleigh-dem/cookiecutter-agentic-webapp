@@ -1,4 +1,4 @@
-import { getCorrelationContext } from '@agentic-webapp/observability';
+import { getCorrelationContext } from '@steadystack/observability';
 import { describe, expect, it } from 'vitest';
 
 import { handleExecuteAgentTaskJob } from './handler';

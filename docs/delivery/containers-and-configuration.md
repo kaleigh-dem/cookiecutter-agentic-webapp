@@ -10,9 +10,9 @@ pnpm containers:build
 
 The default local tags are:
 
-- `agentic-webapp-api:local`
-- `agentic-webapp-worker:local`
-- `agentic-webapp-web:local`
+- `steadystack-api:local`
+- `steadystack-worker:local`
+- `steadystack-web:local`
 
 Override tags and image metadata through `API_IMAGE`, `WORKER_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `GITHUB_SHA`. Set `NEXT_PUBLIC_API_BASE_URL` and the selected public browser authentication variables before building the web image because browser-visible values are compiled into the bundle.
 

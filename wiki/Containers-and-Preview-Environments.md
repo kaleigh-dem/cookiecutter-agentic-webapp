@@ -40,9 +40,9 @@ pnpm containers:build
 Default tags:
 
 ```text
-agentic-webapp-api:local
-agentic-webapp-worker:local
-agentic-webapp-web:local
+steadystack-api:local
+steadystack-worker:local
+steadystack-web:local
 ```
 
 Override with `API_IMAGE`, `WORKER_IMAGE`, `WEB_IMAGE`, `APP_VERSION`, and `GITHUB_SHA`.

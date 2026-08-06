@@ -49,8 +49,8 @@ Download the tarball attached to the desired `template-v<version>` GitHub Releas
 
 ```bash
 TARGET_VERSION=0.2.0
-pnpm add -D "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
-pnpm nx g @agentic-webapp/workspace-plugin:preset my-application \
+pnpm add -D "./steadystack-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm nx g @steadystack/workspace-plugin:preset my-application \
   --packageScope=@my-org \
   --repositoryOwner=my-org
 ```

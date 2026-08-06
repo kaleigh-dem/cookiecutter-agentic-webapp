@@ -1,4 +1,4 @@
-import type { AgentTaskExecutionRequestedV2 } from '@agentic-webapp/contracts';
+import type { AgentTaskExecutionRequestedV2 } from '@steadystack/contracts';
 
 import type { AgentTask } from '../domain/agent-task';
 

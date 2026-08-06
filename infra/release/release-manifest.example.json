@@ -17,19 +17,19 @@
   },
   "images": {
     "api": {
-      "name": "ghcr.io/owner/agentic-webapp-api",
+      "name": "ghcr.io/owner/steadystack-api",
       "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "reference": "ghcr.io/owner/agentic-webapp-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      "reference": "ghcr.io/owner/steadystack-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     "worker": {
-      "name": "ghcr.io/owner/agentic-webapp-worker",
+      "name": "ghcr.io/owner/steadystack-worker",
       "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      "reference": "ghcr.io/owner/agentic-webapp-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      "reference": "ghcr.io/owner/steadystack-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     },
     "web": {
-      "name": "ghcr.io/owner/agentic-webapp-web",
+      "name": "ghcr.io/owner/steadystack-web",
       "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-      "reference": "ghcr.io/owner/agentic-webapp-web@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      "reference": "ghcr.io/owner/steadystack-web@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
     }
   }
 }

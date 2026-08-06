@@ -1,6 +1,6 @@
 # Publishing the reviewed GitHub Wiki source
 
-The authoritative, reviewable wiki source lives under `wiki/` in the main repository. The rendered GitHub Wiki is stored in the separate hidden Git repository at `nx-fullstack-platform.wiki.git`, which does not support the normal pull-request review flow.
+The authoritative, reviewable wiki source lives under `wiki/` in the main repository. The rendered GitHub Wiki is stored in the separate hidden Git repository at `steady-stack.wiki.git`, which does not support the normal pull-request review flow.
 
 ## Automated publication
 
@@ -21,28 +21,28 @@ The workflow may also be run manually with **Publish reviewed wiki** in GitHub A
 Use this only when the automated workflow cannot publish. Start from a clean temporary directory and authenticate with an account that can write the repository wiki.
 
 ```bash
-git clone https://github.com/kaleigh-dem/nx-fullstack-platform.git
-cd nx-fullstack-platform
+git clone https://github.com/kaleigh-dem/steady-stack.git
+cd steady-stack
 git switch main
 git pull --ff-only
 
 cd ..
-git clone https://github.com/kaleigh-dem/nx-fullstack-platform.wiki.git
+git clone https://github.com/kaleigh-dem/steady-stack.wiki.git
 ```
 
 Copy reviewed pages without deleting wiki-only pages:
 
 ```bash
-find nx-fullstack-platform/wiki -maxdepth 1 -type f -name '*.md' -print0 \
+find steady-stack/wiki -maxdepth 1 -type f -name '*.md' -print0 \
   | while IFS= read -r -d '' source; do
-      cp "$source" "nx-fullstack-platform.wiki/$(basename "$source")"
+      cp "$source" "steady-stack.wiki/$(basename "$source")"
     done
 ```
 
 Inspect before publishing:
 
 ```bash
-cd nx-fullstack-platform.wiki
+cd steady-stack.wiki
 git status --short
 git diff --check
 git diff --stat

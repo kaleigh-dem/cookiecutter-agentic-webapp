@@ -203,17 +203,17 @@ Commit or stash unrelated work.
 
 ### 2. Download and install the target artifact
 
-Place `agentic-webapp-workspace-plugin-<TARGET_VERSION>.tgz` in a known local path, then:
+Place `steadystack-workspace-plugin-<TARGET_VERSION>.tgz` in a known local path, then:
 
 ```bash
 TARGET_VERSION=<TARGET_VERSION>
-pnpm add --save-dev "./agentic-webapp-workspace-plugin-${TARGET_VERSION}.tgz"
+pnpm add --save-dev "./steadystack-workspace-plugin-${TARGET_VERSION}.tgz"
 ```
 
 ### 3. Dry run
 
 ```bash
-pnpm exec agentic-webapp-upgrade \
+pnpm exec steadystack-upgrade \
   --to "$TARGET_VERSION" \
   --dry-run
 ```
@@ -232,7 +232,7 @@ For application-owned or customized generated-once files:
 ### 5. Apply and install
 
 ```bash
-pnpm exec agentic-webapp-upgrade \
+pnpm exec steadystack-upgrade \
   --to "$TARGET_VERSION" \
   --apply
 pnpm install --frozen-lockfile

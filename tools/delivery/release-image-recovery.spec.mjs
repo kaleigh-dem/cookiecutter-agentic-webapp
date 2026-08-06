@@ -60,8 +60,8 @@ describe('release image recovery', () => {
     const labels = {
       'org.opencontainers.image.version': expected.version,
       'org.opencontainers.image.revision': expected.revision,
-      'io.agentic-webapp.release.run-id': expected.runId,
-      'io.agentic-webapp.release.build-inputs-sha256': fingerprint,
+      'io.steadystack.release.run-id': expected.runId,
+      'io.steadystack.release.build-inputs-sha256': fingerprint,
     };
 
     expect(verifyRecoveryLabels(labels, expected)).toEqual(labels);

@@ -1,4 +1,4 @@
-import { HeroBanner } from '@agentic-webapp/ui';
+import { HeroBanner } from '@steadystack/ui';
 
 import { ApiHealth } from './api-health';
 
@@ -6,7 +6,7 @@ export default function HomePage() {
   return (
     <main>
       <HeroBanner
-        title="Agentic Webapp"
+        title="SteadyStack"
         description="Next.js, NestJS, Nx boundaries, affected CI, and workspace-aware agents."
       />
       <ApiHealth />
