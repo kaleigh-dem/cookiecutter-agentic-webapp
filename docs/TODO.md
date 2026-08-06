@@ -1,6 +1,6 @@
 # Template Roadmap
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 This file tracks active work required to evolve the repository as a reusable, upgradeable application platform. Completed implementation history remains available in merged pull requests, ADRs, and Git history instead of being repeated as a separate historical roadmap.
 
@@ -40,14 +40,14 @@ Detailed completed-phase task lists are intentionally omitted. Relevant implemen
 
 ## Execution order
 
-1. Phase 13 is active; P13-01 through P13-04 are complete, and P13-05 is next unless an explicit dependency or incident changes the sequence.
+1. Phase 13 is active; P13-01 through P13-05 are complete, and P13-06 is next unless an explicit dependency or incident changes the sequence.
 2. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
 Goal: promote tested immutable artifacts with verifiable provenance while keeping CI fast and failures diagnosable.
 
-Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 is completed in PR #55 and merge commit `fe8a8644458803ca35d35e4262ccd39a9b02e825`; it adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 audits environment, Docker, generator, contract, and delivery cache inputs; adds deterministic invalidation fixtures; records a representative CI sample; moves required typecheck and build to affected execution; and retains explicit generator and generated-workspace coverage. P13-05 is the next planned task.
+Phase 13 progress record (2026-08-06): P13-01 is completed in reviewed PR #50 and squash commit `d4766a30d2e39f308a830ce4c6099edfe3ed045c`. P13-02 is completed in PR #52 and was hardened in PR #53. P13-03 is completed in PR #55 and merge commit `fe8a8644458803ca35d35e4262ccd39a9b02e825`; it adds pull-request cancellation, optional persisted BuildKit caches with deterministic local fallback, and retained failure diagnostics. P13-04 audits environment, Docker, generator, contract, and delivery cache inputs; adds deterministic invalidation fixtures; records a representative CI sample; moves required typecheck and build to affected execution; and retains explicit generator and generated-workspace coverage. P13-05 adds fail-closed documentation checks for links, paths, commands, environment names, identity and authentication descriptions, a generated Nx project-graph diagram, and roadmap-plus-ADR evidence for generator or boundary changes. P13-06 is the next planned task.
 
 - [x] **P13-01 Add image and dependency supply-chain artifacts.**
   - Generate an SBOM for each production image.
@@ -75,7 +75,7 @@ Phase 13 progress record (2026-08-05): P13-01 is completed in reviewed PR #50 an
   - Move full-workspace typecheck and build steps to affected execution when graph coverage proves it safe.
   - Re-evaluate Nx Cloud only after collecting the documented representative CI sample.
 
-- [ ] **P13-05 Add documentation integrity checks.**
+- [x] **P13-05 Add documentation integrity checks.**
   - Check internal links, referenced files, commands, and environment-variable names.
   - Detect stale identity and authentication descriptions.
   - Generate or validate architecture diagrams from the Nx project graph.
