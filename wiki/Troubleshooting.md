@@ -13,19 +13,20 @@ This page is organized by observable symptom. Each entry includes likely causes,
 
 **Diagnose:** Confirm the workflow run belongs to the exact pull-request head SHA. A cancelled run may only indicate that a newer commit superseded it.
 
-For the Phase 13 P13-03 implementation in draft PR #55, download the matching retained artifact:
+PR #55 implemented retained failure artifacts. Download the bundle that matches the failed workflow:
 
 - `ci-failure-<run_id>-<run_attempt>` for Playwright evidence and `release-plan.json`;
 - `delivery-failure-<run_id>-<run_attempt>` for `service-logs.txt` and `performance-report.json`;
 - `generated-workspace-diagnostics-<run_id>-<run_attempt>` for generated-repository evidence.
 
-Artifact names and paths must be rechecked against the merged implementation before the draft-status notice is removed. The planned retention is 14 days.
+The artifacts are retained for 14 days.
 
 **Resolve:** Inspect the first failed operation, then reproduce the smallest matching command locally. Cache loss may slow a container build but must not affect correctness.
 
 ```bash
-rm -rf .cache/buildkit
+rm -rf .cache/buildkit ../buildkit-cache
 unset BUILDKIT_CACHE_ENABLED
+unset BUILDKIT_CACHE_DIR
 pnpm nx run web-feature-agent-tasks:e2e
 pnpm containers:build
 pnpm preview:up
@@ -281,7 +282,6 @@ docker compose \
   --env-file infra/environments/preview.local.env \
   -f infra/deploy/compose.preview.yaml \
   ps
-
 docker compose \
   --env-file infra/environments/preview.local.env \
   -f infra/deploy/compose.preview.yaml \
@@ -394,6 +394,7 @@ pnpm check
 - [Quick Start](Quick-Start)
 - [Validation and Testing](Validation-and-Testing)
 - [CI Diagnostics](CI-Diagnostics)
+- [SteadyStack Identity Migration](SteadyStack-Identity-Migration)
 - [Releases and Upgrades](Releases-and-Upgrades)
 
 ## Next steps
