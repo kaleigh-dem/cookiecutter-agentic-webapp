@@ -5,6 +5,7 @@ import {
   auditChangeEvidence,
   auditDocumentation,
   renderArchitectureDiagram,
+  shouldAuditWorkspace,
 } from './documentation-integrity.mjs';
 
 function baseFiles(overrides = {}) {
@@ -197,4 +198,9 @@ test('requires roadmap and ADR evidence for boundary changes', () => {
     }),
     ['generator or architecture changes require a docs/adr/*.md update'],
   );
+});
+
+test('runs repository-specific checks only in the upstream template', () => {
+  assert.equal(shouldAuditWorkspace({ name: '@steadystack/source' }), true);
+  assert.equal(shouldAuditWorkspace({ name: '@product/example' }), false);
 });
