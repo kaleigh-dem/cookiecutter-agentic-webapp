@@ -95,9 +95,7 @@ test('reports unknown package scripts and Nx targets', () => {
   });
 
   assert(
-    failures.some((failure) =>
-      failure.includes('unknown root package script'),
-    ),
+    failures.some((failure) => failure.includes('unknown root package script')),
   );
   assert(failures.some((failure) => failure.includes('unknown Nx target')));
 });

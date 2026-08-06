@@ -182,7 +182,11 @@ function pathExists(candidate, trackedFiles) {
   );
 }
 
-function resolveMarkdownDestination(markdownPath, rawDestination, trackedFiles) {
+function resolveMarkdownDestination(
+  markdownPath,
+  rawDestination,
+  trackedFiles,
+) {
   const destination = withoutAnchorOrQuery(
     stripMarkdownDestination(rawDestination),
   );
@@ -299,7 +303,10 @@ function validatePnpmCommand(command, packageJson, graph) {
     if (!nxAction) return ['unknown Nx command: (missing)'];
     if (!NX_BUILT_INS.has(nxAction)) {
       const projectName = words[index + 2];
-      if (projectName && graph.nodes?.[projectName]?.data?.targets?.[nxAction]) {
+      if (
+        projectName &&
+        graph.nodes?.[projectName]?.data?.targets?.[nxAction]
+      ) {
         return [];
       }
       return [`unknown Nx command: ${nxAction}`];
@@ -329,7 +336,9 @@ function validateNodeCommand(command, trackedFiles) {
   const words = shellWords(command);
   const nodeIndex = words.findIndex((word) => word === 'node');
   if (nodeIndex < 0) return [];
-  const script = words.slice(nodeIndex + 1).find((word) => !word.startsWith('-'));
+  const script = words
+    .slice(nodeIndex + 1)
+    .find((word) => !word.startsWith('-'));
   if (!script || script === '-' || script === '-e' || /[<$[{]/.test(script)) {
     return [];
   }
@@ -372,7 +381,8 @@ function extractEnvironmentCatalog(files) {
   for (const [file, entry] of files) {
     if (file.endsWith('.md')) continue;
     for (const pattern of patterns) {
-      for (const match of entry.content.matchAll(pattern)) catalog.add(match[1]);
+      for (const match of entry.content.matchAll(pattern))
+        catalog.add(match[1]);
     }
   }
   return catalog;
@@ -382,9 +392,7 @@ function extractDocumentedEnvironmentNames(markdown) {
   const names = [];
   for (const block of extractFencedBlocks(markdown)) {
     if (!['dotenv', 'env'].includes(block.language)) continue;
-    for (const match of block.content.matchAll(
-      /^\s*([A-Z][A-Z0-9_]+)\s*=/gm,
-    )) {
+    for (const match of block.content.matchAll(/^\s*([A-Z][A-Z0-9_]+)\s*=/gm)) {
       names.push(match[1]);
     }
   }
@@ -441,7 +449,9 @@ function auditAuthenticationDescriptions(files, failures) {
       content &&
       /draft PR #|being implemented in draft|prepared for Phase/i.test(content)
     ) {
-      failures.push(`${file}: contains stale draft authentication status language`);
+      failures.push(
+        `${file}: contains stale draft authentication status language`,
+      );
     }
   }
 }
@@ -497,8 +507,8 @@ export function renderArchitectureDiagram(graph) {
     'flowchart LR',
   ];
 
-  for (const [group, groupNodes] of [...groups.entries()].sort(([left], [right]) =>
-    left.localeCompare(right),
+  for (const [group, groupNodes] of [...groups.entries()].sort(
+    ([left], [right]) => left.localeCompare(right),
   )) {
     lines.push(
       `  subgraph ${sanitizeMermaidId(`group_${group}`)}["${escapeMermaidLabel(group)}"]`,
@@ -524,11 +534,10 @@ export function renderArchitectureDiagram(graph) {
       edges.push([source, dependency.target, dependency.type ?? 'static']);
     }
   }
-  edges.sort(
-    ([sourceA, targetA, typeA], [sourceB, targetB, typeB]) =>
-      `${sourceA}\0${targetA}\0${typeA}`.localeCompare(
-        `${sourceB}\0${targetB}\0${typeB}`,
-      ),
+  edges.sort(([sourceA, targetA, typeA], [sourceB, targetB, typeB]) =>
+    `${sourceA}\0${targetA}\0${typeA}`.localeCompare(
+      `${sourceB}\0${targetB}\0${typeB}`,
+    ),
   );
   for (const [source, target, type] of edges) {
     const label = type === 'static' ? '' : `|${escapeMermaidLabel(type)}|`;
@@ -601,7 +610,7 @@ function changedFiles(root, base, head) {
     .split('\0')
     .filter(Boolean);
   const changes = [];
-  for (let index = 0; index < fields.length; ) {
+  for (let index = 0; index < fields.length;) {
     const status = fields[index++];
     if (status.startsWith('R') || status.startsWith('C')) {
       changes.push({
@@ -735,10 +744,7 @@ export function auditDocumentation({
         continue;
       }
       for (const command of commandLines(block.content)) {
-        if (
-          !/(^|\s)pnpm\s/.test(command) &&
-          !/(^|\s)node\s/.test(command)
-        ) {
+        if (!/(^|\s)pnpm\s/.test(command) && !/(^|\s)node\s/.test(command)) {
           continue;
         }
         for (const failure of validatePnpmCommand(
