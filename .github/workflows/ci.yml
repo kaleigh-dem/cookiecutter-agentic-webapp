@@ -41,7 +41,13 @@ jobs:
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
-      - run: pnpm format:check
+      - name: Check formatting and print exact correction
+        run: |
+          if ! pnpm format:check; then
+            pnpm exec prettier --write wiki/Documentation-Audit.md
+            git diff -- wiki/Documentation-Audit.md
+            exit 1
+          fi
       - name: Audit Nx cache inputs
         run: node tools/delivery/nx-cache-audit.mjs
       - run: pnpm delivery:check
