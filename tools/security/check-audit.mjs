@@ -32,6 +32,23 @@ try {
 }
 
 const highSeverity = new Map();
+const ghsaPattern = /GHSA-[0-9A-Za-z-]+/g;
+
+function directGhsaIds(value) {
+  const candidates = [
+    value.github_advisory_id,
+    value.githubAdvisoryId,
+    value.id,
+    value.url,
+  ];
+
+  return candidates.flatMap((candidate) =>
+    typeof candidate === 'string'
+      ? [...candidate.matchAll(ghsaPattern)].map((match) => match[0])
+      : [],
+  );
+}
+
 function visit(value, path = []) {
   if (Array.isArray(value)) {
     value.forEach((item, index) => visit(item, [...path, String(index)]));
@@ -41,17 +58,17 @@ function visit(value, path = []) {
 
   const severity = typeof value.severity === 'string' ? value.severity : '';
   if (severity === 'high' || severity === 'critical') {
-    const serialized = JSON.stringify(value);
-    const ids = [...serialized.matchAll(/GHSA-[0-9A-Za-z-]+/g)].map(
-      (match) => match[0],
-    );
+    const ids = directGhsaIds(value);
     const packageName =
       value.name ??
       value.module_name ??
       value.package ??
       path.at(-1) ??
       'unknown';
-    if (ids.length === 0) {
+    const hasNestedValues = Object.values(value).some(
+      (nested) => nested && typeof nested === 'object',
+    );
+    if (ids.length === 0 && !hasNestedValues) {
       highSeverity.set(`unidentified:${path.join('.')}`, {
         id: 'unidentified',
         packageName,
