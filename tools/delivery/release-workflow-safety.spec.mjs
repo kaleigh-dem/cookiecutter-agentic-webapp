@@ -60,11 +60,11 @@ describe('release workflow safety', () => {
     );
 
     for (const unsafe of [
-      '\`${{ inputs.source_run_id }}\`',
-      '\`${{ inputs.promotion_run_id }}\`',
-      '\`${{ inputs.backup_identifier }}\`',
-      '\`${{ inputs.schema_compatibility }}\`',
-      '\`${{ inputs.rollback_window_minutes }} minutes\`',
+      "`${{ inputs.source_run_id }}`",
+      "`${{ inputs.promotion_run_id }}`",
+      "`${{ inputs.backup_identifier }}`",
+      "`${{ inputs.schema_compatibility }}`",
+      "`${{ inputs.rollback_window_minutes }} minutes`",
     ]) {
       expect(workflow).not.toContain(unsafe);
     }
