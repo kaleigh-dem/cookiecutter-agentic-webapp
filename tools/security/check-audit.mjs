@@ -79,14 +79,16 @@ function visit(value, path = []) {
 
   const severity = typeof value.severity === 'string' ? value.severity : '';
   if (severity === 'high' || severity === 'critical') {
-    const ids = directGhsaIds(value);
+    const ids = [
+      ...new Set([...directGhsaIds(value), ...nestedGhsaIds(value)]),
+    ];
     const packageName =
       value.name ??
       value.module_name ??
       value.package ??
       path.at(-1) ??
       'unknown';
-    if (ids.length === 0 && nestedGhsaIds(value).length === 0) {
+    if (ids.length === 0) {
       highSeverity.set(`unidentified:${path.join('.')}`, {
         id: 'unidentified',
         packageName,
