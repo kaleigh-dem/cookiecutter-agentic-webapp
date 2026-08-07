@@ -77,16 +77,16 @@ jobs:
               [ -n "$table" ] || continue
               count=$(docker exec "$postgres_container" \
                 psql -U postgres -d "$database" -Atc \
-                "SELECT count(*) FROM public.\"$table\";")
+                "SELECT count(*) FROM app.\"$table\";")
               printf '%s=%s\n' "$table" "$count" >> "$output"
             done < <(docker exec "$postgres_container" \
               psql -U postgres -d "$database" -Atc \
-              "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;")
+              "SELECT tablename FROM pg_tables WHERE schemaname = 'app' ORDER BY tablename;")
           }
 
           count_rows app "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.source.txt"
           if [ ! -s "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.source.txt" ]; then
-            echo 'Source database contains no public application tables.' >&2
+            echo 'Source database contains no app-schema application tables.' >&2
             exit 1
           fi
 
@@ -172,6 +172,6 @@ jobs:
             echo
             echo "- Backup identifier: \`${{ steps.restore.outputs.backup_identifier }}\`"
             echo "- Restore duration: \`${{ steps.restore.outputs.duration_seconds }} seconds\`"
-            echo '- Source and restored public-table row counts matched.'
+            echo '- Source and restored app-schema row counts matched.'
             echo '- Restored migration status and idempotent migration execution passed.'
           } >> "$GITHUB_STEP_SUMMARY"
