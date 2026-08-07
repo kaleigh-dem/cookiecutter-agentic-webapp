@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "version": "1.2.3",
+  "source": {
+    "repository": "OWNER/REPOSITORY",
+    "releaseWorkflowRunId": "123456789",
+    "promotionWorkflowRunId": "223456789",
+    "commitSha": "1111111111111111111111111111111111111111"
+  },
+  "backup": {
+    "identifier": "provider-snapshot-production-20260807-160000",
+    "capturedAt": "2026-08-07T16:00:00Z"
+  },
+  "rollback": {
+    "windowMinutes": 60,
+    "schemaCompatibility": "backward-compatible",
+    "decision": "The previous approved application digests remain compatible with the migrated schema during the recorded rollback window.",
+    "decidedBy": "release-owner",
+    "decidedAt": "2026-08-07T16:05:00Z"
+  },
+  "smokeTest": {
+    "status": "passed",
+    "profile": "release",
+    "completedAt": "2026-08-07T16:10:00Z"
+  },
+  "images": {
+    "api": {
+      "reference": "ghcr.io/owner/steadystack-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "worker": {
+      "reference": "ghcr.io/owner/steadystack-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "web": {
+      "reference": "ghcr.io/owner/steadystack-web@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "attachments": {
+    "releaseManifest": {
+      "path": "release-manifest.json",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "bytes": 1024
+    },
+    "releasePlan": {
+      "path": "release-plan.production.json",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "bytes": 2048
+    },
+    "migrationPlan": {
+      "path": "migration-plan.production.json",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "bytes": 512
+    },
+    "smokeTestResult": {
+      "path": "smoke-test.json",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "bytes": 256
+    },
+    "sboms": {
+      "api": {
+        "path": "image-supply-chain/api.spdx.json",
+        "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "bytes": 4096
+      },
+      "worker": {
+        "path": "image-supply-chain/worker.spdx.json",
+        "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "bytes": 4096
+      },
+      "web": {
+        "path": "image-supply-chain/web.spdx.json",
+        "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "bytes": 4096
+      }
+    }
+  },
+  "attestations": {
+    "api": {
+      "subject": "ghcr.io/owner/steadystack-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "provenancePredicateType": "https://slsa.dev/provenance/v1",
+      "sbomPredicateType": "https://spdx.dev/Document/v2.3",
+      "verification": {
+        "path": "attestations/api.txt",
+        "sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "bytes": 1024
+      }
+    },
+    "worker": {
+      "subject": "ghcr.io/owner/steadystack-worker@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "provenancePredicateType": "https://slsa.dev/provenance/v1",
+      "sbomPredicateType": "https://spdx.dev/Document/v2.3",
+      "verification": {
+        "path": "attestations/worker.txt",
+        "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "bytes": 1024
+      }
+    },
+    "web": {
+      "subject": "ghcr.io/owner/steadystack-web@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "provenancePredicateType": "https://slsa.dev/provenance/v1",
+      "sbomPredicateType": "https://spdx.dev/Document/v2.3",
+      "verification": {
+        "path": "attestations/web.txt",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bytes": 1024
+      }
+    }
+  }
+}
