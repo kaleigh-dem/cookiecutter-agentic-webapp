@@ -14,7 +14,7 @@ Dispatch `.github/workflows/release-record.yml` from `main` after production dep
 - the schema-compatibility decision: `backward-compatible` when the previous approved application digests may run against the deployed schema, or `roll-forward-only` when they may not;
 - a concrete rationale for that schema decision.
 
-The workflow runs in the protected `production` GitHub Environment. It downloads the exact production-promotion and image-supply-chain artifacts, validates the release manifest against the named source run, rechecks protected production configuration, verifies each signature and both required attestation predicates, extracts the migration-related steps from the approved production plan, and runs `tools/delivery/smoke-test.mjs --profile release` against the deployed environment.
+The workflow runs in the protected `production` GitHub Environment. It downloads the exact production-promotion and image-supply-chain artifacts, validates the release manifest against the named source run, rechecks protected production configuration, authenticates to GHCR with the workflow's `packages: read` token, verifies each signature and both required attestation predicates, extracts the migration-related steps from the approved production plan, and runs `tools/delivery/smoke-test.mjs --profile release` against the deployed environment.
 
 A successful run uploads `release-record-VERSION`. The bundle contains:
 
@@ -58,7 +58,7 @@ The GitHub Actions copy is retained for 90 days. Treat that as transport and rev
 1. migrates and seeds an isolated PostgreSQL database;
 2. captures a custom-format `pg_dump` backup and records its SHA-256 identifier;
 3. restores into a separate `restore_exercise` database;
-4. compares deterministic public-table row counts between source and restored databases;
+4. compares deterministic row counts for application tables in the `app` schema between source and restored databases;
 5. validates restored migration status and reruns migrations to prove the restored schema is current and migration execution is idempotent;
 6. uploads the dump, row-count evidence, migration-status output, restore duration, source commit/run identity, and `restore-evidence.json`.
 
