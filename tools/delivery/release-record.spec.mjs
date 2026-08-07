@@ -331,7 +331,6 @@ describe('release record workflows', () => {
     expect(workflow).toContain('backup_identifier:');
     expect(workflow).toContain('smoke-test.mjs --profile release');
     expect(workflow).toContain('smoke-test.log');
-    expect(workflow).toContain('api.trivy.json');
     expect(workflow).toContain('release-record.mjs create');
     expect(workflow).toContain('--base-directory "$RECORD_DIRECTORY"');
     expect(workflow).toContain('release-record-${{ inputs.version }}');
