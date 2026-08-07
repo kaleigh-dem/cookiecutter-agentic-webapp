@@ -363,7 +363,10 @@ export function validateReleaseRecord(record, options = {}) {
       'Release image environment',
     ),
     releasePlan: validateAttachment(attachments.releasePlan, 'Release plan'),
-    sourceRun: validateAttachment(attachments.sourceRun, 'Promotion source run'),
+    sourceRun: validateAttachment(
+      attachments.sourceRun,
+      'Promotion source run',
+    ),
     releaseRun: validateAttachment(
       attachments.releaseRun,
       'Release workflow run metadata',
