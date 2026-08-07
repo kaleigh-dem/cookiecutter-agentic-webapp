@@ -49,6 +49,27 @@ function directGhsaIds(value) {
   );
 }
 
+function nestedGhsaIds(value) {
+  const ids = new Set();
+
+  function visitNested(nested) {
+    if (Array.isArray(nested)) {
+      nested.forEach(visitNested);
+      return;
+    }
+    if (!nested || typeof nested !== 'object') return;
+
+    for (const id of directGhsaIds(nested)) ids.add(id);
+    for (const child of Object.values(nested)) visitNested(child);
+  }
+
+  for (const nested of Object.values(value)) {
+    if (nested && typeof nested === 'object') visitNested(nested);
+  }
+
+  return [...ids];
+}
+
 function visit(value, path = []) {
   if (Array.isArray(value)) {
     value.forEach((item, index) => visit(item, [...path, String(index)]));
@@ -65,10 +86,7 @@ function visit(value, path = []) {
       value.package ??
       path.at(-1) ??
       'unknown';
-    const hasNestedValues = Object.values(value).some(
-      (nested) => nested && typeof nested === 'object',
-    );
-    if (ids.length === 0 && !hasNestedValues) {
+    if (ids.length === 0 && nestedGhsaIds(value).length === 0) {
       highSeverity.set(`unidentified:${path.join('.')}`, {
         id: 'unidentified',
         packageName,
