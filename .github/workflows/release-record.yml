@@ -69,10 +69,12 @@ jobs:
       name: production
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      RECORD_DIRECTORY: ${{ runner.temp }}/release-record
-      RELEASE_MANIFEST: ${{ runner.temp }}/release-record/release-manifest.json
     steps:
+      - name: Initialize release-record paths
+        run: |
+          echo "RECORD_DIRECTORY=$RUNNER_TEMP/release-record" >> "$GITHUB_ENV"
+          echo "RELEASE_MANIFEST=$RUNNER_TEMP/release-record/release-manifest.json" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -163,6 +165,7 @@ jobs:
 
       - name: Validate immutable release identity
         env:
+          RELEASE_VERSION: ${{ inputs.version }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
         run: |
           set -euo pipefail
@@ -174,7 +177,7 @@ jobs:
           )
           node tools/delivery/release-manifest.mjs validate \
             --manifest "$RELEASE_MANIFEST" \
-            --expected-version "${{ inputs.version }}" \
+            --expected-version "$RELEASE_VERSION" \
             --expected-repository "$GITHUB_REPOSITORY" \
             --expected-run-id "$SOURCE_RUN_ID" \
             --expected-commit-sha "$release_head_sha"
@@ -199,7 +202,9 @@ jobs:
           --compare-release-environment
 
       - name: Authenticate to GHCR for verification
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -361,15 +366,21 @@ jobs:
           retention-days: 30
 
       - name: Summarize finalized release record
+        env:
+          BACKUP_IDENTIFIER: ${{ inputs.backup_identifier }}
+          PROMOTION_RUN_ID: ${{ inputs.promotion_run_id }}
+          ROLLBACK_WINDOW_MINUTES: ${{ inputs.rollback_window_minutes }}
+          SCHEMA_COMPATIBILITY: ${{ inputs.schema_compatibility }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
         run: |
           {
             echo '## Finalized production release record'
             echo
-            echo "- Release images run: \`${{ inputs.source_run_id }}\`"
-            echo "- Production promotion run: \`${{ inputs.promotion_run_id }}\`"
-            echo "- Backup identifier: \`${{ inputs.backup_identifier }}\`"
-            echo "- Schema compatibility: \`${{ inputs.schema_compatibility }}\`"
-            echo "- Rollback window: \`${{ inputs.rollback_window_minutes }} minutes\`"
+            echo "- Release images run: \`$SOURCE_RUN_ID\`"
+            echo "- Production promotion run: \`$PROMOTION_RUN_ID\`"
+            echo "- Backup identifier: \`$BACKUP_IDENTIFIER\`"
+            echo "- Schema compatibility: \`$SCHEMA_COMPATIBILITY\`"
+            echo "- Rollback window: \`$ROLLBACK_WINDOW_MINUTES minutes\`"
             echo '- Smoke profile: `release` (passed)'
             echo
             echo 'Persist the complete release-record artifact in the deployment system of record before workflow-artifact retention expires.'
