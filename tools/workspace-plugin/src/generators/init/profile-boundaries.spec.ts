@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  createWorkspaceManifest,
-  normalizeInitOptions,
-} from './generator';
+import { createWorkspaceManifest, normalizeInitOptions } from './generator';
 import type { InitGeneratorSchema } from './schema';
 
 const baseOptions: InitGeneratorSchema = {
