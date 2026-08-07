@@ -22,6 +22,7 @@ Artifacts are uploaded only after failure and only when the workflow produced ma
 | -------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Browser or Playwright failure                      | `ci-failure-<run_id>-<run_attempt>`                      | `playwright-results/`, retained trace/video/screenshots, then `playwright-report/` |
 | CI release-plan generation or validation           | `ci-failure-<run_id>-<run_attempt>`                      | `release-plan.json`                                                                |
+| Documentation-integrity or stale graph             | `ci-failure-<run_id>-<run_attempt>`                      | `project-graph.md`, then the failing `pnpm docs:check` output                      |
 | Preview startup, health, smoke, or service failure | `delivery-failure-<run_id>-<run_attempt>`                | `service-logs.txt`                                                                 |
 | Performance-budget failure                         | `delivery-failure-<run_id>-<run_attempt>`                | `performance-report.json`, then `service-logs.txt`                                 |
 | Generated-workspace lifecycle failure              | `generated-workspace-diagnostics-<run_id>-<run_attempt>` | the failed step's generated workspace output and test-output bundle                |
@@ -37,6 +38,21 @@ The workflows retain these failure artifacts for 14 days. Download evidence befo
 4. Extract it into a separate diagnostic directory; do not overwrite a local test-output directory that contains other evidence.
 
 A rerun uses a new run attempt and therefore a different artifact name. Keep the run ID and attempt with any incident or pull-request notes.
+
+## Inspect documentation-integrity failures
+
+P13-05 runs the upstream SteadyStack documentation-integrity audit in CI as part of `pnpm docs:check`. When architecture validation detects that the committed Nx graph is stale, the checker writes the expected `project-graph.md` into the CI diagnostics directory. That file is retained in `ci-failure-<run_id>-<run_attempt>` with the rest of the CI failure evidence.
+
+Start with the failing `pnpm docs:check` output to identify whether the failure is a link/path/command/environment/identity/authentication issue, missing roadmap/ADR evidence, or architecture drift. For a stale graph, compare the retained `project-graph.md` with `docs/architecture/project-graph.md`, then regenerate from the exact source revision:
+
+```bash
+pnpm docs:architecture
+pnpm docs:check
+```
+
+`pnpm docs:architecture` rewrites the committed upstream architecture artifact from the Nx project graph; `pnpm docs:check` reruns the focused checker tests and repository audit. Do not hand-edit the generated graph to silence CI.
+
+These repository content/topology checks are specific to the upstream `@steadystack/source` template. Initialized products retain the checker unit tests but intentionally skip the upstream repository audit; adopters should add product-specific documentation rules if they want an equivalent downstream contract.
 
 ## Inspect Playwright evidence
 
@@ -159,6 +175,8 @@ Use the smallest command that matches the failed operation, then expand only as 
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm docs:architecture
+pnpm docs:check
 pnpm delivery:check
 pnpm nx run web-feature-agent-tasks:e2e
 pnpm containers:build

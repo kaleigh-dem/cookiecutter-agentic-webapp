@@ -63,6 +63,8 @@ Naming uses title case for page headings and hyphenated GitHub Wiki filenames. C
 | PostgreSQL, migrations, seed, reset, backups                              | Database and Data Management        |
 | Outbox, leasing, retries, replay, metrics, drain                          | Worker and Background Jobs          |
 | `pnpm check`, focused commands, budgets, clean tree                       | Validation and Testing              |
+| Documentation-integrity commands, upstream-only audit scope, graph checks | Validation and Testing              |
+| Documentation-integrity failure artifact and graph remediation            | CI Diagnostics                      |
 | Cancellation, failure artifacts, traces, logs, cache fallback             | CI Diagnostics                      |
 | Images, preview, smoke, performance, cleanup                              | Containers and Preview Environments |
 | Repository controls, environments, permissions, retention                 | Repository and GitHub Setup         |
@@ -90,6 +92,8 @@ pnpm affected
 pnpm graph
 pnpm format
 pnpm format:check
+pnpm docs:architecture
+pnpm docs:check
 pnpm security:secrets
 pnpm security:audit
 pnpm security:licenses
@@ -130,6 +134,8 @@ pnpm telemetry:down
 pnpm telemetry:check
 ```
 
+`pnpm docs:architecture` and `pnpm docs:check` are P13-05 template-maintainer commands. In `@steadystack/source`, they generate/check the committed Nx architecture graph and run the documentation content/topology audit. Initialized products retain the deterministic checker tests but skip the upstream repository audit; product teams must add product-specific rules if they want equivalent enforcement.
+
 Template-maintainer-only release scripts were intentionally not presented as generated-workspace everyday commands.
 
 ### Project targets confirmed
@@ -162,6 +168,10 @@ pnpm nx run database:test
 - initialization: identity, apps, ports/database, auth, worker transport, telemetry, deployment, AI
 
 ## Discrepancies and important reconciliations
+
+### Documentation integrity is upstream-specific
+
+P13-05 adds deterministic documentation-integrity enforcement for the reviewed upstream template package, `@steadystack/source`. Initialization changes product identity, can remove projects through profile selection, and removes maintainer-only workflows and documents. For that reason, initialized products run the checker’s deterministic unit tests but intentionally skip the upstream content/topology audit. The wiki labels `pnpm docs:check` and `pnpm docs:architecture` accordingly and directs adopters to define product-owned rules when they need equivalent enforcement.
 
 ### SteadyStack public identity
 
@@ -208,6 +218,8 @@ The repository implements an OIDC API verifier and browser credential adapter. P
 ### CI cancellation, cache, and failure evidence
 
 PR #55 completed pull-request-only cancellation, optional BuildKit cache reuse, and retained diagnostics. Delivery uses `.cache/buildkit`; Generated workspace stores cache state outside its temporary source copy at `../buildkit-cache`. Cache failure affects speed, not correctness. Failure bundles are retained for 14 days.
+
+P13-05 extends the retained CI bundle for stale documentation architecture validation: the expected `project-graph.md` is written into the CI diagnostics directory so reviewers can compare the generated correction candidate with the committed graph. CI Diagnostics documents this failure class and the `pnpm docs:architecture` / `pnpm docs:check` remediation path.
 
 ### Artifact retention is bounded
 

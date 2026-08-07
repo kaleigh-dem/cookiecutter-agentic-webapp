@@ -39,7 +39,18 @@ packages/env                         Node-only validated configuration
 packages/observability               structured logging, metrics, tracing, and telemetry setup
 ```
 
-`tools/workspace-plugin` owns the released preset, structural generators, and downstream upgrade tooling. `tools/delivery`, `infra`, and `performance` own production-image preparation, environment validation, preview orchestration, release manifests and plans, and performance budgets.
+`tools/workspace-plugin` owns the released preset, structural generators, and downstream upgrade tooling. `tools/delivery`, `infra`, and `performance` own production-image preparation, environment validation, preview orchestration, release manifests and plans, and performance budgets. `tools/documentation` validates documented links, paths, commands, environment names, identity and authentication descriptions, architecture evidence, and change records.
+
+## Generated project graph
+
+`docs/architecture/project-graph.md` is generated from the current Nx project graph and committed for review. Regenerate it whenever an Nx project is added, removed, retagged, or rewired:
+
+```bash
+pnpm docs:architecture
+pnpm docs:check
+```
+
+The graph check fails when the committed diagram differs from Nx. See `docs/documentation-integrity.md` for the complete validation contract.
 
 ## Dependency direction
 

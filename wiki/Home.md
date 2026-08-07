@@ -76,8 +76,8 @@ Current Phase 13 status:
 - **P13-02 — complete:** immutable digest publication and promotion, merged in PR #52 and hardened in PR #53.
 - **P13-03 — complete:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics, merged in PR #55.
 - **P13-04 — complete:** Nx cache-input auditing and affected execution, merged in PR #59.
-- **P13-05 — next:** documentation integrity checks.
-- **P13-06 — planned:** release metadata and rollback-evidence validation.
+- **P13-05 — complete:** documentation integrity checks for links, paths, commands, environment names, current identity and authentication descriptions, generated Nx architecture evidence, and roadmap-plus-ADR change evidence.
+- **P13-06 — next:** release metadata and rollback-evidence validation.
 
 Use `docs/TODO.md` for sequencing, acceptance criteria, and future status changes.
 
