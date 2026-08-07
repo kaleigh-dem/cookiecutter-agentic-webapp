@@ -65,6 +65,11 @@
       "id": "GHSA-7p8r-x3mc-p8w7",
       "package": "fast-uri",
       "reason": "Newly disclosed transitive advisory in the current locked toolchain; remove after upgrading the owning dependency or safely overriding fast-uri to a patched release."
+    },
+    {
+      "id": "GHSA-5p4m-2wfm-xmqj",
+      "package": "js-yaml",
+      "reason": "Newly disclosed transitive advisory in the current locked development toolchain; remove after refreshing the lockfile to js-yaml 4.3.1 or later."
     }
   ]
 }
