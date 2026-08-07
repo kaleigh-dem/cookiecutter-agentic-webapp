@@ -331,9 +331,18 @@ describe('release record workflows', () => {
     expect(workflow).toContain('backup_identifier:');
     expect(workflow).toContain('smoke-test.mjs --profile release');
     expect(workflow).toContain('smoke-test.log');
+    expect(workflow).toContain('Authenticate to GHCR for verification');
+    expect(workflow).toContain('docker login ghcr.io');
     expect(workflow).toContain('release-record.mjs create');
     expect(workflow).toContain('--base-directory "$RECORD_DIRECTORY"');
     expect(workflow).toContain('release-record-${{ inputs.version }}');
+
+    const ghcrLoginIndex = workflow.indexOf(
+      'Authenticate to GHCR for verification',
+    );
+    const cosignVerifyIndex = workflow.indexOf('cosign verify');
+    expect(ghcrLoginIndex).toBeGreaterThan(-1);
+    expect(cosignVerifyIndex).toBeGreaterThan(ghcrLoginIndex);
   });
 
   it('schedules an isolated PostgreSQL restore exercise', async () => {
@@ -343,6 +352,8 @@ describe('release record workflows', () => {
 
     expect(workflow).toContain("cron: '17 6 1 */3 *'");
     expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain("schemaname = 'app'");
+    expect(workflow).not.toContain("schemaname = 'public'");
     expect(workflow).toContain('pg_dump -U postgres -d app -Fc');
     expect(workflow).toContain('createdb -U postgres restore_exercise');
     expect(workflow).toContain('pg_restore -U postgres -d restore_exercise');
