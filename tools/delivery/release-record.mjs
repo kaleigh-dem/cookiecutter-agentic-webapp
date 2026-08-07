@@ -46,7 +46,11 @@ function requireString(value, label) {
   return value.trim();
 }
 
-function requirePositiveInteger(value, label, maximum = Number.MAX_SAFE_INTEGER) {
+function requirePositiveInteger(
+  value,
+  label,
+  maximum = Number.MAX_SAFE_INTEGER,
+) {
   const normalized =
     typeof value === 'number' ? String(value) : requireString(value, label);
   if (!/^[1-9]\d*$/u.test(normalized)) {
@@ -62,7 +66,10 @@ function requirePositiveInteger(value, label, maximum = Number.MAX_SAFE_INTEGER)
 function requireTimestamp(value, label) {
   const normalized = requireString(value, label);
   const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime()) || !/[zZ]|[+-]\d\d:\d\d$/u.test(normalized)) {
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    !/[zZ]|[+-]\d\d:\d\d$/u.test(normalized)
+  ) {
     throw new Error(`${label} must be an ISO-8601 timestamp with a timezone.`);
   }
   return normalized;
@@ -71,19 +78,33 @@ function requireTimestamp(value, label) {
 function requireEvidenceText(value, label) {
   const normalized = requireString(value, label);
   if (/^(?:todo|tbd|pending|unknown|n\/a|none)$/iu.test(normalized)) {
-    throw new Error(`${label} must contain recorded evidence, not a placeholder.`);
+    throw new Error(
+      `${label} must contain recorded evidence, not a placeholder.`,
+    );
   }
   return normalized;
 }
 
 function validateAttachment(attachment, label) {
-  if (!attachment || typeof attachment !== 'object' || Array.isArray(attachment)) {
+  if (
+    !attachment ||
+    typeof attachment !== 'object' ||
+    Array.isArray(attachment)
+  ) {
     throw new Error(`${label} attachment is required.`);
   }
-  const path = validateRelativePath(attachment.path, `${label} attachment path`);
-  const sha256 = requireString(attachment.sha256, `${label} attachment SHA-256`);
+  const path = validateRelativePath(
+    attachment.path,
+    `${label} attachment path`,
+  );
+  const sha256 = requireString(
+    attachment.sha256,
+    `${label} attachment SHA-256`,
+  );
   if (!sha256Pattern.test(sha256)) {
-    throw new Error(`${label} attachment SHA-256 must be lowercase hexadecimal.`);
+    throw new Error(
+      `${label} attachment SHA-256 must be lowercase hexadecimal.`,
+    );
   }
   const bytes = requirePositiveInteger(
     attachment.bytes,
@@ -95,7 +116,9 @@ function validateAttachment(attachment, label) {
 function validateRelativePath(value, label) {
   const path = requireString(value, label);
   if (isAbsolute(path)) {
-    throw new Error(`${label} must be relative to the release-record directory.`);
+    throw new Error(
+      `${label} must be relative to the release-record directory.`,
+    );
   }
   const normalized = normalize(path).replaceAll('\\', '/');
   if (normalized === '..' || normalized.startsWith('../')) {
@@ -115,16 +138,23 @@ function validateImageEvidence(images, manifest) {
     if (!image || typeof image !== 'object' || Array.isArray(image)) {
       throw new Error(`Release record is missing ${service} image evidence.`);
     }
-    const reference = requireString(image.reference, `${service} image reference`);
+    const reference = requireString(
+      image.reference,
+      `${service} image reference`,
+    );
     const digest = requireString(image.digest, `${service} image digest`);
     if (!digestPattern.test(digest)) {
-      throw new Error(`${service} image digest must be a lowercase sha256 digest.`);
+      throw new Error(
+        `${service} image digest must be a lowercase sha256 digest.`,
+      );
     }
     if (!reference.endsWith(`@${digest}`)) {
       throw new Error(`${service} image reference must end with its digest.`);
     }
     if (manifest && reference !== manifest.images[service].reference) {
-      throw new Error(`${service} image reference does not match the release manifest.`);
+      throw new Error(
+        `${service} image reference does not match the release manifest.`,
+      );
     }
     normalized[service] = { reference, digest };
   }
@@ -148,14 +178,18 @@ function validateAttestations(attestations, images) {
       typeof attestation !== 'object' ||
       Array.isArray(attestation)
     ) {
-      throw new Error(`Release record is missing ${service} attestation evidence.`);
+      throw new Error(
+        `Release record is missing ${service} attestation evidence.`,
+      );
     }
     const subject = requireString(
       attestation.subject,
       `${service} attestation subject`,
     );
     if (subject !== images[service].reference) {
-      throw new Error(`${service} attestation subject must match its image reference.`);
+      throw new Error(
+        `${service} attestation subject must match its image reference.`,
+      );
     }
     if (attestation.provenancePredicateType !== provenancePredicateType) {
       throw new Error(
@@ -163,7 +197,9 @@ function validateAttestations(attestations, images) {
       );
     }
     if (attestation.sbomPredicateType !== sbomPredicateType) {
-      throw new Error(`${service} SBOM predicate type must be ${sbomPredicateType}.`);
+      throw new Error(
+        `${service} SBOM predicate type must be ${sbomPredicateType}.`,
+      );
     }
     normalized[service] = {
       subject,
@@ -195,7 +231,10 @@ export function validateReleaseRecord(record, options = {}) {
   if (!source || typeof source !== 'object' || Array.isArray(source)) {
     throw new Error('Release record source metadata is required.');
   }
-  const repository = requireString(source.repository, 'Release record repository');
+  const repository = requireString(
+    source.repository,
+    'Release record repository',
+  );
   if (!repositoryPattern.test(repository)) {
     throw new Error('Release record repository must be in owner/name form.');
   }
@@ -211,7 +250,10 @@ export function validateReleaseRecord(record, options = {}) {
       'Promotion workflow run ID',
     ),
   );
-  const commitSha = requireString(source.commitSha, 'Release record commit SHA');
+  const commitSha = requireString(
+    source.commitSha,
+    'Release record commit SHA',
+  );
   if (!commitPattern.test(commitSha)) {
     throw new Error('Release record commit SHA must be a full lowercase SHA.');
   }
@@ -280,10 +322,14 @@ export function validateReleaseRecord(record, options = {}) {
     : undefined;
   if (manifest) {
     if (manifest.version !== version) {
-      throw new Error('Release record version does not match the release manifest.');
+      throw new Error(
+        'Release record version does not match the release manifest.',
+      );
     }
     if (manifest.source.repository !== repository) {
-      throw new Error('Release record repository does not match the release manifest.');
+      throw new Error(
+        'Release record repository does not match the release manifest.',
+      );
     }
     if (manifest.source.runId !== releaseWorkflowRunId) {
       throw new Error(
@@ -291,7 +337,9 @@ export function validateReleaseRecord(record, options = {}) {
       );
     }
     if (manifest.source.commitSha !== commitSha) {
-      throw new Error('Release record commit SHA does not match the release manifest.');
+      throw new Error(
+        'Release record commit SHA does not match the release manifest.',
+      );
     }
   }
 
@@ -368,9 +416,13 @@ async function createAttachment(baseDirectory, relativePath, label) {
   const relativePathFromBase = relative(base, absolutePath);
   if (
     relativePathFromBase === '..' ||
-    relativePathFromBase.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`)
+    relativePathFromBase.startsWith(
+      `..${process.platform === 'win32' ? '\\' : '/'}`,
+    )
   ) {
-    throw new Error(`${label} path must stay inside the release-record directory.`);
+    throw new Error(
+      `${label} path must stay inside the release-record directory.`,
+    );
   }
   const contents = await readFile(absolutePath);
   const metadata = await stat(absolutePath);
@@ -388,7 +440,9 @@ async function verifyAttachment(baseDirectory, attachment, label) {
   const expected = validateAttachment(attachment, label);
   const actual = await createAttachment(baseDirectory, expected.path, label);
   if (actual.sha256 !== expected.sha256 || actual.bytes !== expected.bytes) {
-    throw new Error(`${label} attachment hash or size does not match the record.`);
+    throw new Error(
+      `${label} attachment hash or size does not match the record.`,
+    );
   }
 }
 

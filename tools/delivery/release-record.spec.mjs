@@ -233,7 +233,9 @@ describe('release records', () => {
 
 describe('release record workflows', () => {
   it('finalizes only complete exact-run production evidence', async () => {
-    const workflow = await repositoryFile('.github/workflows/release-record.yml');
+    const workflow = await repositoryFile(
+      '.github/workflows/release-record.yml',
+    );
 
     expect(workflow).toContain('name: Finalize release record');
     expect(workflow).toContain('environment:\n      name: production');
