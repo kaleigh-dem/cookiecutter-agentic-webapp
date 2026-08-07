@@ -23,7 +23,8 @@
         "commands": [
           "node tools/delivery/validate-environment.mjs infra/environments/preview.env.example --allow-placeholders",
           "node tools/delivery/validate-environment.mjs infra/environments/production.env.example --allow-placeholders",
-          "node tools/delivery/validate-environment.mjs infra/environments/preview.local.env --allow-local"
+          "node tools/delivery/validate-environment.mjs infra/environments/preview.local.env --allow-local",
+          "node tools/delivery/release-record.mjs validate --record infra/release/release-record.example.json --manifest infra/release/release-manifest.example.json"
         ],
         "parallel": false
       }

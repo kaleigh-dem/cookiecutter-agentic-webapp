@@ -1,0 +1,179 @@
+name: Disaster recovery exercise
+
+on:
+  schedule:
+    - cron: '17 6 1 */3 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: disaster-recovery-exercise
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: app
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/app
+    steps:
+      - name: Initialize recovery evidence path
+        run: echo "RECOVERY_EVIDENCE_DIRECTORY=$RUNNER_TEMP/disaster-recovery-exercise" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prepare deterministic source database
+        run: |
+          set -euo pipefail
+          mkdir -p "$RECOVERY_EVIDENCE_DIRECTORY"
+          pnpm db:migrate
+          pnpm db:seed
+          pnpm db:status > "$RECOVERY_EVIDENCE_DIRECTORY/migration-status.source.txt"
+
+      - name: Capture and restore PostgreSQL backup
+        id: restore
+        run: |
+          set -euo pipefail
+          started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          started_epoch=$(date +%s)
+          postgres_container=$(docker ps \
+            --filter 'ancestor=postgres:17-alpine' \
+            --format '{{.ID}}')
+          if [ "$(printf '%s\n' "$postgres_container" | sed '/^$/d' | wc -l)" -ne 1 ]; then
+            echo 'Expected exactly one postgres:17-alpine service container.' >&2
+            exit 1
+          fi
+
+          count_rows() {
+            local database=$1
+            local output=$2
+            : > "$output"
+            while IFS= read -r table; do
+              [ -n "$table" ] || continue
+              count=$(docker exec "$postgres_container" \
+                psql -U postgres -d "$database" -Atc \
+                "SELECT count(*) FROM app.\"$table\";")
+              printf '%s=%s\n' "$table" "$count" >> "$output"
+            done < <(docker exec "$postgres_container" \
+              psql -U postgres -d "$database" -Atc \
+              "SELECT tablename FROM pg_tables WHERE schemaname = 'app' ORDER BY tablename;")
+          }
+
+          count_rows app "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.source.txt"
+          if [ ! -s "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.source.txt" ]; then
+            echo 'Source database contains no app-schema application tables.' >&2
+            exit 1
+          fi
+
+          docker exec "$postgres_container" \
+            pg_dump -U postgres -d app -Fc \
+            > "$RECOVERY_EVIDENCE_DIRECTORY/backup.dump"
+          backup_sha=$(sha256sum "$RECOVERY_EVIDENCE_DIRECTORY/backup.dump" | awk '{print $1}')
+
+          docker exec "$postgres_container" dropdb -U postgres --if-exists restore_exercise
+          docker exec "$postgres_container" createdb -U postgres restore_exercise
+          cat "$RECOVERY_EVIDENCE_DIRECTORY/backup.dump" | \
+            docker exec -i "$postgres_container" \
+              pg_restore -U postgres -d restore_exercise --exit-on-error
+
+          count_rows restore_exercise "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.restored.txt"
+          diff -u \
+            "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.source.txt" \
+            "$RECOVERY_EVIDENCE_DIRECTORY/table-counts.restored.txt"
+
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/restore_exercise \
+            pnpm db:status > "$RECOVERY_EVIDENCE_DIRECTORY/migration-status.restored.txt"
+          DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/restore_exercise \
+            pnpm db:migrate
+
+          completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          completed_epoch=$(date +%s)
+          duration_seconds=$((completed_epoch - started_epoch))
+          BACKUP_SHA=$backup_sha \
+          COMPLETED_AT=$completed_at \
+          DURATION_SECONDS=$duration_seconds \
+          STARTED_AT=$started_at \
+          node --input-type=module - \
+            "$RECOVERY_EVIDENCE_DIRECTORY/restore-evidence.json" \
+            "$RECOVERY_EVIDENCE_DIRECTORY/backup.dump" <<'NODE'
+          import { stat, writeFile } from 'node:fs/promises';
+
+          const backup = await stat(process.argv[3]);
+          await writeFile(
+            process.argv[2],
+            `${JSON.stringify(
+              {
+                schemaVersion: 1,
+                status: 'passed',
+                source: {
+                  repository: process.env.GITHUB_REPOSITORY,
+                  commitSha: process.env.GITHUB_SHA,
+                  workflowRunId: process.env.GITHUB_RUN_ID,
+                },
+                backup: {
+                  identifier: `sha256:${process.env.BACKUP_SHA}`,
+                  bytes: backup.size,
+                },
+                restore: {
+                  isolatedDatabase: 'restore_exercise',
+                  tableCountsMatched: true,
+                  migrationsValidated: true,
+                  startedAt: process.env.STARTED_AT,
+                  completedAt: process.env.COMPLETED_AT,
+                  durationSeconds: Number(process.env.DURATION_SECONDS),
+                },
+              },
+              null,
+              2,
+            )}\n`,
+          );
+          NODE
+          echo "backup_identifier=sha256:$backup_sha" >> "$GITHUB_OUTPUT"
+          echo "duration_seconds=$duration_seconds" >> "$GITHUB_OUTPUT"
+
+      - name: Upload restore evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: disaster-recovery-exercise-${{ github.run_id }}
+          path: ${{ env.RECOVERY_EVIDENCE_DIRECTORY }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Summarize restore exercise
+        run: |
+          {
+            echo '## Disaster recovery exercise'
+            echo
+            echo "- Backup identifier: \`${{ steps.restore.outputs.backup_identifier }}\`"
+            echo "- Restore duration: \`${{ steps.restore.outputs.duration_seconds }} seconds\`"
+            echo '- Source and restored app-schema row counts matched.'
+            echo '- Restored migration status and idempotent migration execution passed.'
+          } >> "$GITHUB_STEP_SUMMARY"
