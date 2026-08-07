@@ -18,13 +18,13 @@ The baseline remains provider-neutral. SteadyStack can validate the shape and in
    - It requires a non-placeholder database backup identifier and capture timestamp.
    - It requires a positive rollback window plus an explicit schema-compatibility decision of `backward-compatible` or `roll-forward-only`, with rationale, owner, and decision timestamp.
    - It requires a successful `release` smoke profile result.
-   - It records the production release plan, an extracted migration plan, all three image SBOMs, and per-image signature/attestation verification evidence.
-   - Every attached evidence file is recorded with a SHA-256 hash and byte size. Validation can re-read the bundle and fail if any attachment is missing or has changed.
+   - It records the production digest environment, release and migration plans, source/release/promotion workflow metadata, all three image SBOMs and scan reports, the smoke result and log, and per-image signature/attestation verification evidence.
+   - Every supporting evidence file in the finalized bundle, except the release record itself, is recorded with a SHA-256 hash and byte size. Validation can re-read the bundle and fail if any recorded attachment is missing or has changed.
 2. Add the **Finalize release record** workflow as a post-deployment production action.
    - It may run only from `main` and uses the protected `production` GitHub Environment.
    - It accepts the successful Release images and Promote release digests workflow run IDs plus the provider-specific backup identifier, backup time, rollback window, schema decision, and rationale.
-   - It downloads the approved production promotion and image supply-chain artifacts from the exact named runs, revalidates the manifest, production configuration, signatures, and attestations, materializes migration-plan evidence, and runs the deployed `release` smoke profile.
-   - It emits `release-record-VERSION` only after the complete record validates against its attachment hashes.
+   - It downloads the approved production promotion and image-supply-chain artifacts from the exact named runs, revalidates the manifest, production configuration, signatures, and attestations, materializes migration-plan evidence, and runs the deployed `release` smoke profile.
+   - It emits `release-record-VERSION` only after the complete record validates against hashes for every supporting evidence file in the bundle.
 3. GitHub workflow artifacts are a handoff copy, not the long-term system of record. The finalizer retains its bundle for 90 days and requires the deployment platform or compliance archive to persist the complete bundle before that retention expires.
 4. Add a scheduled **Disaster recovery exercise** workflow.
    - It runs quarterly and remains manually dispatchable.
@@ -34,8 +34,8 @@ The baseline remains provider-neutral. SteadyStack can validate the shape and in
 
 ## Consequences
 
-- A release cannot be considered fully recorded when the backup, rollback window, schema decision, smoke result, or evidence attachments are absent.
+- A release cannot be considered fully recorded when the backup, rollback window, schema decision, smoke result, or supporting evidence attachments are absent.
 - Rollback decisions become auditable alongside the exact image digests and migration plan instead of being reconstructed after an incident.
 - The production promotion workflow remains read-only and provider-neutral; evidence finalization occurs after the deployment platform has consumed the approved promotion artifact.
-- Release-record artifacts are tamper-evident within the bundle because every required attachment is hashed and revalidated.
+- Release-record artifacts are tamper-evident within the bundle because every supporting evidence file is hashed and revalidated.
 - The repository now exercises backup and restore mechanics on a schedule, while adopters still own production backup creation and durable release-record retention.

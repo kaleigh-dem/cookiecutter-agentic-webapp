@@ -21,11 +21,11 @@ A successful run uploads `release-record-VERSION`. The bundle contains:
 - `release-record.json`, including release/promotion run identities, commit SHA, immutable image digests, backup identifier, rollback window, schema decision, decision owner/time, and smoke status;
 - `release-manifest.json`, `release-images.env`, the approved production release plan, and source/promotion workflow metadata;
 - `migration-plan.production.json`, extracted from the approved plan's backup, migration inspection, and migration application steps;
-- all API, worker, and web SPDX SBOMs plus the corresponding scan reports downloaded from the exact release run;
+- all API, worker, and web SPDX SBOMs plus the corresponding Trivy scan reports downloaded from the exact release run;
 - per-image Cosign and GitHub attestation verification output for build provenance and SPDX SBOM attestations;
-- `smoke-test.json` and the smoke log from the deployed release.
+- `smoke-test.json` and `smoke-test.log` from the deployed release.
 
-`release-record.json` stores a SHA-256 hash and byte size for every required release plan, migration plan, smoke result, SBOM, and attestation-verification attachment. The validator fails closed on missing evidence, mutated attachments, a missing backup, a non-positive rollback window, an unrecorded schema decision, a failed smoke result, or digest evidence that does not match the immutable release manifest.
+`release-record.json` stores a SHA-256 hash and byte size for every supporting evidence file in the bundle except the record itself. That includes the release manifest and digest environment, release and migration plans, source/release/promotion run metadata, smoke result and log, every SBOM and scan report, and every attestation-verification file. The validator re-reads each recorded attachment when `--base-directory` is supplied and fails closed if any evidence file is missing or has changed, as well as on a missing backup, a non-positive rollback window, an unrecorded schema decision, a failed smoke result, or digest evidence that does not match the immutable release manifest.
 
 Validate a complete downloaded bundle with:
 
@@ -49,7 +49,7 @@ The backup identifier must name the snapshot captured for that deployment, not a
 
 ## Retention
 
-The GitHub Actions copy is retained for 90 days. Treat that as transport and review retention only. Before it expires, persist the complete `release-record-VERSION` bundle in the deployment system of record, release archive, or compliance store with retention appropriate to the service. Keeping only `release-record.json` is insufficient because its attachment hashes are designed to bind the complete evidence bundle.
+The GitHub Actions copy is retained for 90 days. Treat that as transport and review retention only. Before it expires, persist the complete `release-record-VERSION` bundle in the deployment system of record, release archive, or compliance store with retention appropriate to the service. Keeping only `release-record.json` is insufficient because its attachment hashes are designed to bind the complete supporting evidence bundle.
 
 ## Scheduled restore exercise
 

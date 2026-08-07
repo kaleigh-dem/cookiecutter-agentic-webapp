@@ -1,9 +1,17 @@
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import { createReleaseManifest } from './release-manifest.mjs';
-import { validateReleaseRecord } from './release-record.mjs';
+import {
+  validateReleaseRecord,
+  verifyReleaseRecordAttachments,
+} from './release-record.mjs';
+
+const services = ['api', 'worker', 'web'];
 
 function sampleManifest() {
   return createReleaseManifest({
@@ -76,7 +84,7 @@ function sampleRecord() {
       completedAt: '2026-08-07T16:10:00Z',
     },
     images: Object.fromEntries(
-      ['api', 'worker', 'web'].map((service) => [
+      services.map((service) => [
         service,
         {
           reference: manifest.images[service].reference,
@@ -86,13 +94,23 @@ function sampleRecord() {
     ),
     attachments: {
       releaseManifest: attachment('release-manifest.json', '1'),
-      releasePlan: attachment('release-plan.production.json', '2'),
-      migrationPlan: attachment('migration-plan.production.json', '3'),
-      smokeTestResult: attachment('smoke-test.json', '4'),
+      releaseImagesEnvironment: attachment('release-images.env', '2'),
+      releasePlan: attachment('release-plan.production.json', '3'),
+      sourceRun: attachment('source-run.json', '4'),
+      releaseRun: attachment('release-run.json', '5'),
+      promotionRun: attachment('promotion-run.json', '6'),
+      migrationPlan: attachment('migration-plan.production.json', '7'),
+      smokeTestResult: attachment('smoke-test.json', '8'),
+      smokeTestLog: attachment('smoke-test.log', '9'),
       sboms: {
-        api: attachment('image-supply-chain/api.spdx.json', '5'),
-        worker: attachment('image-supply-chain/worker.spdx.json', '6'),
-        web: attachment('image-supply-chain/web.spdx.json', '7'),
+        api: attachment('image-supply-chain/api.spdx.json', 'a'),
+        worker: attachment('image-supply-chain/worker.spdx.json', 'b'),
+        web: attachment('image-supply-chain/web.spdx.json', 'c'),
+      },
+      scanReports: {
+        api: attachment('image-supply-chain/api.trivy.json', 'd'),
+        worker: attachment('image-supply-chain/worker.trivy.json', 'e'),
+        web: attachment('image-supply-chain/web.trivy.json', 'f'),
       },
     },
     attestations: {
@@ -118,12 +136,44 @@ function sampleRecord() {
   };
 }
 
+function allSupportingAttachments(record) {
+  return [
+    record.attachments.releaseManifest,
+    record.attachments.releaseImagesEnvironment,
+    record.attachments.releasePlan,
+    record.attachments.sourceRun,
+    record.attachments.releaseRun,
+    record.attachments.promotionRun,
+    record.attachments.migrationPlan,
+    record.attachments.smokeTestResult,
+    record.attachments.smokeTestLog,
+    ...services.flatMap((service) => [
+      record.attachments.sboms[service],
+      record.attachments.scanReports[service],
+      record.attestations[service].verification,
+    ]),
+  ];
+}
+
+async function materializeBundle(record) {
+  const directory = await mkdtemp(join(tmpdir(), 'release-record-'));
+  for (const evidence of allSupportingAttachments(record)) {
+    const absolutePath = join(directory, evidence.path);
+    await mkdir(dirname(absolutePath), { recursive: true });
+    const contents = `fixture:${evidence.path}\n`;
+    await writeFile(absolutePath, contents);
+    evidence.sha256 = createHash('sha256').update(contents).digest('hex');
+    evidence.bytes = Buffer.byteLength(contents);
+  }
+  return directory;
+}
+
 async function repositoryFile(path) {
   return readFile(new URL(`../../${path}`, import.meta.url), 'utf8');
 }
 
 describe('release records', () => {
-  it('binds rollback, backup, smoke, SBOM, attestation, and digest evidence to the release manifest', () => {
+  it('binds rollback, backup, smoke, supply-chain, attestation, and digest evidence to the release manifest', () => {
     const manifest = sampleManifest();
     const record = validateReleaseRecord(sampleRecord(), { manifest });
 
@@ -133,8 +183,12 @@ describe('release records', () => {
     expect(record.rollback.schemaCompatibility).toBe('backward-compatible');
     expect(record.smokeTest.status).toBe('passed');
     expect(record.images.api.reference).toBe(manifest.images.api.reference);
+    expect(record.attachments.smokeTestLog.path).toBe('smoke-test.log');
     expect(record.attachments.sboms.web.path).toBe(
       'image-supply-chain/web.spdx.json',
+    );
+    expect(record.attachments.scanReports.api.path).toBe(
+      'image-supply-chain/api.trivy.json',
     );
     expect(record.attestations.worker.subject).toBe(
       manifest.images.worker.reference,
@@ -229,6 +283,30 @@ describe('release records', () => {
       }),
     ).toThrow('must match its image reference');
   });
+
+  it('rejects mutation of scan reports and smoke logs in a finalized bundle', async () => {
+    for (const relativePath of [
+      'image-supply-chain/api.trivy.json',
+      'smoke-test.log',
+    ]) {
+      const manifest = sampleManifest();
+      const record = sampleRecord();
+      const directory = await materializeBundle(record);
+      try {
+        const normalized = validateReleaseRecord(record, { manifest });
+        await expect(
+          verifyReleaseRecordAttachments(directory, normalized),
+        ).resolves.toBeUndefined();
+
+        await writeFile(join(directory, relativePath), 'tampered\n');
+        await expect(
+          verifyReleaseRecordAttachments(directory, normalized),
+        ).rejects.toThrow('attachment hash or size does not match the record');
+      } finally {
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  });
 });
 
 describe('release record workflows', () => {
@@ -252,6 +330,8 @@ describe('release record workflows', () => {
     expect(workflow).toContain('rollback_window_minutes:');
     expect(workflow).toContain('backup_identifier:');
     expect(workflow).toContain('smoke-test.mjs --profile release');
+    expect(workflow).toContain('smoke-test.log');
+    expect(workflow).toContain('api.trivy.json');
     expect(workflow).toContain('release-record.mjs create');
     expect(workflow).toContain('--base-directory "$RECORD_DIRECTORY"');
     expect(workflow).toContain('release-record-${{ inputs.version }}');

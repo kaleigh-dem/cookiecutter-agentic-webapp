@@ -43,35 +43,77 @@
       "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
       "bytes": 1024
     },
+    "releaseImagesEnvironment": {
+      "path": "release-images.env",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "bytes": 512
+    },
     "releasePlan": {
       "path": "release-plan.production.json",
-      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
       "bytes": 2048
+    },
+    "sourceRun": {
+      "path": "source-run.json",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "bytes": 512
+    },
+    "releaseRun": {
+      "path": "release-run.json",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 512
+    },
+    "promotionRun": {
+      "path": "promotion-run.json",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "bytes": 512
     },
     "migrationPlan": {
       "path": "migration-plan.production.json",
-      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
       "bytes": 512
     },
     "smokeTestResult": {
       "path": "smoke-test.json",
-      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "8888888888888888888888888888888888888888888888888888888888888888",
       "bytes": 256
+    },
+    "smokeTestLog": {
+      "path": "smoke-test.log",
+      "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "bytes": 1024
     },
     "sboms": {
       "api": {
         "path": "image-supply-chain/api.spdx.json",
-        "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "bytes": 4096
       },
       "worker": {
         "path": "image-supply-chain/worker.spdx.json",
-        "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "bytes": 4096
       },
       "web": {
         "path": "image-supply-chain/web.spdx.json",
-        "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "bytes": 4096
+      }
+    },
+    "scanReports": {
+      "api": {
+        "path": "image-supply-chain/api.trivy.json",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "bytes": 4096
+      },
+      "worker": {
+        "path": "image-supply-chain/worker.trivy.json",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "bytes": 4096
+      },
+      "web": {
+        "path": "image-supply-chain/web.trivy.json",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "bytes": 4096
       }
     }

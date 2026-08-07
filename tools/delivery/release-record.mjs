@@ -85,6 +85,20 @@ function requireEvidenceText(value, label) {
   return normalized;
 }
 
+function validateRelativePath(value, label) {
+  const path = requireString(value, label);
+  if (isAbsolute(path)) {
+    throw new Error(
+      `${label} must be relative to the release-record directory.`,
+    );
+  }
+  const normalized = normalize(path).replaceAll('\\', '/');
+  if (normalized === '..' || normalized.startsWith('../')) {
+    throw new Error(`${label} must stay inside the release-record directory.`);
+  }
+  return normalized;
+}
+
 function validateAttachment(attachment, label) {
   if (
     !attachment ||
@@ -111,20 +125,6 @@ function validateAttachment(attachment, label) {
     `${label} attachment size`,
   );
   return { path, sha256, bytes };
-}
-
-function validateRelativePath(value, label) {
-  const path = requireString(value, label);
-  if (isAbsolute(path)) {
-    throw new Error(
-      `${label} must be relative to the release-record directory.`,
-    );
-  }
-  const normalized = normalize(path).replaceAll('\\', '/');
-  if (normalized === '..' || normalized.startsWith('../')) {
-    throw new Error(`${label} must stay inside the release-record directory.`);
-  }
-  return normalized;
 }
 
 function validateImageEvidence(images, manifest) {
@@ -358,7 +358,20 @@ export function validateReleaseRecord(record, options = {}) {
       attachments.releaseManifest,
       'Release manifest',
     ),
+    releaseImagesEnvironment: validateAttachment(
+      attachments.releaseImagesEnvironment,
+      'Release image environment',
+    ),
     releasePlan: validateAttachment(attachments.releasePlan, 'Release plan'),
+    sourceRun: validateAttachment(attachments.sourceRun, 'Promotion source run'),
+    releaseRun: validateAttachment(
+      attachments.releaseRun,
+      'Release workflow run metadata',
+    ),
+    promotionRun: validateAttachment(
+      attachments.promotionRun,
+      'Promotion workflow run metadata',
+    ),
     migrationPlan: validateAttachment(
       attachments.migrationPlan,
       'Migration plan',
@@ -367,12 +380,21 @@ export function validateReleaseRecord(record, options = {}) {
       attachments.smokeTestResult,
       'Smoke-test result',
     ),
+    smokeTestLog: validateAttachment(
+      attachments.smokeTestLog,
+      'Smoke-test log',
+    ),
     sboms: {},
+    scanReports: {},
   };
   for (const service of RELEASE_SERVICES) {
     normalizedAttachments.sboms[service] = validateAttachment(
       attachments.sboms?.[service],
       `${service} SBOM`,
+    );
+    normalizedAttachments.scanReports[service] = validateAttachment(
+      attachments.scanReports?.[service],
+      `${service} scan report`,
     );
   }
 
@@ -446,7 +468,7 @@ async function verifyAttachment(baseDirectory, attachment, label) {
   }
 }
 
-async function verifyAttachments(baseDirectory, record) {
+export async function verifyReleaseRecordAttachments(baseDirectory, record) {
   await verifyAttachment(
     baseDirectory,
     record.attachments.releaseManifest,
@@ -454,8 +476,28 @@ async function verifyAttachments(baseDirectory, record) {
   );
   await verifyAttachment(
     baseDirectory,
+    record.attachments.releaseImagesEnvironment,
+    'Release image environment',
+  );
+  await verifyAttachment(
+    baseDirectory,
     record.attachments.releasePlan,
     'Release plan',
+  );
+  await verifyAttachment(
+    baseDirectory,
+    record.attachments.sourceRun,
+    'Promotion source run',
+  );
+  await verifyAttachment(
+    baseDirectory,
+    record.attachments.releaseRun,
+    'Release workflow run metadata',
+  );
+  await verifyAttachment(
+    baseDirectory,
+    record.attachments.promotionRun,
+    'Promotion workflow run metadata',
   );
   await verifyAttachment(
     baseDirectory,
@@ -467,11 +509,21 @@ async function verifyAttachments(baseDirectory, record) {
     record.attachments.smokeTestResult,
     'Smoke-test result',
   );
+  await verifyAttachment(
+    baseDirectory,
+    record.attachments.smokeTestLog,
+    'Smoke-test log',
+  );
   for (const service of RELEASE_SERVICES) {
     await verifyAttachment(
       baseDirectory,
       record.attachments.sboms[service],
       `${service} SBOM`,
+    );
+    await verifyAttachment(
+      baseDirectory,
+      record.attachments.scanReports[service],
+      `${service} scan report`,
     );
     await verifyAttachment(
       baseDirectory,
@@ -497,10 +549,30 @@ async function createCommand(values) {
       values['release-manifest-attachment'] ?? 'release-manifest.json',
       'Release manifest',
     ),
+    releaseImagesEnvironment: await createAttachment(
+      baseDirectory,
+      values['release-images-environment'] ?? 'release-images.env',
+      'Release image environment',
+    ),
     releasePlan: await createAttachment(
       baseDirectory,
       values['release-plan'],
       'Release plan',
+    ),
+    sourceRun: await createAttachment(
+      baseDirectory,
+      values['source-run'] ?? 'source-run.json',
+      'Promotion source run',
+    ),
+    releaseRun: await createAttachment(
+      baseDirectory,
+      values['release-run'] ?? 'release-run.json',
+      'Release workflow run metadata',
+    ),
+    promotionRun: await createAttachment(
+      baseDirectory,
+      values['promotion-run'] ?? 'promotion-run.json',
+      'Promotion workflow run metadata',
     ),
     migrationPlan: await createAttachment(
       baseDirectory,
@@ -512,13 +584,25 @@ async function createCommand(values) {
       values['smoke-result'],
       'Smoke-test result',
     ),
+    smokeTestLog: await createAttachment(
+      baseDirectory,
+      values['smoke-log'] ?? 'smoke-test.log',
+      'Smoke-test log',
+    ),
     sboms: {},
+    scanReports: {},
   };
   for (const service of RELEASE_SERVICES) {
     attachments.sboms[service] = await createAttachment(
       baseDirectory,
       values[`${service}-sbom`],
       `${service} SBOM`,
+    );
+    attachments.scanReports[service] = await createAttachment(
+      baseDirectory,
+      values[`${service}-scan-report`] ??
+        `image-supply-chain/${service}.trivy.json`,
+      `${service} scan report`,
     );
   }
 
@@ -588,7 +672,7 @@ async function validateCommand(values) {
     : undefined;
   const normalized = validateReleaseRecord(record, { manifest });
   if (values['base-directory']) {
-    await verifyAttachments(values['base-directory'], normalized);
+    await verifyReleaseRecordAttachments(values['base-directory'], normalized);
   }
   process.stdout.write(
     `${JSON.stringify(
