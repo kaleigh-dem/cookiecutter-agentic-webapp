@@ -32,8 +32,10 @@ jobs:
           --health-retries 30
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/app
-      RECOVERY_EVIDENCE_DIRECTORY: ${{ runner.temp }}/disaster-recovery-exercise
     steps:
+      - name: Initialize recovery evidence path
+        run: echo "RECOVERY_EVIDENCE_DIRECTORY=$RUNNER_TEMP/disaster-recovery-exercise" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
