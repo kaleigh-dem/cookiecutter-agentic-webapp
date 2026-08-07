@@ -12,7 +12,9 @@ import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const auditScript = fileURLToPath(new URL('./check-audit.mjs', import.meta.url));
+const auditScript = fileURLToPath(
+  new URL('./check-audit.mjs', import.meta.url),
+);
 const baseline = JSON.parse(
   readFileSync(new URL('./audit-baseline.json', import.meta.url), 'utf8'),
 );
