@@ -76,20 +76,24 @@ Use `pnpm format` to apply fixes.
 
 ### Documentation integrity
 
+The documentation-integrity commands below are **SteadyStack/template-maintainer validation**, not a generic product-documentation contract.
+
 ```bash
 pnpm docs:check
 ```
 
-Validates internal links, repository paths, root and Nx commands, documented environment-variable names, current SteadyStack identity and authentication descriptions, the committed Nx project-graph diagram, and required roadmap-plus-ADR evidence for generator or architectural-boundary changes.
+In the upstream `@steadystack/source` template, this validates internal links, repository paths, root and Nx commands, documented environment-variable names, current SteadyStack identity and authentication descriptions, the committed Nx project-graph diagram, and required roadmap-plus-ADR evidence for generator or architectural-boundary changes.
 
-After changing the Nx project inventory or dependency graph, regenerate and review the diagram:
+After initialization, the root package is no longer `@steadystack/source`. An initialized product still runs the checker’s deterministic unit tests through `pnpm docs:check`, but it intentionally skips the upstream repository topology/content audit because initialization changes identity, can remove projects, and removes maintainer-only material. Adopters that want equivalent enforcement should add product-specific documentation-integrity rules for their own repository structure, commands, identity, and content.
+
+Template maintainers should regenerate and review the upstream architecture diagram after changing the Nx project inventory or dependency graph:
 
 ```bash
 pnpm docs:architecture
 pnpm docs:check
 ```
 
-See the repository-local `docs/documentation-integrity.md` for the exact checked surfaces and failure remediation.
+See the repository-local `docs/documentation-integrity.md` for the exact upstream checked surfaces, downstream skip behavior, and failure remediation.
 
 ### Security policy
 
@@ -186,12 +190,14 @@ Affected validation:
 pnpm affected
 ```
 
-Documentation integrity:
+Template-maintainer documentation integrity:
 
 ```bash
 pnpm docs:check
 pnpm docs:architecture
 ```
+
+For initialized products, `pnpm docs:check` retains the checker unit tests but skips the upstream `@steadystack/source` content/topology audit. Add product-specific documentation rules if the initialized workspace should enforce an equivalent documentation contract.
 
 Security integration without cache:
 
