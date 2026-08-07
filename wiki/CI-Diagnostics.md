@@ -22,7 +22,7 @@ Artifacts are uploaded only after failure and only when the workflow produced ma
 | -------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Browser or Playwright failure                      | `ci-failure-<run_id>-<run_attempt>`                      | `playwright-results/`, retained trace/video/screenshots, then `playwright-report/` |
 | CI release-plan generation or validation           | `ci-failure-<run_id>-<run_attempt>`                      | `release-plan.json`                                                                |
-| Documentation-integrity or stale architecture graph | `ci-failure-<run_id>-<run_attempt>`                     | `project-graph.md`, then the failing `pnpm docs:check` output                       |
+| Documentation-integrity or stale graph             | `ci-failure-<run_id>-<run_attempt>`                      | `project-graph.md`, then the failing `pnpm docs:check` output                       |
 | Preview startup, health, smoke, or service failure | `delivery-failure-<run_id>-<run_attempt>`                | `service-logs.txt`                                                                 |
 | Performance-budget failure                         | `delivery-failure-<run_id>-<run_attempt>`                | `performance-report.json`, then `service-logs.txt`                                 |
 | Generated-workspace lifecycle failure              | `generated-workspace-diagnostics-<run_id>-<run_attempt>` | the failed step's generated workspace output and test-output bundle                |
