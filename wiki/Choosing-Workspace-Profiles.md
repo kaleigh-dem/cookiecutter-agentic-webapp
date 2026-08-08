@@ -111,9 +111,11 @@ When true, initialization enables local OTLP defaults. Production still requires
 
 This setting describes the **product being built**, not the development process. Every generated workspace retains the agent-compatible repository controls: `AGENTS.md` guidance, Nx graph and MCP configuration, generators, boundaries, validation, and upgrade tooling.
 
-`true` records product intent to add AI-powered application capabilities and requires web plus API. The base template adds no model provider, credentials, prompt system, safety controls, evaluation framework, or persistence policy. Selecting `false` does not make the repository less suitable for AI coding agents.
+`true` records product intent to add AI-powered application capabilities and requires web plus API. Phase 14 now provides reusable upstream runtime primitives behind that optional boundary: a provider-neutral backend `ModelClient` with OpenAI native-`fetch` and deterministic adapters, typed tools with invocation-time authorization, the versioned V1 NDJSON browser stream, and reviewed prompt/evaluation evidence. These primitives are **not composed into the default applications**, and `ai=true` still does not generate a runnable model-backed workflow or install a provider-specific SDK.
 
-See [Agentic Development Model](Agentic-Development-Model) for the development operating model.
+The default profile remains free of model-provider runtime dependencies. Any application that composes the optional capabilities must make server-side provider/model choices and explicitly own data classification, retention, provider credentials, tool policy, evaluation budgets, and production operations. Durable execution is the next Phase 14 task; broader safety/fallback policy and generated runnable AI-profile composition remain later work.
+
+See [Optional AI Runtime](Optional-AI-Runtime) for the implemented boundaries and current gaps, and [Agentic Development Model](Agentic-Development-Model) for the development operating model.
 
 ## Ports and database
 
@@ -201,6 +203,7 @@ This records Kubernetes intent but does not generate deployable cluster manifest
 ## Related pages
 
 - [Agentic Development Model](Agentic-Development-Model)
+- [Optional AI Runtime](Optional-AI-Runtime)
 - [Quick Start](Quick-Start)
 - [Authentication and Authorization](Authentication-and-Authorization)
 - [Production Readiness](Production-Readiness)
@@ -209,6 +212,7 @@ This records Kubernetes intent but does not generate deployable cluster manifest
 
 1. [Agentic Development Model](Agentic-Development-Model)
 2. [Quick Start](Quick-Start)
-3. [Repository Tour](Repository-Tour)
+3. [Optional AI Runtime](Optional-AI-Runtime)
+4. [Repository Tour](Repository-Tour)
 
 [Back to Home](Home)
