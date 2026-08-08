@@ -67,7 +67,7 @@ export class DeterministicModelAdapter implements ModelClient {
         provider: this.provider,
         model: request.model,
         value: request.parse(this.fixture.structuredValue),
-        rawText: JSON.stringify(this.fixture.structuredValue),
+        rawText: JSON.stringify(this.fixture.structuredValue) ?? 'null',
         finishReason: 'stop',
         usage: usageFromFixture(this.fixture.usage),
       };
