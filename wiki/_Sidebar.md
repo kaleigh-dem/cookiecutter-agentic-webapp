@@ -13,6 +13,7 @@
 - [Everyday Development](Everyday-Development)
 - [Code Generation](Code-Generation)
 - [Architecture](Architecture)
+- [Optional AI Runtime](Optional-AI-Runtime)
 - [Validation and Testing](Validation-and-Testing)
 - [CI Diagnostics](CI-Diagnostics)
 
