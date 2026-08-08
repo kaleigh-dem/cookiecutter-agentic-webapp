@@ -125,6 +125,34 @@ describe('invokeTool', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it('fails closed when authorization returns a malformed runtime decision', async () => {
+    const execute = vi.fn();
+    const authorize = vi.fn(() => ({ allowed: 'yes' }));
+
+    await expect(
+      invokeTool(
+        definition({
+          authorize:
+            authorize as unknown as ToolDefinition<
+              EchoInput,
+              EchoOutput
+            >['authorize'],
+          execute,
+        }),
+        { context, input: { message: 'hello' } },
+      ),
+    ).rejects.toMatchObject({
+      code: 'authorization_failed',
+      traceId: 'trace-01',
+      actorId: 'actor-01',
+      conversationId: 'conversation-01',
+      toolId: 'echo',
+      toolCallId: 'call-01',
+    });
+    expect(authorize).toHaveBeenCalledOnce();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it('rejects malformed tool output without exposing the output in the normalized error', async () => {
     let error: unknown;
     try {
