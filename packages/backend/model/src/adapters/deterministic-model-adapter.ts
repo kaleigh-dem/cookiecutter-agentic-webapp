@@ -128,6 +128,7 @@ export class DeterministicModelAdapter implements ModelClient {
       model: request.model,
       usage,
     };
+    assertActive(request.signal);
     yield {
       type: 'completed',
       provider: this.provider,
