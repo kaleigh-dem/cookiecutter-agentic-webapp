@@ -41,19 +41,22 @@ Read [Agentic Development Model](Agentic-Development-Model) before establishing 
 - A Node.js worker that consumes a PostgreSQL transactional outbox.
 - Framework-free Agent Task and rate-limit libraries.
 - Shared UI, contracts, PostgreSQL migrations, environment validation, and observability.
-- Production OCI image builds, a local preview stack, smoke tests, performance budgets, SBOMs, vulnerability policy, signatures, attestations, immutable release manifests, and production configuration validation.
+- Production OCI image builds, a local preview stack, smoke tests, performance budgets, SBOMs, vulnerability policy, signatures, attestations, immutable release manifests, finalized release-record evidence, and production configuration validation.
+- Optional, default-off AI runtime primitives for provider-neutral model access, typed authorized tools, versioned browser streaming, and reviewed prompt/evaluation evidence.
 
 ## What it does not include
 
 The template does not provide:
 
-- a hosted coding-agent service, an LLM choice, or an autonomous production operator;
+- a hosted coding-agent service, a default LLM choice, or an autonomous production operator;
 - organization-specific agent credentials or permission policy;
 - an organization-specific cloud deployment or Kubernetes manifests;
 - identity-provider login, callback, and logout implementation;
 - a production session store or Redis worker adapter;
-- a model-provider integration, prompt system, or AI evaluation framework;
+- a composed model-backed application in the default profile, a default model provider, provider credentials, durable agent execution, or complete runtime AI safety/fallback policy;
 - production backups, DNS/TLS, dashboards, alert routing, or incident ownership.
+
+The upstream source now contains optional AI model/tool/stream/evaluation boundaries, but `ai=true` still records product intent rather than generating a runnable AI application. See [Optional AI Runtime](Optional-AI-Runtime).
 
 Supported profiles can record some product or platform directions without implementing them.
 
@@ -61,23 +64,19 @@ Supported profiles can record some product or platform directions without implem
 
 1. [Understand the Agentic Development Model](Agentic-Development-Model), including the standard agent workflow and human approval boundaries.
 2. [Choose workspace profiles](Choosing-Workspace-Profiles) for applications, authentication, worker delivery, telemetry, deployment, and optional product AI intent.
-3. [Complete the Quick Start](Quick-Start) to create, initialize, map, run, and validate a local workspace.
-4. [Tour the repository](Repository-Tour) and inspect its Nx project graph.
-5. [Learn everyday development](Everyday-Development), [code generation](Code-Generation), and [validation](Validation-and-Testing).
-6. Review [Production Readiness](Production-Readiness) before connecting shared or production environments.
+3. If you are composing runtime AI behavior, read [Optional AI Runtime](Optional-AI-Runtime) for the default-off boundary, model/tool contracts, streaming protocol, evaluation evidence, and remaining Phase 14 gaps.
+4. [Complete the Quick Start](Quick-Start) to create, initialize, map, run, and validate a local workspace.
+5. [Tour the repository](Repository-Tour) and inspect its Nx project graph.
+6. [Learn everyday development](Everyday-Development), [code generation](Code-Generation), and [validation](Validation-and-Testing).
+7. Review [Production Readiness](Production-Readiness) before connecting shared or production environments.
 
 ## Current roadmap status
 
 Roadmap status is mirrored from the repository's authoritative [`docs/TODO.md`](https://github.com/kaleigh-dem/steady-stack/blob/main/docs/TODO.md); the wiki does not maintain an independent task ledger.
 
-Current Phase 13 status:
-
-- **P13-01 — complete:** image and dependency supply-chain artifacts, reviewed in PR #50.
-- **P13-02 — complete:** immutable digest publication and promotion, merged in PR #52 and hardened in PR #53.
-- **P13-03 — complete:** CI cancellation, BuildKit cache reuse, and retained failure diagnostics, merged in PR #55.
-- **P13-04 — complete:** Nx cache-input auditing and affected execution, merged in PR #59.
-- **P13-05 — complete:** documentation integrity checks for links, paths, commands, environment names, current identity and authentication descriptions, generated Nx architecture evidence, and roadmap-plus-ADR change evidence.
-- **P13-06 — next:** release metadata and rollback-evidence validation.
+- **Phase 13 — complete:** P13-01 through P13-06 established supply-chain evidence, immutable digest promotion, CI diagnostics/caching, cache-input and affected-execution validation, documentation integrity, and finalized release/recovery evidence. No additional Phase 13 implementation is planned.
+- **Phase 14 — active and optional:** P14-01 through P14-04 are complete. The repository now has the optional profile boundary, provider-neutral model interfaces and adapters, typed authorized tools plus V1 agent streaming, and reviewed prompt/evaluation evidence without composing runtime AI into the default applications.
+- **Next — P14-05:** add optional durable execution for checkpointing, resumable runs, human approval, and recovery after interruption while keeping durable-agent frameworks out of the default profile.
 
 Use `docs/TODO.md` for sequencing, acceptance criteria, and future status changes.
 
@@ -98,6 +97,7 @@ The repository had no released generated users before SteadyStack became the can
 | Run focused and affected development commands           | [Everyday Development](Everyday-Development)                               |
 | Generate domains, features, jobs, and contracts         | [Code Generation](Code-Generation)                                         |
 | Understand the executable architecture                  | [Architecture](Architecture)                                               |
+| Compose or evaluate optional runtime AI capabilities    | [Optional AI Runtime](Optional-AI-Runtime)                                 |
 | Configure identity                                      | [Authentication and Authorization](Authentication-and-Authorization)       |
 | Manage PostgreSQL and migrations                        | [Database and Data Management](Database-and-Data-Management)               |
 | Operate background jobs                                 | [Worker and Background Jobs](Worker-and-Background-Jobs)                   |
@@ -107,14 +107,14 @@ The repository had no released generated users before SteadyStack became the can
 | Verify image SBOMs, scans, signatures, and attestations | [Image Supply Chain](Image-Supply-Chain)                                   |
 | Configure repository controls and agent permissions     | [Repository and GitHub Setup](Repository-and-GitHub-Setup)                 |
 | Prepare for launch                                      | [Production Readiness](Production-Readiness)                               |
-| Upgrade a generated repository                          | [Releases and Upgrades](Releases-and-Upgrades)                             |
+| Finalize release evidence or upgrade a generated repo   | [Releases and Upgrades](Releases-and-Upgrades)                             |
 | Diagnose a failure                                      | [Troubleshooting](Troubleshooting)                                         |
 
 ## By role
 
 ### Evaluating the template
 
-Read [Agentic Development Model](Agentic-Development-Model), [Architecture](Architecture), [Repository Tour](Repository-Tour), and [Choosing Workspace Profiles](Choosing-Workspace-Profiles).
+Read [Agentic Development Model](Agentic-Development-Model), [Architecture](Architecture), [Repository Tour](Repository-Tour), and [Choosing Workspace Profiles](Choosing-Workspace-Profiles). If runtime AI matters to the product, also review [Optional AI Runtime](Optional-AI-Runtime).
 
 ### Creating an agent-led product workspace
 
@@ -122,7 +122,7 @@ Follow [Quick Start](Quick-Start), customize the root and nested agent guidance 
 
 ### Developing applications
 
-Use [Everyday Development](Everyday-Development), [Code Generation](Code-Generation), [Validation and Testing](Validation-and-Testing), and the root plus closest nested `AGENTS.md` files.
+Use [Everyday Development](Everyday-Development), [Code Generation](Code-Generation), [Validation and Testing](Validation-and-Testing), and the root plus closest nested `AGENTS.md` files. For model/tool/prompt changes, also follow [Optional AI Runtime](Optional-AI-Runtime) and the evaluation-evidence gate.
 
 ### Configuring infrastructure
 
@@ -167,6 +167,8 @@ flowchart LR
 
 The web application obtains an access token through the configured browser authentication adapter and calls the API through generated client code. The API validates transport contracts, authenticates and authorizes the request, executes framework-free application behavior, and writes application data plus outbox events transactionally. The worker leases outbox records, executes handlers at least once, and uses fencing and idempotency to make duplicate or stale delivery safe.
 
+Optional AI primitives sit outside this default request/data flow until an application explicitly composes them.
+
 ## Source of truth
 
 The wiki reorganizes end-user guidance from the repository implementation and maintained documentation. When a wiki statement conflicts with code, use the implementation and open a documentation correction. The [Documentation Audit](Documentation-Audit) records command verification, source mapping, discrepancies, and known gaps.
@@ -175,4 +177,5 @@ The wiki reorganizes end-user guidance from the repository implementation and ma
 
 1. [Agentic Development Model](Agentic-Development-Model)
 2. [Choosing Workspace Profiles](Choosing-Workspace-Profiles)
-3. [Quick Start](Quick-Start)
+3. [Optional AI Runtime](Optional-AI-Runtime)
+4. [Quick Start](Quick-Start)

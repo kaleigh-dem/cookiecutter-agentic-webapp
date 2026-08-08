@@ -1,6 +1,6 @@
 # Architecture
 
-This page explains the system structure and the executable guardrails that let humans and AI agents change it safely, including request flow, data ownership, background delivery, rate limiting, observability, containers, and enforced boundaries.
+This page explains the system structure and the executable guardrails that let humans and AI agents change it safely, including request flow, data ownership, background delivery, rate limiting, observability, containers, optional runtime AI boundaries, and enforced dependencies.
 
 ## Prerequisites
 
@@ -52,7 +52,13 @@ flowchart TB
   WorkerApp --> Contracts
   WorkerApp --> Env
   WorkerApp --> Obs
+  OptionalAI[Optional AI composition] -.-> Model[packages/backend/model]
+  OptionalAI -.-> Tools[packages/backend/agent-tool]
+  OptionalAI -.-> Eval[packages/backend/agent-eval]
+  OptionalAI -.-> Contracts
 ```
+
+The dashed AI edges represent reusable optional boundaries that are present in the upstream source but are not composed into the default web/API/worker applications.
 
 ## Synchronous request flow
 
@@ -103,7 +109,22 @@ Authentication and authorization are separate:
 1. HTTP contract source and generated browser/server artifacts.
 2. Versioned asynchronous event schemas.
 
+It also contains the optional V1 browser agent-stream contract used by the Agent Tasks web feature. That protocol is a reusable transport boundary only; the default API does not expose a model-backed streaming endpoint.
+
 Generated artifacts are checked for drift and compatibility. Consumers must not duplicate request/response DTOs by hand.
+
+## Optional runtime AI boundaries
+
+Phase 14 adds reusable AI-facing libraries without turning the default applications into an AI product:
+
+- `packages/backend/model` defines provider-neutral generation, structured-output, embedding, and streaming through `ModelClient`. It includes an OpenAI adapter implemented with native `fetch` and a deterministic no-network adapter.
+- `packages/backend/agent-tool` defines typed tool invocation with runtime input/output validation and mandatory invocation-time authorization against the authenticated application actor.
+- `packages/contracts/src/agent-stream` defines strict versioned NDJSON browser events that preserve trace, actor, conversation, provider, model, tool, and tool-call identifiers without exposing raw prompt or tool payload fields.
+- `packages/backend/agent-eval` defines reviewed prompt/tool-instruction artifacts, deterministic and application-supplied grading boundaries, quality/latency/token/cost budgets, and CI-enforced evidence manifests.
+
+These projects are backend/shared primitives, not composition roots. Provider/model selection remains server-side and allowlisted. Secrets and authentication material must not be sent to providers, and sensitive or residency-constrained data requires explicit application policy. Model output is never an authorization decision.
+
+The `ai` workspace profile remains default-off and does not yet generate a runnable model-backed workflow. Durable execution is next; broader safety/fallback policy and generated AI-profile composition remain later Phase 14 work. See [Optional AI Runtime](Optional-AI-Runtime).
 
 ## Database and migrations
 
@@ -147,6 +168,8 @@ Policies include anonymous, authenticated subject, route, and optional tenant li
 
 The repository provides structured logging, OpenTelemetry traces/metrics, health endpoints, and worker metrics. Local telemetry is optional through the Compose collector. Production teams own exporter credentials, sampling, redaction, retention, dashboards, alerts, and support.
 
+Optional AI composition should preserve identifier-oriented observability by default. Do not log raw prompts, completions, retrieved sensitive context, tool arguments, or tool results merely to make model behavior easier to inspect.
+
 ## Containers and preview architecture
 
 The node services use a shared multi-stage Dockerfile; the web uses Next.js standalone output. Runtime images run as the unprivileged `node` user.
@@ -180,24 +203,27 @@ Do not weaken a boundary to make one import pass. Move behavior to the correct p
 | Area           | Out of the box                                       | Adopter responsibility                            |
 | -------------- | ---------------------------------------------------- | ------------------------------------------------- |
 | Web/API/worker | Reference applications and composition               | Product behavior and scaling                      |
-| Contracts      | Generation and runtime validation                    | API lifecycle and compatibility decisions         |
+| Contracts      | Generation, runtime validation, agent-stream V1      | API/protocol lifecycle and compatibility decisions |
 | PostgreSQL     | Local Compose, migrations, adapters                  | Managed service, TLS, capacity, backups           |
 | Authentication | Development verifier, OIDC verifier, browser adapter | Provider login/session integration and operations |
 | Worker         | PostgreSQL outbox baseline                           | Capacity, alerting, business handlers             |
 | Rate limits    | Memory local, PostgreSQL production adapter          | Thresholds and ingress trust                      |
 | Telemetry      | Instrumentation and local collector                  | Backend, retention, redaction, dashboards         |
+| Optional AI    | Model/tool/stream/evaluation primitives              | Runtime composition, provider policy, credentials, data handling, safety, durable execution, monitoring |
 | Deployment     | Images, preview, release plan                        | Real platform, ingress, DNS, TLS, rollout         |
 
 ## Related pages
 
 - [Agentic Development Model](Agentic-Development-Model)
 - [Repository Tour](Repository-Tour)
+- [Optional AI Runtime](Optional-AI-Runtime)
 - [Authentication and Authorization](Authentication-and-Authorization)
 - [Worker and Background Jobs](Worker-and-Background-Jobs)
 
 ## Next steps
 
-1. [Authentication and Authorization](Authentication-and-Authorization)
-2. [Database and Data Management](Database-and-Data-Management)
+1. [Optional AI Runtime](Optional-AI-Runtime)
+2. [Authentication and Authorization](Authentication-and-Authorization)
+3. [Database and Data Management](Database-and-Data-Management)
 
 [Back to Home](Home)

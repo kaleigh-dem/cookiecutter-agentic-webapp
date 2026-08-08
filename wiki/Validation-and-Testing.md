@@ -31,14 +31,15 @@ pnpm check
 3. `pnpm contracts:compat`
 4. `pnpm format:check`
 5. `pnpm docs:check`
-6. `pnpm security:secrets`
-7. `pnpm security:audit`
-8. `pnpm security:licenses`
-9. `pnpm delivery:check`
-10. `pnpm lint`
-11. `pnpm typecheck`
-12. `pnpm test`
-13. `pnpm build`
+6. `pnpm agent-eval:check`
+7. `pnpm security:secrets`
+8. `pnpm security:audit`
+9. `pnpm security:licenses`
+10. `pnpm delivery:check`
+11. `pnpm lint`
+12. `pnpm typecheck`
+13. `pnpm test`
+14. `pnpm build`
 
 The command stops at the first failing stage.
 
@@ -94,6 +95,24 @@ pnpm docs:check
 ```
 
 See the repository-local `docs/documentation-integrity.md` for the exact upstream checked surfaces, downstream skip behavior, and failure remediation.
+
+### AI evaluation evidence
+
+```bash
+pnpm agent-eval:check
+```
+
+This is the Phase 14 evaluation-evidence gate. It always validates committed evidence manifests under `docs/evaluations/evidence`. In CI, Nx supplies the comparison range so the checker can inspect governed behavior-bearing changes.
+
+Evidence is required when a pull request changes:
+
+- reviewed prompt or tool-instruction JSON artifacts under `packages/backend/agent-eval/artifacts/prompts`;
+- non-test provider-neutral model runtime source under `packages/backend/model/src`;
+- non-test typed tool runtime source under `packages/backend/agent-tool/src`.
+
+A governed prompt, model, or tool behavior change must update reviewed evaluation evidence in the same change. The evidence records reviewed artifact fingerprints, deterministic validation commands, budgets, and payload-safe result summaries. Test-only changes do not create a false evidence requirement.
+
+See [Optional AI Runtime](Optional-AI-Runtime) for the model/tool/prompt boundaries and lifecycle.
 
 ### Security policy
 
@@ -198,6 +217,18 @@ pnpm docs:architecture
 ```
 
 For initialized products, `pnpm docs:check` retains the checker unit tests but skips the upstream `@steadystack/source` content/topology audit. Add product-specific documentation rules if the initialized workspace should enforce an equivalent documentation contract.
+
+Optional AI runtime and evaluation projects:
+
+```bash
+pnpm nx run backend-model:test
+pnpm nx run backend-model:typecheck
+pnpm nx run backend-agent-tool:test
+pnpm nx run backend-agent-tool:typecheck
+pnpm nx run backend-agent-eval:test
+pnpm nx run backend-agent-eval:typecheck
+pnpm agent-eval:check
+```
 
 Security integration without cache:
 
@@ -321,10 +352,17 @@ pnpm performance:load
 pnpm preview:down
 ```
 
+For governed optional-AI prompt, model, or tool behavior changes, ensure the evidence manifest is updated and run:
+
+```bash
+pnpm agent-eval:check
+```
+
 ## Related pages
 
 - [Agentic Development Model](Agentic-Development-Model)
 - [Everyday Development](Everyday-Development)
+- [Optional AI Runtime](Optional-AI-Runtime)
 - [CI Diagnostics](CI-Diagnostics)
 - [Image Supply Chain](Image-Supply-Chain)
 - [Containers and Preview Environments](Containers-and-Preview-Environments)
@@ -332,8 +370,9 @@ pnpm preview:down
 
 ## Next steps
 
-1. [CI Diagnostics](CI-Diagnostics)
-2. [Image Supply Chain](Image-Supply-Chain)
-3. [Production Readiness](Production-Readiness)
+1. [Optional AI Runtime](Optional-AI-Runtime)
+2. [CI Diagnostics](CI-Diagnostics)
+3. [Image Supply Chain](Image-Supply-Chain)
+4. [Production Readiness](Production-Readiness)
 
 [Back to Home](Home)

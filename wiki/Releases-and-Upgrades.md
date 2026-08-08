@@ -1,24 +1,27 @@
 # Releases and Upgrades
 
-This page explains immutable application-image publication and production promotion, release manifests, deployment handoff, immutable rollback, template releases, and generated-workspace upgrades.
+This page explains immutable application-image publication and production promotion, deployment handoff, post-deployment release-record finalization, immutable rollback, template releases, and generated-workspace upgrades.
 
 ## Application release prerequisites
 
-- The digest-promotion implementation and its `Release images` and `Promote release digests` workflows.
+- The digest-promotion implementation and its `Release images`, `Promote release digests`, and `Finalize release record` workflows.
 - GitHub Environments named `preview` and `production`.
 - Production reviewers and a `main`-only deployment restriction on `production`.
 - The environment-scoped `PRODUCTION_ENVIRONMENT` secret.
 - A new semantic version that has never been published.
 - Production-safe browser build inputs.
+- A deployment platform that can report the backup/snapshot identity captured before migrations and expose the deployed release for smoke validation.
 
 ## Immutable application release model
 
-The release path has two explicit stages:
+The release path has two pre-deployment workflow stages plus an explicit post-deployment evidence stage:
 
 1. **Release images** builds, scans, signs, attests, and publishes one immutable set of API, worker, and web images from `main`.
 2. **Promote release digests** approves those exact digests for production and creates the production release plan.
+3. The adopting platform deploys the approved digests, executes the reviewed migration/rollout plan, and records provider-specific deployment facts.
+4. **Finalize release record** binds the approved release and promotion runs to the deployed backup identity, migration evidence, rollback/schema decisions, supply-chain evidence, and deployed smoke results.
 
-The publication workflow refuses to overwrite an existing semantic-version tag. If a partial publication fails, only a rerun of the same workflow run ID may reuse an existing image, and only when version, commit, and the canonical public build-input fingerprint all match. Registry inspection errors fail closed rather than being treated as absent tags. Promotion does not rebuild, retag, or push images.
+The publication workflow refuses to overwrite an existing semantic-version tag. If a partial publication fails, only a rerun of the same workflow run ID may reuse an existing image, and only when version, commit, and the canonical public build-input fingerprint all match. Registry inspection errors fail closed rather than being treated as absent tags. Promotion does not rebuild, retag, or push images, and finalization does not rebuild or redeploy them.
 
 ## Publish release images
 
@@ -61,7 +64,7 @@ release-images-<VERSION>/
   release-plan.preview.json
 ```
 
-Record the successful `Release images` workflow run ID. Promotion validates and downloads the artifact from that exact run.
+Record the successful `Release images` workflow run ID. Promotion and finalization validate evidence against that exact run.
 
 ## Release manifest
 
@@ -141,20 +144,93 @@ node tools/delivery/release-plan.mjs \
 
 ### 5. Hand off to the deployment platform
 
-The approved artifact is a deployment input, not a deployment action. The target platform must deploy the exact digests, run the ordered migration and rollout steps, and retain its own deployment evidence.
+The approved artifact is a deployment input, not a deployment action. The target platform must deploy the exact digests, run the ordered backup/migration/rollout steps, retain provider-specific deployment evidence, and make the deployed environment available for release smoke validation.
+
+Record the successful **Promote release digests** workflow run ID. It is required when finalizing the production release record.
+
+## Finalize a production release record
+
+Run **Finalize release record** after the production deployment has consumed the approved promotion artifact. Dispatch `.github/workflows/release-record.yml` from `main`; the finalization job runs in the protected `production` GitHub Environment.
+
+### Required inputs
+
+Provide:
+
+```text
+version: <PUBLISHED_VERSION>
+source_run_id: <SUCCESSFUL_RELEASE_IMAGES_RUN_ID>
+promotion_run_id: <SUCCESSFUL_PROMOTE_RELEASE_DIGESTS_RUN_ID>
+backup_identifier: <PROVIDER_SPECIFIC_SNAPSHOT_OR_BACKUP_ID>
+backup_captured_at: <ISO_8601_TIMESTAMP_WITH_TIMEZONE>
+rollback_window_minutes: <POSITIVE_INTEGER>
+schema_compatibility: backward-compatible | roll-forward-only
+schema_decision: <CONCRETE_RATIONALE>
+```
+
+The backup identifier must name the snapshot captured for this deployment before migrations, not a backup policy name or placeholder. The schema decision records whether the previous approved application digests are expected to run against the deployed schema during the rollback window:
+
+- `backward-compatible` means application rollback may remain possible, subject to incident-time reconfirmation.
+- `roll-forward-only` means the migration makes application rollback unsafe and recovery should use a forward fix unless disaster recovery is explicitly invoked.
+
+### What finalization verifies
+
+The workflow consumes the exact successful release and promotion runs. It validates the immutable release manifest against the named source run, rechecks protected production configuration, downloads the matching promotion and supply-chain artifacts, verifies each image signature plus build-provenance and SPDX attestations, extracts migration-related steps from the approved production plan, and runs the release smoke profile against the deployed environment.
+
+A successful run uploads:
+
+```text
+release-record-<VERSION>/
+```
+
+The bundle contains:
+
+- `release-record.json` with release/promotion run identities, commit SHA, immutable digests, backup identity, rollback window, schema decision, decision metadata, and smoke status;
+- `release-manifest.json`, `release-images.env`, the approved production plan, and release/promotion workflow metadata;
+- `migration-plan.production.json` containing the approved backup, migration inspection, and migration application steps;
+- API, worker, and web SPDX SBOMs and their Trivy reports from the exact release run;
+- per-image Cosign and GitHub attestation verification output for build provenance and SPDX SBOM attestations;
+- `smoke-test.json` and `smoke-test.log` from the deployed release.
+
+`release-record.json` stores a SHA-256 hash and byte size for every supporting evidence file except the record itself. Validation therefore fails closed if a recorded attachment is missing or modified, or if backup identity, rollback-window/schema evidence, successful deployed smoke, or digest binding is invalid.
+
+### Validate a downloaded release record locally
+
+From the extracted `release-record-<VERSION>` directory, run:
+
+```bash
+node tools/delivery/release-record.mjs validate \
+  --record release-record.json \
+  --manifest release-manifest.json \
+  --base-directory .
+```
+
+The repository's deterministic delivery tests also validate the checked-in `infra/release/release-record.example.json` fixture against the example immutable manifest.
+
+### Retention and durable handoff
+
+The GitHub Actions `release-record-<VERSION>` artifact is retained for **90 days**. Treat that as transport and review retention, not the durable system of record. Before expiry, persist the complete bundle in the deployment system of record, release archive, or compliance store according to the service's retention policy.
+
+Keeping only `release-record.json` is insufficient because its attachment hashes bind the complete supporting evidence bundle.
+
+## Quarterly baseline restore exercise
+
+`.github/workflows/disaster-recovery.yml` runs quarterly and can also be dispatched manually. It exercises the repository's baseline PostgreSQL recovery mechanics by migrating and seeding an isolated database, taking a custom-format `pg_dump`, restoring into a separate database, comparing deterministic application-table row counts, validating migration state, rerunning migrations, and retaining restore evidence for 90 days.
+
+This quarterly exercise proves the **repository baseline restore path**. It does **not** replace provider-specific production disaster-recovery drills. Production owners must separately test provider snapshot access, encryption/key recovery, permissions, networking, traffic switching, reconciliation, and the declared RPO/RTO for the real platform.
 
 ## Immutable rollback
 
 Rollback means selecting a previously approved release manifest, not recreating an old tag.
 
-1. Select a previously approved `production-promotion-<VERSION>` artifact.
-2. Verify `source-run.json` and the release manifest against the original successful run.
+1. Select a previously approved `production-promotion-<VERSION>` artifact and, when available, its finalized `release-record-<VERSION>` bundle.
+2. Verify source/promotion run identities and the release manifest against the original successful runs.
 3. Reverify Cosign signatures and GitHub attestations for all three digests.
-4. Confirm the previous application version remains compatible with the current database schema.
-5. Inspect or regenerate its production release plan.
-6. Deploy the exact digest references from its `release-images.env`.
-7. Run smoke, readiness, authorization, queue, and performance checks.
-8. Observe through the defined rollback window.
+4. Reconfirm the recorded schema compatibility decision against the current database schema and incident state.
+5. Confirm the required backup identifier and rollback evidence are available.
+6. Inspect or regenerate the production release plan.
+7. Deploy the exact digest references from its `release-images.env`.
+8. Run smoke, readiness, authorization, queue, and performance checks.
+9. Observe through the defined rollback window.
 
 > Never recreate, overwrite, or retag an old semantic version. A rebuilt image with the same version is not the previously approved release.
 
@@ -162,13 +238,20 @@ Prefer roll-forward after schema changes unless the previous application is comp
 
 ## Evidence retention
 
-The baseline promotion artifact is retained for 90 days. Preserve approved manifests and plans in the organization's evidence store before expiration when rollback, audit, or regulatory requirements exceed that window. Longer-term retention automation remains future P13-06 work.
+Default GitHub handoff retention is bounded:
+
+- image supply-chain evidence: 30 days;
+- production-promotion artifact: 90 days;
+- finalized production release record: 90 days;
+- quarterly restore-exercise evidence: 90 days.
+
+Copy evidence to the organization's durable evidence store before expiry when rollback, audit, incident, or regulatory requirements exceed those windows. The repository now creates and validates the P13-06 release-record bundle, but the adopting organization still owns the durable store, access policy, retention duration, legal holds, and deletion policy.
 
 ---
 
 ## Template releases and generated-workspace upgrades
 
-Application release promotion is separate from upgrading the workspace template itself.
+Application release promotion and release-record finalization are separate from upgrading the workspace template itself.
 
 ### Template release model
 
@@ -256,7 +339,7 @@ git status --short
 git diff
 ```
 
-When database or delivery behavior changes, also run the relevant migration, preview, smoke, performance, supply-chain, and release-manifest checks.
+When database or delivery behavior changes, also run the relevant migration, preview, smoke, performance, supply-chain, release-manifest, and release-record checks.
 
 ### 7. Commit separately
 
