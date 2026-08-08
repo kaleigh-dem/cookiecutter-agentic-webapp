@@ -41,7 +41,7 @@ Finish reasons currently normalize to `stop`, `length`, `content_filter`, or `un
 All requests accept an optional caller `AbortSignal`, timeout, and retry policy. The shared defaults are:
 
 ```text
-timeout: 30 seconds
+timeout per non-streaming attempt: 30 seconds
 maximum attempts: 3
 base retry delay: 250 ms
 maximum retry delay: 2 seconds
