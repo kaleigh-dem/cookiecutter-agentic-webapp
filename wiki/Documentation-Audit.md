@@ -13,11 +13,11 @@ The wiki was derived from implementation and maintained repository documents, in
 - root `README.md`, `AGENTS.md`, `.mcp.json`, `package.json`, `nx.json`, `.env.example`, Compose
 - application and database `project.json` files
 - workspace plugin generator registry, schemas, shared utilities, and implementations
-- GitHub Actions CI, Security, Delivery, Generated workspace, image release, digest promotion, and wiki publication workflows
-- getting started, initialization, architecture, authentication, rate limiting, database, worker, delivery, production readiness, upgrade, release, validation, runtime, security, migration, and runbook documentation
-- nested `AGENTS.md` files for web, API, worker, contracts, database, Agent Task domain, web feature, and worker job
+- GitHub Actions CI, Security, Delivery, Generated workspace, image release, digest promotion, release-record finalization, disaster-recovery, and wiki publication workflows
+- getting started, initialization, architecture, authentication, rate limiting, database, worker, delivery, production readiness, upgrade, release, validation, runtime, security, migration, model/tool/stream/evaluation, and runbook documentation
+- nested `AGENTS.md` files for web, API, worker, contracts, database, Agent Task domain, web feature, worker job, backend model, backend agent-tool, and backend agent-eval projects
 - performance budget and smoke-test implementation
-- merged PR #50 supply-chain evidence, PR #52 immutable promotion, PR #55 CI diagnostics, PR #59 cache-input auditing, and PR #61 SteadyStack identity rebrand
+- merged PR #50 supply-chain evidence, PR #52 immutable promotion, PR #55 CI diagnostics, PR #59 cache-input auditing, PR #61 SteadyStack identity rebrand, PR #64 release records/recovery evidence, and PRs #65–#68 for the Phase 14 profile, model, tool/stream, and evaluation boundaries
 
 The hidden GitHub wiki Git repository is not exposed through the ordinary repository contents API and does not support the main repository's pull-request workflow. Reviewed source is maintained under `wiki/`. After a reviewed wiki change reaches `main`, `.github/workflows/wiki-publish.yml` synchronizes it to `steady-stack.wiki.git`, preserves wiki-only pages except those explicitly listed in `wiki/deletions.txt`, and rejects every unapproved deletion. `docs/wiki-publication.md` documents the manual fallback.
 
@@ -31,19 +31,20 @@ The hidden GitHub wiki Git repository is not exposed through the ordinary reposi
 6. Everyday Development
 7. Code Generation
 8. Architecture
-9. Authentication and Authorization
-10. Database and Data Management
-11. Worker and Background Jobs
-12. Validation and Testing
-13. CI Diagnostics
-14. Containers and Preview Environments
-15. Repository and GitHub Setup
-16. Image Supply Chain
-17. Production Readiness
-18. Releases and Upgrades
-19. Troubleshooting
-20. Documentation Audit
-21. `_Sidebar` and `_Footer`
+9. Optional AI Runtime
+10. Authentication and Authorization
+11. Database and Data Management
+12. Worker and Background Jobs
+13. Validation and Testing
+14. CI Diagnostics
+15. Containers and Preview Environments
+16. Repository and GitHub Setup
+17. Image Supply Chain
+18. Production Readiness
+19. Releases and Upgrades
+20. Troubleshooting
+21. Documentation Audit
+22. `_Sidebar` and `_Footer`
 
 Naming uses title case for page headings and hyphenated GitHub Wiki filenames. Cross-links use wiki page slugs. Repository file links point at stable `main` paths and explain the file's role.
 
@@ -59,10 +60,12 @@ Naming uses title case for page headings and hyphenated GitHub Wiki filenames. C
 | Common Nx workflows                                                       | Everyday Development                |
 | Domain/feature/job/contract generators                                    | Code Generation                     |
 | Monorepo, request/data/worker flows, boundaries                           | Architecture                        |
+| Optional AI profile/model/tool/stream/evaluation boundaries               | Optional AI Runtime                 |
 | Development, none, OIDC, session, claims, outage                          | Authentication and Authorization    |
 | PostgreSQL, migrations, seed, reset, backups                              | Database and Data Management        |
 | Outbox, leasing, retries, replay, metrics, drain                          | Worker and Background Jobs          |
 | `pnpm check`, focused commands, budgets, clean tree                       | Validation and Testing              |
+| AI evaluation-evidence gate and focused model/tool/eval checks            | Validation and Testing              |
 | Documentation-integrity commands, upstream-only audit scope, graph checks | Validation and Testing              |
 | Documentation-integrity failure artifact and graph remediation            | CI Diagnostics                      |
 | Cancellation, failure artifacts, traces, logs, cache fallback             | CI Diagnostics                      |
@@ -70,7 +73,7 @@ Naming uses title case for page headings and hyphenated GitHub Wiki filenames. C
 | Repository controls, environments, permissions, retention                 | Repository and GitHub Setup         |
 | SBOMs, Trivy, policy, signatures, attestations, digests                   | Image Supply Chain                  |
 | Governance, secrets, identity, data, operations, evidence                 | Production Readiness                |
-| Release artifacts, provenance, upgrade walkthrough                        | Releases and Upgrades               |
+| Release promotion, finalization, recovery evidence, upgrade walkthrough   | Releases and Upgrades               |
 | Symptom-based diagnostics                                                 | Troubleshooting                     |
 | Audit, discrepancies, verified commands, gaps                             | Documentation Audit                 |
 
@@ -94,6 +97,7 @@ pnpm format
 pnpm format:check
 pnpm docs:architecture
 pnpm docs:check
+pnpm agent-eval:check
 pnpm security:secrets
 pnpm security:audit
 pnpm security:licenses
@@ -136,7 +140,9 @@ pnpm telemetry:check
 
 `pnpm docs:architecture` and `pnpm docs:check` are P13-05 template-maintainer commands. In `@steadystack/source`, they generate/check the committed Nx architecture graph and run the documentation content/topology audit. Initialized products retain the deterministic checker tests but skip the upstream repository audit; product teams must add product-specific rules if they want equivalent enforcement.
 
-Template-maintainer-only release scripts were intentionally not presented as generated-workspace everyday commands.
+`pnpm agent-eval:check` is the P14-04 evidence gate. It validates committed evidence manifests and, when Nx supplies a comparison range in CI, requires evidence updates for governed prompt artifacts and non-test model/tool runtime behavior changes.
+
+Template-maintainer-only release scripts were intentionally not presented as generated-workspace everyday commands. Release-record finalization and the quarterly restore exercise are GitHub Actions workflows rather than root package scripts.
 
 ### Project targets confirmed
 
@@ -157,6 +163,19 @@ pnpm nx run worker:test
 pnpm nx run worker:build
 pnpm nx run worker:container
 pnpm nx run database:test
+pnpm nx run backend-model:lint
+pnpm nx run backend-model:typecheck
+pnpm nx run backend-model:test
+pnpm nx run backend-model:build
+pnpm nx run backend-agent-tool:lint
+pnpm nx run backend-agent-tool:typecheck
+pnpm nx run backend-agent-tool:test
+pnpm nx run backend-agent-tool:build
+pnpm nx run backend-agent-eval:lint
+pnpm nx run backend-agent-eval:typecheck
+pnpm nx run backend-agent-eval:test
+pnpm nx run backend-agent-eval:build
+pnpm nx run backend-agent-eval:evidence-check
 ```
 
 ### Generator options confirmed
@@ -185,7 +204,9 @@ Checked-in Markdown remains the authoritative reviewed page set. Pages that exis
 
 ### Agentic compatibility versus optional product AI
 
-Agentic compatibility is a baseline repository property implemented through `AGENTS.md`, Nx graph and MCP context, generators, executable boundaries, validation, and upgrades. The `ai` initialization flag only records product intent to add AI-powered application features. The wiki states this distinction explicitly.
+Agentic compatibility is a baseline repository property implemented through `AGENTS.md`, Nx graph and MCP context, generators, executable boundaries, validation, and upgrades. The `ai` initialization flag only records product intent to add AI-powered application features.
+
+Phase 14 now adds reusable runtime primitives in the upstream source: provider-neutral model interfaces, OpenAI native-`fetch` plus deterministic adapters, typed authorization-enforced tools, a strict V1 NDJSON browser stream, and reviewed prompt/evaluation evidence. These capabilities remain uncomposed in the default applications. `ai=false` is still the default, and `ai=true` does not yet generate a runnable AI workflow. The wiki therefore documents both the implemented boundaries and the remaining durable-execution, broader safety/fallback, and generated-profile work.
 
 ### Worker operations port exposure
 
@@ -203,9 +224,9 @@ pnpm preview:smoke
 
 The `preview:up` implementation itself builds images and runs smoke after startup. The wiki explains that the explicit build and smoke commands are useful for isolation or repetition but are redundant in the shortest path.
 
-### Image publication, promotion, and deployment are separate
+### Image publication, promotion, deployment, and finalization are separate
 
-The digest-promotion implementation uses one-time image publication plus read-only production promotion. The wiki documents that `Release images` publishes once, `Promote release digests` approves exact digests, and the adopting platform performs deployment. Neither workflow deploys the service.
+The release implementation uses one-time image publication plus read-only production promotion. The adopting platform then performs deployment. P13-06 adds a protected post-deployment `Finalize release record` workflow that binds the exact successful release and promotion runs to the provider-specific backup identifier, approved migration steps, rollback window/schema decision, supply-chain artifacts, and deployed smoke results. None of the publication, promotion, or finalization workflows silently substitutes for the deployment platform.
 
 ### Redis and Kubernetes profile status
 
@@ -223,11 +244,13 @@ P13-05 extends the retained CI bundle for stale documentation architecture valid
 
 ### Artifact retention is bounded
 
-The supply-chain artifact defaults to 30-day retention and the production promotion artifact defaults to 90 days. The wiki identifies longer-term evidence retention as adopter-owned until future P13-06 work is implemented.
+The supply-chain artifact defaults to 30-day retention. Production promotion, finalized release records, and the quarterly repository restore-exercise evidence default to 90 days. The wiki treats those GitHub artifacts as bounded handoff/review copies and requires adopters to persist complete release-record bundles in their durable system of record when rollback, audit, incident, or regulatory retention exceeds that window.
+
+The quarterly isolated PostgreSQL restore exercise proves the repository baseline recovery path; it does not replace provider-specific production DR testing for snapshot access, encryption/key recovery, permissions, networking, traffic switching, reconciliation, and declared RPO/RTO.
 
 ### `pnpm check` scope
 
-`pnpm check` does not run identity validation, telemetry Compose validation, preview lifecycle, production readiness, or a real provider reachability test. Those are documented separately.
+`pnpm check` now includes `pnpm agent-eval:check` immediately after documentation integrity. It still does not run identity validation, telemetry Compose validation, preview lifecycle, production readiness, a real provider reachability test, or release-record finalization. Those are documented separately.
 
 ## Existing documentation disposition
 
@@ -237,8 +260,12 @@ The supply-chain artifact defaults to 30-day retention and the production promot
 | `docs/agentic-development.md`       | Repository-local source for agent workflow, control surfaces, approval boundaries, and anti-patterns.               |
 | `docs/getting-started.md`           | Expanded for agent-ready onboarding and merged into Quick Start, Profiles, Production Readiness.                    |
 | `docs/template-initialization.md`   | Merged into Profiles and Releases/Upgrades.                                                                         |
+| `docs/model-interfaces.md`          | End-user model boundary summarized in Optional AI Runtime.                                                          |
+| `docs/typed-tools-and-streaming.md` | Typed tool authorization and V1 transport summarized in Optional AI Runtime and Architecture.                       |
+| `docs/prompt-evaluation-lifecycle.md` | Prompt/evaluation lifecycle summarized in Optional AI Runtime and Validation/Testing.                             |
+| `docs/delivery/release-records.md`  | Release finalization and baseline restore evidence merged into Releases/Upgrades, Production Readiness, Troubleshooting. |
 | `docs/steadystack-migration.md`     | Retained as maintainer-only historical identity and compatibility evidence; no separate end-user wiki page.         |
-| Architecture docs and ADR summaries | Reorganized into Repository Tour and Architecture.                                                                  |
+| Architecture docs and ADR summaries | Reorganized into Repository Tour, Architecture, and Optional AI Runtime.                                             |
 | Auth docs                           | Merged into Authentication and Authorization, with local/production separation.                                     |
 | Database docs                       | Expanded into task-based database page.                                                                             |
 | Worker docs                         | Merged into operations-focused worker page.                                                                         |
@@ -265,15 +292,15 @@ Needed information:
 - audit-log and session-retention requirements
 - human approval points and emergency revocation owner
 
-### Long-term release-evidence retention
+### Organization-specific durable release-evidence retention
 
-Needed information:
+The repository now creates validated release-record bundles and retains GitHub handoff copies for 90 days, but an adopting organization must still define:
 
-- evidence store and retention duration
-- export automation and access policy
-- legal or regulatory requirements
-- deletion and incident-hold process
-- owner for future P13-06 implementation
+- durable evidence store and retention duration
+- export/ingestion automation and access policy
+- legal or regulatory requirements and incident holds
+- deletion policy
+- accountable evidence owner
 
 ### Provider-specific login/session implementation
 
@@ -299,6 +326,19 @@ Needed information:
 - scaling and rollout controller
 - environment approval
 - deployment and rollback commands
+
+### Production model-provider composition
+
+SteadyStack supplies reusable optional AI boundaries but intentionally does not choose production composition. Needed information includes:
+
+- approved provider/model/region allowlist and credentials
+- application data-classification and retention policy
+- provider-side retention/training terms
+- tool allowlist and audit policy
+- prompt/application persistence policy
+- fallback and safety policy
+- durable-execution adapter when required
+- quality/latency/token/cost budgets and production monitoring
 
 ### Redis worker transport
 
@@ -331,7 +371,7 @@ Needed information:
 - PostgreSQL provider
 - backup frequency/retention
 - cross-account or immutable storage
-- restore procedure and measured duration
+- provider-specific restore procedure and measured duration
 - approved business RPO/RTO
 - named owners
 
@@ -346,10 +386,12 @@ The page set provides a direct path to:
 - make and validate a focused change
 - generate a domain, feature, contract, or job
 - understand synchronous and asynchronous architecture
+- understand and safely compose the current optional AI model/tool/stream/evaluation boundaries
 - build and validate the preview environment
 - identify production replacement points
+- publish/promote immutable images and finalize production release evidence
 - perform a dry-run and applied upgrade
-- diagnose common runtime, delivery, and CI symptoms
+- diagnose common runtime, delivery, release-record, recovery, and CI symptoms
 
 Runtime execution should still be repeated in the generated repository's CI and target environment because documentation verification cannot replace the repository's own test and delivery contracts.
 
@@ -357,6 +399,7 @@ Runtime execution should still be repeated in the generated repository's CI and 
 
 - [Agentic Development Model](Agentic-Development-Model)
 - [Home](Home)
+- [Optional AI Runtime](Optional-AI-Runtime)
 - [Production Readiness](Production-Readiness)
 - [Releases and Upgrades](Releases-and-Upgrades)
 
