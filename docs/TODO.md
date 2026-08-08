@@ -41,7 +41,7 @@ Detailed completed-phase task lists are intentionally omitted. Relevant implemen
 ## Execution order
 
 1. Phase 13 is active; P13-01 through P13-06 are complete, and no additional Phase 13 implementation is planned.
-2. Phase 14 is optional and must not add AI dependencies to the default workspace profile.
+2. Phase 14 is optional; P14-01 is complete, P14-02 is next, and the default workspace profile must remain free of AI runtime dependencies.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
@@ -92,7 +92,9 @@ Exit criteria: production uses the exact image digests validated in preview, eac
 
 Goal: offer reusable AI application capabilities without coupling ordinary generated web applications to a specific model provider or orchestration framework.
 
-- [ ] **P14-01 Define profile boundaries in an ADR.**
+Phase 14 progress record (2026-08-07): P14-01 is completed by ADR 0020. It separates coding-agent repository support from runtime AI product capabilities, keeps provider-neutral contracts distinct from optional provider adapters, preserves `ai=false` as the default profile, and establishes fail-closed data-classification, explicit-retention, and server-side provider-selection constraints. P14-02 is next.
+
+- [x] **P14-01 Define profile boundaries in an ADR.**
   - Separate coding-agent repository support from runtime AI product capabilities.
   - Define which interfaces belong in the shared platform and which implementations remain optional.
   - Establish data classification, retention, and provider-selection constraints.
