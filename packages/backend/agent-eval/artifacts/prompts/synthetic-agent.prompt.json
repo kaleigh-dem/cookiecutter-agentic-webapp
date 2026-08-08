@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-agent",
+  "version": "1.0.0",
+  "kind": "prompt",
+  "content": "Answer the synthetic evaluation request using only the supplied fixture facts. Return a concise response.",
+  "variables": ["request"],
+  "review": {
+    "status": "approved",
+    "reviewer": "repository-review",
+    "reviewedAt": "2026-08-08T00:00:00.000Z"
+  }
+}

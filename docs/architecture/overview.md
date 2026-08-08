@@ -29,6 +29,7 @@ Applications are composition roots. HTTP, framework, process lifecycle, and tran
 ## Current libraries
 
 ```text
+packages/backend/agent-eval          reviewed prompt artifacts, deterministic evaluations, budgets, and evidence enforcement
 packages/backend/agent-task          framework-free Agent Task domain and use cases
 packages/backend/agent-tool          framework-neutral typed tool invocation and authorization boundary
 packages/backend/model               provider-neutral model contracts, execution policy, and optional adapters
@@ -44,6 +45,8 @@ packages/observability               structured logging, metrics, tracing, and t
 The model project is backend-only and is not composed into the default API, worker, or web applications. It owns provider-neutral generation, structured-output, embedding, streaming, usage, cancellation, timeout, retry, and error semantics. Provider wire formats stay behind replaceable adapters; the current OpenAI adapter uses the Node runtime `fetch` API and adds no provider SDK dependency. See `docs/model-interfaces.md` and ADRs 0020–0021.
 
 The P14-03 tool and browser-stream boundaries remain optional runtime primitives rather than default application composition. `backend-agent-tool` validates model-controlled input and handler output and requires authorization against application-supplied actor context before execution. `contracts` owns strict V1 NDJSON agent-stream events, while the Agent Tasks web feature incrementally consumes that universal contract and enforces sequence plus stream-identity continuity. Raw prompts and tool payloads are not V1 transport fields. See `docs/typed-tools-and-streaming.md` and ADR 0022.
+
+The P14-04 evaluation boundary is also backend-only and uncomposed. `backend-agent-eval` owns strict reviewed prompt/tool-instruction artifacts, deterministic fixture and grader contracts, quality/latency/token/cost budgets, and payload-safe evidence manifests. CI requires changed evidence for governed prompt artifacts plus non-test model and typed-tool runtime changes. Model grading remains an application-supplied callback, so this boundary does not choose a provider or add provider dependencies. See `docs/prompt-evaluation-lifecycle.md` and ADR 0023.
 
 `tools/workspace-plugin` owns the released preset, structural generators, and downstream upgrade tooling. `tools/delivery`, `infra`, and `performance` own production-image preparation, environment validation, preview orchestration, release manifests and plans, and performance budgets. `tools/documentation` validates documented links, paths, commands, environment names, identity and authentication descriptions, architecture evidence, and change records.
 
@@ -66,6 +69,7 @@ The graph check fails when the committed diagram differs from Nx. See `docs/docu
 - Infrastructure adapters implement ports owned by domain or policy libraries.
 - Provider-specific model protocol translation stays behind the provider-neutral model boundary and is not a default application dependency.
 - Tool authorization uses trusted application actor context at the invocation boundary; model output is never an authorization decision.
+- Prompt and tool-instruction changes use reviewed versioned artifacts and changed evaluation evidence; model grading does not select providers inside the shared evaluation boundary.
 - Browser-facing AI events use the shared versioned agent-stream contract rather than provider-native streaming frames.
 - HTTP contracts originate in `packages/contracts/openapi/source`; generated artifacts are consumed at API and browser boundaries.
 - The API persists Agent Tasks and outbox events transactionally. The worker claims outbox rows at least once and executes fenced, idempotent handlers.

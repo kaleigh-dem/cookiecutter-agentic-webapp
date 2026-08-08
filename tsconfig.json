@@ -12,6 +12,9 @@
       "path": "./apps/worker"
     },
     {
+      "path": "./packages/backend/agent-eval"
+    },
+    {
       "path": "./packages/backend/agent-task"
     },
     {

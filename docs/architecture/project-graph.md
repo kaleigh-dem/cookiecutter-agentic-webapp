@@ -12,6 +12,7 @@ flowchart LR
     project_worker["worker<br/>apps/worker<br/>npm:private, runtime:node, scope:backend, type:app"]
   end
   subgraph project_group_packages["packages"]
+    project_backend_agent_eval["backend-agent-eval<br/>packages/backend/agent-eval<br/>runtime:node, scope:backend, type:util"]
     project_backend_agent_task["backend-agent-task<br/>packages/backend/agent-task<br/>npm:private, runtime:node, scope:backend, type:domain"]
     project_backend_agent_tool["backend-agent-tool<br/>packages/backend/agent-tool<br/>runtime:node, scope:backend, type:util"]
     project_backend_model["backend-model<br/>packages/backend/model<br/>runtime:node, scope:backend, type:util"]

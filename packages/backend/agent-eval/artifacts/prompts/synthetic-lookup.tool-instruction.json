@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-lookup",
+  "version": "1.0.0",
+  "kind": "tool_instruction",
+  "content": "Use lookup_fixture only when the synthetic evaluation request requires fixture lookup. Never infer authorization from model output.",
+  "variables": ["query"],
+  "toolId": "lookup_fixture",
+  "review": {
+    "status": "approved",
+    "reviewer": "repository-review",
+    "reviewedAt": "2026-08-08T00:00:00.000Z"
+  }
+}
