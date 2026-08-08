@@ -75,11 +75,7 @@ function readUsage(value: unknown, outputFallback?: number): ModelUsage {
     'completion_tokens',
     outputFallback,
   );
-  const totalTokens = readTokenCount(
-    usage,
-    'total_tokens',
-    inputTokens + outputTokens,
-  );
+  const totalTokens = readTokenCount(usage, 'total_tokens');
   const details = asRecord(usage.prompt_tokens_details);
   const cached = details?.cached_tokens;
   if (cached === undefined) return { inputTokens, outputTokens, totalTokens };
