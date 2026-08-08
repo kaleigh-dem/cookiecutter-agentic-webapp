@@ -30,6 +30,7 @@ Applications are composition roots. HTTP, framework, process lifecycle, and tran
 
 ```text
 packages/backend/agent-task          framework-free Agent Task domain and use cases
+packages/backend/model               provider-neutral model contracts, execution policy, and optional adapters
 packages/backend/rate-limit          framework-free rate-limit policies and storage port
 packages/web/features/agent-tasks    browser-facing Agent Tasks feature and client behavior
 packages/ui                          shared React presentation
@@ -38,6 +39,8 @@ packages/database                    PostgreSQL schema, migrations, repositories
 packages/env                         Node-only validated configuration
 packages/observability               structured logging, metrics, tracing, and telemetry setup
 ```
+
+The model project is backend-only and is not composed into the default API, worker, or web applications. It owns provider-neutral generation, structured-output, embedding, streaming, usage, cancellation, timeout, retry, and error semantics. Provider wire formats stay behind replaceable adapters; the current OpenAI adapter uses the Node runtime `fetch` API and adds no provider SDK dependency. See `docs/model-interfaces.md` and ADRs 0020–0021.
 
 `tools/workspace-plugin` owns the released preset, structural generators, and downstream upgrade tooling. `tools/delivery`, `infra`, and `performance` own production-image preparation, environment validation, preview orchestration, release manifests and plans, and performance budgets. `tools/documentation` validates documented links, paths, commands, environment names, identity and authentication descriptions, architecture evidence, and change records.
 
@@ -58,6 +61,7 @@ The graph check fails when the committed diagram differs from Nx. See `docs/docu
 - Browser projects cannot depend on Node-only projects.
 - Domain and contract projects remain framework-free.
 - Infrastructure adapters implement ports owned by domain or policy libraries.
+- Provider-specific model protocol translation stays behind the provider-neutral model boundary and is not a default application dependency.
 - HTTP contracts originate in `packages/contracts/openapi/source`; generated artifacts are consumed at API and browser boundaries.
 - The API persists Agent Tasks and outbox events transactionally. The worker claims outbox rows at least once and executes fenced, idempotent handlers.
 - Cross-project imports use public entry points rather than deep internal paths.
