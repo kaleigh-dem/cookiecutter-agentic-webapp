@@ -41,6 +41,7 @@ jobs:
       - run: pnpm contracts:check
       - run: pnpm contracts:compat
       - run: pnpm nx sync:check
+      - run: pnpm agent-eval:check
       - run: pnpm format:check
       - name: Check documentation integrity
         run: pnpm docs:check
@@ -109,6 +110,7 @@ jobs:
       - run: pnpm contracts:check
       - run: pnpm nx sync:check
       - run: pnpm docs:check
+      - run: pnpm agent-eval:check
       - run: pnpm typecheck
       - run: pnpm test
       - name: Build workspace

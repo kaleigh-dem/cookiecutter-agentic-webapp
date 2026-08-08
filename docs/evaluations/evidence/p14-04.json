@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "p14-04-prompt-evaluation-lifecycle",
+  "taskId": "P14-04",
+  "recordedAt": "2026-08-08T00:00:00.000Z",
+  "promptArtifacts": [
+    {
+      "id": "synthetic-agent",
+      "version": "1.0.0",
+      "kind": "prompt",
+      "fingerprint": "ce1000b96cff3851d88b4c3ce46875fe20c39d07d4e96b8d8cf6a495fa5dc207"
+    },
+    {
+      "id": "synthetic-lookup",
+      "version": "1.0.0",
+      "kind": "tool_instruction",
+      "fingerprint": "d9ca035d1c37e8c848026c657f9c90507fda56ba5c5a70c24b61e6c78793e5ce"
+    }
+  ],
+  "coveredChanges": [
+    {
+      "kind": "prompt",
+      "path": "packages/backend/agent-eval/artifacts/prompts/synthetic-agent.prompt.json"
+    },
+    {
+      "kind": "prompt",
+      "path": "packages/backend/agent-eval/artifacts/prompts/synthetic-lookup.tool-instruction.json"
+    }
+  ],
+  "checks": [
+    "pnpm nx run backend-agent-eval:test",
+    "pnpm nx run backend-agent-eval:typecheck",
+    "pnpm nx run backend-agent-eval:lint",
+    "pnpm nx run backend-agent-eval:build",
+    "pnpm agent-eval:check"
+  ],
+  "budget": {
+    "minQualityScore": 1,
+    "maxLatencyMs": 25,
+    "maxTotalTokens": 20,
+    "maxEstimatedCostUsd": 0.00002
+  },
+  "results": [
+    {
+      "fixtureId": "synthetic-echo",
+      "passed": true,
+      "qualityScore": 1,
+      "latencyMs": 5,
+      "budgetPassed": true,
+      "providerId": "deterministic",
+      "modelId": "fixture-model",
+      "usage": {
+        "inputTokens": 8,
+        "outputTokens": 4,
+        "totalTokens": 12,
+        "cachedInputTokens": 2
+      },
+      "estimatedCostUsd": 0.000015
+    }
+  ]
+}
