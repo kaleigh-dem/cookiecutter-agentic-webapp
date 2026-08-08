@@ -152,6 +152,34 @@ describe('invokeTool', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it('does not expose handler failures through the normalized error cause', async () => {
+    let error: unknown;
+    try {
+      await invokeTool(
+        definition({
+          execute: () => {
+            throw new Error('handler payload SECRET');
+          },
+        }),
+        { context, input: { message: 'hello' } },
+      );
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(ToolInvocationError);
+    expect(error).toMatchObject({
+      code: 'execution_failed',
+      traceId: 'trace-01',
+      actorId: 'actor-01',
+      conversationId: 'conversation-01',
+      toolId: 'echo',
+      toolCallId: 'call-01',
+    });
+    expect(error).not.toHaveProperty('cause');
+    expect(String(error)).not.toContain('SECRET');
+  });
+
   it('rejects malformed tool output without exposing the output in the normalized error', async () => {
     let error: unknown;
     try {
@@ -169,6 +197,7 @@ describe('invokeTool', () => {
       toolId: 'echo',
       toolCallId: 'call-01',
     });
+    expect(error).not.toHaveProperty('cause');
     expect(String(error)).not.toContain('do-not-expose');
   });
 

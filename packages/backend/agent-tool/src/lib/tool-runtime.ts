@@ -53,7 +53,6 @@ export type ToolInvocationErrorCode =
 export interface ToolInvocationErrorOptions extends ToolExecutionContext {
   readonly code: ToolInvocationErrorCode;
   readonly authorizationReason?: string;
-  readonly cause?: unknown;
 }
 
 export class ToolInvocationError extends Error {
@@ -68,7 +67,7 @@ export class ToolInvocationError extends Error {
   public readonly authorizationReason?: string;
 
   public constructor(message: string, options: ToolInvocationErrorOptions) {
-    super(message, { cause: options.cause });
+    super(message);
     this.name = 'ToolInvocationError';
     this.code = options.code;
     this.traceId = options.traceId;
@@ -103,11 +102,10 @@ function executionContext(
     requireIdentifier(result.modelId, 'modelId');
     requireIdentifier(result.toolId, 'toolId');
     requireIdentifier(result.toolCallId, 'toolCallId');
-  } catch (cause) {
+  } catch {
     throw new ToolInvocationError('Tool invocation context was invalid.', {
       ...result,
       code: 'invalid_context',
-      cause,
     });
   }
   return result;
@@ -137,11 +135,10 @@ export async function invokeTool<TInput, TOutput>(
   let input: TInput;
   try {
     input = tool.inputSchema.parse(request.input);
-  } catch (cause) {
+  } catch {
     throw new ToolInvocationError('Tool input failed runtime validation.', {
       ...context,
       code: 'invalid_input',
-      cause,
     });
   }
 
@@ -152,11 +149,10 @@ export async function invokeTool<TInput, TOutput>(
       throw new Error('Tool authorization decision was invalid.');
     }
     authorization = decision;
-  } catch (cause) {
+  } catch {
     throw new ToolInvocationError('Tool authorization failed.', {
       ...context,
       code: 'authorization_failed',
-      cause,
     });
   }
 
@@ -171,22 +167,20 @@ export async function invokeTool<TInput, TOutput>(
   let rawOutput: unknown;
   try {
     rawOutput = await tool.execute(context, input);
-  } catch (cause) {
+  } catch {
     throw new ToolInvocationError('Tool execution failed.', {
       ...context,
       code: 'execution_failed',
-      cause,
     });
   }
 
   let output: TOutput;
   try {
     output = tool.outputSchema.parse(rawOutput);
-  } catch (cause) {
+  } catch {
     throw new ToolInvocationError('Tool output failed runtime validation.', {
       ...context,
       code: 'invalid_output',
-      cause,
     });
   }
 
