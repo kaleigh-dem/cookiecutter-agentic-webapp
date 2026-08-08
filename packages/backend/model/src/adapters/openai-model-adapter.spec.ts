@@ -175,6 +175,41 @@ describe('OpenAIModelAdapter', () => {
     });
   });
 
+  it('rejects duplicate or out-of-range embedding indexes', async () => {
+    for (const data of [
+      [
+        { index: 1, embedding: [0.2] },
+        { index: 1, embedding: [0.9] },
+      ],
+      [
+        { index: 0, embedding: [0.2] },
+        { index: 2, embedding: [0.9] },
+      ],
+    ]) {
+      const fetchMock: typeof fetch = async () =>
+        jsonResponse({
+          model: 'text-embedding-test',
+          data,
+          usage: { prompt_tokens: 2, total_tokens: 2 },
+        });
+      const adapter = new OpenAIModelAdapter({
+        apiKey: 'secret',
+        fetch: fetchMock,
+      });
+
+      await expect(
+        adapter.embed({
+          model: 'text-embedding-test',
+          inputs: ['first', 'second'],
+        }),
+      ).rejects.toMatchObject({
+        code: 'invalid_response',
+        provider: 'openai',
+        retryable: false,
+      });
+    }
+  });
+
   it('translates provider SSE into provider-neutral stream events', async () => {
     const stream = [
       'data: {"model":"gpt-test","choices":[{"delta":{"content":"Hel"},"finish_reason":null}]}',
@@ -228,6 +263,41 @@ describe('OpenAIModelAdapter', () => {
         usage: { inputTokens: 2, outputTokens: 1, totalTokens: 3 },
       },
     ]);
+  });
+
+  it('normalizes stream body transport failures without retrying', async () => {
+    let calls = 0;
+    const fetchMock: typeof fetch = async () => {
+      calls += 1;
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            controller.error(new Error('connection lost'));
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        },
+      );
+    };
+    const adapter = new OpenAIModelAdapter({
+      apiKey: 'secret',
+      fetch: fetchMock,
+    });
+    const iterator = adapter
+      .stream({
+        ...generationRequest,
+        retry: { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 5 },
+      })
+      [Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toMatchObject({
+      code: 'unavailable',
+      provider: 'openai',
+      retryable: true,
+    });
+    expect(calls).toBe(1);
   });
 
   it('maps non-retryable provider authentication failures', async () => {
