@@ -248,7 +248,27 @@ function createStreamAbortContext(
   };
 }
 
-async function* sseData(response: Response): AsyncIterable<string> {
+async function readStreamChunk(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal,
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  if (signal.aborted) throw signal.reason;
+  let abort: (() => void) | undefined;
+  const aborted = new Promise<never>((_resolve, reject) => {
+    abort = () => reject(signal.reason ?? new Error('Model stream aborted.'));
+    signal.addEventListener('abort', abort, { once: true });
+  });
+  try {
+    return await Promise.race([reader.read(), aborted]);
+  } finally {
+    if (abort) signal.removeEventListener('abort', abort);
+  }
+}
+
+async function* sseData(
+  response: Response,
+  signal: AbortSignal,
+): AsyncIterable<string> {
   if (!response.body) throw invalidResponse('OpenAI stream body was empty.');
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -272,7 +292,7 @@ async function* sseData(response: Response): AsyncIterable<string> {
 
   try {
     while (true) {
-      const chunk = await reader.read();
+      const chunk = await readStreamChunk(reader, signal);
       if (chunk.done) break;
       buffer += decoder.decode(chunk.value, { stream: true });
       yield* drain();
@@ -555,10 +575,13 @@ export class OpenAIModelAdapter implements ModelClient {
       body.stream_options = { include_usage: true };
       const response = await executeModelOperation(
         operationOptions,
-        ({ signal }) => this.post('/chat/completions', body, signal),
+        () => this.post('/chat/completions', body, streamAbort.controller.signal),
         this.executionHooks(),
       );
-      for await (const data of sseData(response)) {
+      for await (const data of sseData(
+        response,
+        streamAbort.controller.signal,
+      )) {
         if (data === '[DONE]') break;
         let chunk: unknown;
         try {
