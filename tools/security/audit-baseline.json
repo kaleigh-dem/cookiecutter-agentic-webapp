@@ -70,6 +70,21 @@
       "id": "GHSA-5p4m-2wfm-xmqj",
       "package": "js-yaml",
       "reason": "Newly disclosed transitive advisory in the current locked development toolchain; remove after refreshing the lockfile to js-yaml 4.3.1 or later."
+    },
+    {
+      "id": "GHSA-w3rx-r6r6-pgpr",
+      "package": "image-size",
+      "reason": "Newly reviewed transitive denial-of-service advisory in the unchanged locked dependency graph; no patched image-size release is available, so remove after the owning dependency can move to a safe release."
+    },
+    {
+      "id": "GHSA-5p2g-fcmc-qvqq",
+      "package": "image-size",
+      "reason": "Newly reviewed transitive denial-of-service advisory in the unchanged locked dependency graph; no patched image-size release is available, so remove after the owning dependency can move to a safe release."
+    },
+    {
+      "id": "GHSA-2v37-7h3g-55p8",
+      "package": "nanoid",
+      "reason": "Newly reviewed transitive advisory in the unchanged locked dependency graph; remove after the owning dependency resolves to nanoid 3.3.17, 5.1.6, or another non-affected release."
     }
   ]
 }
