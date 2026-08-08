@@ -557,9 +557,7 @@ export class OpenAIModelAdapter implements ModelClient {
           );
         }
         if (
-          entries.some(
-            (entry, expectedIndex) => entry.index !== expectedIndex,
-          )
+          entries.some((entry, expectedIndex) => entry.index !== expectedIndex)
         ) {
           throw invalidResponse(
             'OpenAI embedding indexes did not uniquely cover request inputs.',
