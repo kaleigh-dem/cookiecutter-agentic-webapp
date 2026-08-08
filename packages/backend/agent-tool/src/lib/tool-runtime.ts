@@ -113,6 +113,21 @@ function executionContext(
   return result;
 }
 
+function isToolAuthorizationDecision(
+  value: unknown,
+): value is ToolAuthorizationDecision {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const decision = value as { allowed?: unknown; reasonCode?: unknown };
+  if (decision.allowed === true) return true;
+
+  return (
+    decision.allowed === false &&
+    typeof decision.reasonCode === 'string' &&
+    Boolean(decision.reasonCode.trim())
+  );
+}
+
 export async function invokeTool<TInput, TOutput>(
   tool: ToolDefinition<TInput, TOutput>,
   request: ToolInvocationRequest,
@@ -132,7 +147,11 @@ export async function invokeTool<TInput, TOutput>(
 
   let authorization: ToolAuthorizationDecision;
   try {
-    authorization = await tool.authorize(context, input);
+    const decision: unknown = await tool.authorize(context, input);
+    if (!isToolAuthorizationDecision(decision)) {
+      throw new Error('Tool authorization decision was invalid.');
+    }
+    authorization = decision;
   } catch (cause) {
     throw new ToolInvocationError('Tool authorization failed.', {
       ...context,
@@ -141,7 +160,7 @@ export async function invokeTool<TInput, TOutput>(
     });
   }
 
-  if (!authorization.allowed) {
+  if (authorization.allowed === false) {
     throw new ToolInvocationError('Tool invocation was not authorized.', {
       ...context,
       code: 'unauthorized',
