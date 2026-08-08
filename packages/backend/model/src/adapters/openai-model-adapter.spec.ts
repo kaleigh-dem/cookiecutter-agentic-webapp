@@ -35,11 +35,9 @@ describe('OpenAIModelAdapter', () => {
       capturedBody =
         typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
       if (calls === 1) {
-        return jsonResponse(
-          { error: { message: 'rate limited' } },
-          429,
-          { 'retry-after': '0.01' },
-        );
+        return jsonResponse({ error: { message: 'rate limited' } }, 429, {
+          'retry-after': '0.01',
+        });
       }
       return jsonResponse({
         model: 'gpt-test-2026-08-07',

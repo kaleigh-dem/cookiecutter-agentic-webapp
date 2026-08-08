@@ -6,12 +6,12 @@ P14-02 adds a backend-only model boundary under `packages/backend/model`. It pro
 
 `ModelClient` exposes:
 
-| Operation | Input | Normalized output |
-| --- | --- | --- |
-| `generate` | model, ordered messages, optional temperature/output limit, cancellation/timeout/retry policy | text, finish reason, provider/model identity, token usage |
-| `generateStructured` | generation input plus JSON Schema name/schema and an application parser | parser-validated typed value, raw JSON text, finish reason, identity, usage |
-| `embed` | model, ordered text inputs, optional dimensions, cancellation/timeout/retry policy | vectors in input order, identity, usage |
-| `stream` | generation input | async `text_delta`, `usage`, and `completed` events |
+| Operation            | Input                                                                                         | Normalized output                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `generate`           | model, ordered messages, optional temperature/output limit, cancellation/timeout/retry policy | text, finish reason, provider/model identity, token usage                   |
+| `generateStructured` | generation input plus JSON Schema name/schema and an application parser                       | parser-validated typed value, raw JSON text, finish reason, identity, usage |
+| `embed`              | model, ordered text inputs, optional dimensions, cancellation/timeout/retry policy            | vectors in input order, identity, usage                                     |
+| `stream`             | generation input                                                                              | async `text_delta`, `usage`, and `completed` events                         |
 
 The stream events are internal provider-neutral runtime events. They do not define an HTTP/SSE/WebSocket contract for the browser; that versioned transport belongs to P14-03.
 
@@ -57,17 +57,17 @@ For streams, connection establishment can retry before the first provider respon
 
 `ModelError` uses these codes:
 
-| Code | Typical meaning | Default retryable |
-| --- | --- | --- |
-| `aborted` | caller cancellation | no |
-| `timeout` | operation or stream exceeded its budget | yes |
-| `rate_limited` | provider throttling | yes |
-| `authentication` | invalid provider credential | no |
-| `permission` | credential lacks provider/model access | no |
-| `invalid_request` | rejected local/provider request shape | no |
-| `invalid_response` | malformed provider data or failed typed parser | no |
-| `unavailable` | network or provider service unavailable | yes |
-| `provider_error` | provider failure without a safer classification | adapter-defined, currently no for unknown OpenAI statuses |
+| Code               | Typical meaning                                 | Default retryable                                         |
+| ------------------ | ----------------------------------------------- | --------------------------------------------------------- |
+| `aborted`          | caller cancellation                             | no                                                        |
+| `timeout`          | operation or stream exceeded its budget         | yes                                                       |
+| `rate_limited`     | provider throttling                             | yes                                                       |
+| `authentication`   | invalid provider credential                     | no                                                        |
+| `permission`       | credential lacks provider/model access          | no                                                        |
+| `invalid_request`  | rejected local/provider request shape           | no                                                        |
+| `invalid_response` | malformed provider data or failed typed parser  | no                                                        |
+| `unavailable`      | network or provider service unavailable         | yes                                                       |
+| `provider_error`   | provider failure without a safer classification | adapter-defined, currently no for unknown OpenAI statuses |
 
 Normalized errors may include status and bounded retry guidance but do not copy provider response bodies into their message.
 

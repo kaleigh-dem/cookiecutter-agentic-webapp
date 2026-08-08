@@ -27,10 +27,7 @@ export interface ModelUsage {
 }
 
 export type ModelFinishReason =
-  | 'stop'
-  | 'length'
-  | 'content_filter'
-  | 'unknown';
+  'stop' | 'length' | 'content_filter' | 'unknown';
 
 export interface ModelRequestOptions {
   readonly timeoutMs?: number;
@@ -63,8 +60,9 @@ export type ModelJsonValue =
 
 export type ModelJsonSchema = Readonly<Record<string, ModelJsonValue>>;
 
-export interface ModelStructuredOutputRequest<T>
-  extends ModelGenerationRequest {
+export interface ModelStructuredOutputRequest<
+  T,
+> extends ModelGenerationRequest {
   readonly schemaName: string;
   readonly schema: ModelJsonSchema;
   readonly parse: (value: unknown) => T;
@@ -114,9 +112,7 @@ export interface ModelCompletedEvent extends ModelStreamEventBase {
 }
 
 export type ModelStreamEvent =
-  | ModelTextDeltaEvent
-  | ModelUsageEvent
-  | ModelCompletedEvent;
+  ModelTextDeltaEvent | ModelUsageEvent | ModelCompletedEvent;
 
 export interface ModelClient {
   generate(request: ModelGenerationRequest): Promise<ModelGenerationResult>;
@@ -342,7 +338,10 @@ export async function executeModelOperation<T>(
       policy.timeoutMs,
     );
     try {
-      return await operation({ attempt, signal: abortContext.controller.signal });
+      return await operation({
+        attempt,
+        signal: abortContext.controller.signal,
+      });
     } catch (error) {
       const normalized = normalizeOperationError(
         error,
@@ -352,7 +351,10 @@ export async function executeModelOperation<T>(
       if (!normalized.retryable || attempt >= policy.retry.maxAttempts) {
         throw normalized;
       }
-      await sleep(retryDelay(normalized, attempt, policy.retry), options.signal);
+      await sleep(
+        retryDelay(normalized, attempt, policy.retry),
+        options.signal,
+      );
     } finally {
       abortContext.cleanup();
     }

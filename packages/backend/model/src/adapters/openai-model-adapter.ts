@@ -59,7 +59,9 @@ function readTokenCount(
   const value = record?.[key];
   if (value === undefined && fallback !== undefined) return fallback;
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-    throw invalidResponse(`OpenAI usage.${key} must be a non-negative integer.`);
+    throw invalidResponse(
+      `OpenAI usage.${key} must be a non-negative integer.`,
+    );
   }
   return value;
 }
@@ -68,7 +70,11 @@ function readUsage(value: unknown, outputFallback?: number): ModelUsage {
   const usage = asRecord(value);
   if (!usage) throw invalidResponse('OpenAI response did not include usage.');
   const inputTokens = readTokenCount(usage, 'prompt_tokens');
-  const outputTokens = readTokenCount(usage, 'completion_tokens', outputFallback);
+  const outputTokens = readTokenCount(
+    usage,
+    'completion_tokens',
+    outputFallback,
+  );
   const totalTokens = readTokenCount(
     usage,
     'total_tokens',
@@ -77,7 +83,11 @@ function readUsage(value: unknown, outputFallback?: number): ModelUsage {
   const details = asRecord(usage.prompt_tokens_details);
   const cached = details?.cached_tokens;
   if (cached === undefined) return { inputTokens, outputTokens, totalTokens };
-  if (typeof cached !== 'number' || !Number.isSafeInteger(cached) || cached < 0) {
+  if (
+    typeof cached !== 'number' ||
+    !Number.isSafeInteger(cached) ||
+    cached < 0
+  ) {
     throw invalidResponse(
       'OpenAI usage.prompt_tokens_details.cached_tokens must be a non-negative integer.',
     );
@@ -188,7 +198,8 @@ function assertRequest(request: ModelGenerationRequest): void {
   }
   if (
     request.maxOutputTokens !== undefined &&
-    (!Number.isSafeInteger(request.maxOutputTokens) || request.maxOutputTokens < 1)
+    (!Number.isSafeInteger(request.maxOutputTokens) ||
+      request.maxOutputTokens < 1)
   ) {
     throw new ModelError('maxOutputTokens must be a positive integer.', {
       code: 'invalid_request',
@@ -370,12 +381,15 @@ export class OpenAIModelAdapter implements ModelClient {
       });
     } catch (error) {
       if (signal.aborted) throw error;
-      throw new ModelError('OpenAI request failed before receiving a response.', {
-        code: 'unavailable',
-        retryable: true,
-        provider: this.provider,
-        cause: error,
-      });
+      throw new ModelError(
+        'OpenAI request failed before receiving a response.',
+        {
+          code: 'unavailable',
+          retryable: true,
+          provider: this.provider,
+          cause: error,
+        },
+      );
     }
     if (!response.ok) throw errorForResponse(response);
     return response;
@@ -442,11 +456,7 @@ export class OpenAIModelAdapter implements ModelClient {
             schema: request.schema,
           },
         };
-        const response = await this.postJson(
-          '/chat/completions',
-          body,
-          signal,
-        );
+        const response = await this.postJson('/chat/completions', body, signal);
         const content = readChatText(response);
         let parsedJson: unknown;
         try {
@@ -514,12 +524,15 @@ export class OpenAIModelAdapter implements ModelClient {
           model: request.model,
           input: request.inputs,
         };
-        if (request.dimensions !== undefined) body.dimensions = request.dimensions;
+        if (request.dimensions !== undefined)
+          body.dimensions = request.dimensions;
         const response = await this.postJson('/embeddings', body, signal);
         const record = asRecord(response);
         const data = record?.data;
         if (!Array.isArray(data)) {
-          throw invalidResponse('OpenAI embedding response did not include data.');
+          throw invalidResponse(
+            'OpenAI embedding response did not include data.',
+          );
         }
         const entries = data.map((entry) => {
           const embeddingRecord = asRecord(entry);
@@ -559,7 +572,10 @@ export class OpenAIModelAdapter implements ModelClient {
   ): AsyncIterable<ModelStreamEvent> {
     assertRequest(request);
     const policy = normalizeModelRequestPolicy(request);
-    const streamAbort = createStreamAbortContext(request.signal, policy.timeoutMs);
+    const streamAbort = createStreamAbortContext(
+      request.signal,
+      policy.timeoutMs,
+    );
     const operationOptions: ModelRequestOptions = {
       timeoutMs: policy.timeoutMs,
       signal: streamAbort.controller.signal,
@@ -575,7 +591,8 @@ export class OpenAIModelAdapter implements ModelClient {
       body.stream_options = { include_usage: true };
       const response = await executeModelOperation(
         operationOptions,
-        () => this.post('/chat/completions', body, streamAbort.controller.signal),
+        () =>
+          this.post('/chat/completions', body, streamAbort.controller.signal),
         this.executionHooks(),
       );
       for await (const data of sseData(
@@ -587,7 +604,10 @@ export class OpenAIModelAdapter implements ModelClient {
         try {
           chunk = JSON.parse(data);
         } catch (error) {
-          throw invalidResponse('OpenAI stream event was not valid JSON.', error);
+          throw invalidResponse(
+            'OpenAI stream event was not valid JSON.',
+            error,
+          );
         }
         responseModel = readResponseModel(chunk, responseModel);
         const record = asRecord(chunk);

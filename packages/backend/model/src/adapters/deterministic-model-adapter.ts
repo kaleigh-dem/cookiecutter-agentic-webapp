@@ -72,12 +72,15 @@ export class DeterministicModelAdapter implements ModelClient {
         usage: usageFromFixture(this.fixture.usage),
       };
     } catch (error) {
-      throw new ModelError('Deterministic structured output failed validation.', {
-        code: 'invalid_response',
-        retryable: false,
-        provider: this.provider,
-        cause: error,
-      });
+      throw new ModelError(
+        'Deterministic structured output failed validation.',
+        {
+          code: 'invalid_response',
+          retryable: false,
+          provider: this.provider,
+          cause: error,
+        },
+      );
     }
   }
 
