@@ -15,6 +15,9 @@
       "path": "./packages/backend/agent-task"
     },
     {
+      "path": "./packages/backend/model"
+    },
+    {
       "path": "./packages/backend/rate-limit"
     },
     {
