@@ -679,12 +679,15 @@ export class OpenAIModelAdapter implements ModelClient {
         });
       }
       if (error instanceof ModelError) throw error;
-      throw new ModelError('OpenAI stream failed while reading response body.', {
-        code: 'unavailable',
-        retryable: true,
-        provider: this.provider,
-        cause: error,
-      });
+      throw new ModelError(
+        'OpenAI stream failed while reading response body.',
+        {
+          code: 'unavailable',
+          retryable: true,
+          provider: this.provider,
+          cause: error,
+        },
+      );
     } finally {
       streamAbort.cleanup();
     }
