@@ -1,5 +1,4 @@
 import {
-  DEFAULT_MODEL_TIMEOUT_MS,
   ModelError,
   executeModelOperation,
   normalizeModelRequestPolicy,
@@ -7,6 +6,7 @@ import {
   type ModelCompletedEvent,
   type ModelEmbeddingRequest,
   type ModelEmbeddingResult,
+  type ModelErrorCode,
   type ModelExecutionHooks,
   type ModelFinishReason,
   type ModelGenerationRequest,
@@ -58,10 +58,10 @@ function readTokenCount(
 ): number {
   const value = record?.[key];
   if (value === undefined && fallback !== undefined) return fallback;
-  if (!Number.isSafeInteger(value) || (value as number) < 0) {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
     throw invalidResponse(`OpenAI usage.${key} must be a non-negative integer.`);
   }
-  return value as number;
+  return value;
 }
 
 function readUsage(value: unknown, outputFallback?: number): ModelUsage {
@@ -77,7 +77,7 @@ function readUsage(value: unknown, outputFallback?: number): ModelUsage {
   const details = asRecord(usage.prompt_tokens_details);
   const cached = details?.cached_tokens;
   if (cached === undefined) return { inputTokens, outputTokens, totalTokens };
-  if (!Number.isSafeInteger(cached) || (cached as number) < 0) {
+  if (typeof cached !== 'number' || !Number.isSafeInteger(cached) || cached < 0) {
     throw invalidResponse(
       'OpenAI usage.prompt_tokens_details.cached_tokens must be a non-negative integer.',
     );
@@ -86,7 +86,7 @@ function readUsage(value: unknown, outputFallback?: number): ModelUsage {
     inputTokens,
     outputTokens,
     totalTokens,
-    cachedInputTokens: cached as number,
+    cachedInputTokens: cached,
   };
 }
 
@@ -143,7 +143,7 @@ function retryAfterMilliseconds(response: Response): number | undefined {
 function errorForResponse(response: Response): ModelError {
   const status = response.status;
   const retryAfterMs = retryAfterMilliseconds(response);
-  let code: ModelError['code'] = 'provider_error';
+  let code: ModelErrorCode = 'provider_error';
   let retryable = false;
   if (status === 400 || status === 404 || status === 422) {
     code = 'invalid_request';
@@ -497,25 +497,25 @@ export class OpenAIModelAdapter implements ModelClient {
         if (request.dimensions !== undefined) body.dimensions = request.dimensions;
         const response = await this.postJson('/embeddings', body, signal);
         const record = asRecord(response);
-        if (!Array.isArray(record?.data)) {
+        const data = record?.data;
+        if (!Array.isArray(data)) {
           throw invalidResponse('OpenAI embedding response did not include data.');
         }
-        const entries = record.data.map((entry) => {
+        const entries = data.map((entry) => {
           const embeddingRecord = asRecord(entry);
+          const index = embeddingRecord?.index;
+          const embedding = embeddingRecord?.embedding;
           if (
-            !embeddingRecord ||
-            !Number.isSafeInteger(embeddingRecord.index) ||
-            !Array.isArray(embeddingRecord.embedding) ||
-            !embeddingRecord.embedding.every((value) =>
-              Number.isFinite(value),
+            typeof index !== 'number' ||
+            !Number.isSafeInteger(index) ||
+            !Array.isArray(embedding) ||
+            !embedding.every(
+              (value) => typeof value === 'number' && Number.isFinite(value),
             )
           ) {
             throw invalidResponse('OpenAI embedding entry was invalid.');
           }
-          return {
-            index: embeddingRecord.index as number,
-            embedding: embeddingRecord.embedding as number[],
-          };
+          return { index, embedding: embedding as number[] };
         });
         entries.sort((left, right) => left.index - right.index);
         if (entries.length !== request.inputs.length) {
@@ -527,7 +527,7 @@ export class OpenAIModelAdapter implements ModelClient {
           provider: this.provider,
           model: readResponseModel(response, request.model),
           embeddings: entries.map((entry) => entry.embedding),
-          usage: readUsage(record.usage, 0),
+          usage: readUsage(record?.usage, 0),
         };
       },
       this.executionHooks(),
@@ -539,10 +539,7 @@ export class OpenAIModelAdapter implements ModelClient {
   ): AsyncIterable<ModelStreamEvent> {
     assertRequest(request);
     const policy = normalizeModelRequestPolicy(request);
-    const streamAbort = createStreamAbortContext(
-      request.signal,
-      policy.timeoutMs ?? DEFAULT_MODEL_TIMEOUT_MS,
-    );
+    const streamAbort = createStreamAbortContext(request.signal, policy.timeoutMs);
     const operationOptions: ModelRequestOptions = {
       timeoutMs: policy.timeoutMs,
       signal: streamAbort.controller.signal,
@@ -593,7 +590,10 @@ export class OpenAIModelAdapter implements ModelClient {
               text: delta.content,
             };
           }
-          if (choice?.finish_reason !== null && choice?.finish_reason !== undefined) {
+          if (
+            choice?.finish_reason !== null &&
+            choice?.finish_reason !== undefined
+          ) {
             finishReason = normalizeFinishReason(choice.finish_reason);
           }
         }
