@@ -303,6 +303,50 @@ pnpm preview:smoke
 pnpm performance:load
 ```
 
+## Finalize release record fails
+
+**Symptom:** The protected **Finalize release record** workflow rejects the release, cannot download evidence, fails signature/attestation verification, or the deployed smoke profile fails.
+
+**Likely causes:** A release or promotion run ID is wrong or not successful; the version/run/manifest identities disagree; the backup identifier is missing or not deployment-specific; rollback window or schema decision is invalid; supply-chain attachments do not match the exact release run; protected production values differ from the built release; or the deployed service is not healthy/reachable for release smoke.
+
+**Diagnose:** Confirm the release was finalized from `main` and collect the exact inputs:
+
+```text
+version
+source_run_id
+promotion_run_id
+backup_identifier
+backup_captured_at
+rollback_window_minutes
+schema_compatibility
+schema_decision
+```
+
+Inspect the named `Release images` and `Promote release digests` runs and verify they succeeded for the intended version. Compare the promotion artifact's `release-manifest.json`, `release-images.env`, and `release-plan.production.json` with what the deployment consumed. For smoke failures, reproduce the release endpoints using the same production-safe environment configuration.
+
+**Resolve:** Correct the first identity or deployment-evidence mismatch. Do not substitute a different run, rebuild an image, retag a release, or invent a backup identifier to make finalization pass. If the deployed release itself is unhealthy, follow the approved rollback or roll-forward decision before trying to finalize a successful record.
+
+**Verify:** After a successful finalization run, download `release-record-<VERSION>` and validate the complete bundle:
+
+```bash
+node tools/delivery/release-record.mjs validate \
+  --record release-record.json \
+  --manifest release-manifest.json \
+  --base-directory .
+```
+
+Persist the complete bundle before the 90-day GitHub artifact retention expires.
+
+## Quarterly restore exercise fails
+
+**Symptom:** The scheduled or manually dispatched disaster-recovery exercise cannot dump, restore, compare application-table row counts, or validate migration state.
+
+**Diagnose:** Review the `disaster-recovery-exercise-<run_id>` artifact when available. Compare source/restored row-count files, migration-status output, and `restore-evidence.json` to identify whether the failure occurred during migration/seed, backup capture, restore, row-count comparison, or restored migration validation.
+
+**Resolve:** Fix the repository baseline PostgreSQL backup/restore or migration issue and rerun the exercise. Do not treat a passing repository exercise as proof that provider-specific production disaster recovery works.
+
+**Verify:** The isolated exercise passes and retains evidence, then separately confirm the production DR drill covers provider snapshot access, encryption/key recovery, permissions, networking, traffic switching, reconciliation, and declared RPO/RTO.
+
 ## Validation changes generated files
 
 **Symptom:** `pnpm check` or generation leaves a dirty tree.
@@ -395,6 +439,7 @@ pnpm check
 - [Validation and Testing](Validation-and-Testing)
 - [CI Diagnostics](CI-Diagnostics)
 - [Releases and Upgrades](Releases-and-Upgrades)
+- [Production Readiness](Production-Readiness)
 
 ## Next steps
 
