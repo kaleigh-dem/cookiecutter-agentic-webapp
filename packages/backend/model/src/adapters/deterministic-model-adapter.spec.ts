@@ -82,6 +82,28 @@ describe('DeterministicModelAdapter', () => {
     expect(events[1]).toMatchObject({ text: 'response' });
   });
 
+  it('honors cancellation before deterministic stream completion', async () => {
+    const controller = new AbortController();
+    const iterator = adapter
+      .stream({
+        model: 'fixture-model',
+        messages: [{ role: 'user', content: 'stream' }],
+        signal: controller.signal,
+      })
+      [Symbol.asyncIterator]();
+
+    await iterator.next();
+    await iterator.next();
+    const usage = await iterator.next();
+    expect(usage).toMatchObject({ done: false, value: { type: 'usage' } });
+
+    controller.abort(new Error('cancelled'));
+    await expect(iterator.next()).rejects.toMatchObject({
+      code: 'aborted',
+      retryable: false,
+    });
+  });
+
   it('surfaces fixture shape errors through the normalized error contract', async () => {
     const invalid = new DeterministicModelAdapter({
       generationText: 'unused',
