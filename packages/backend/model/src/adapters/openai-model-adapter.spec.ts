@@ -4,9 +4,11 @@ import type { ModelStreamEvent } from '../lib/model';
 import { OpenAIModelAdapter } from './openai-model-adapter';
 
 function jsonResponse(value: unknown, status = 200, headers?: HeadersInit): Response {
+  const responseHeaders = new Headers(headers);
+  responseHeaders.set('content-type', 'application/json');
   return new Response(JSON.stringify(value), {
     status,
-    headers: { 'content-type': 'application/json', ...headers },
+    headers: responseHeaders,
   });
 }
 
