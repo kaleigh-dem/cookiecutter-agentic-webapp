@@ -132,11 +132,10 @@ describe('invokeTool', () => {
     await expect(
       invokeTool(
         definition({
-          authorize:
-            authorize as unknown as ToolDefinition<
-              EchoInput,
-              EchoOutput
-            >['authorize'],
+          authorize: authorize as unknown as ToolDefinition<
+            EchoInput,
+            EchoOutput
+          >['authorize'],
           execute,
         }),
         { context, input: { message: 'hello' } },
