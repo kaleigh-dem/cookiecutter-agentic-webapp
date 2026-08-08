@@ -1,0 +1,259 @@
+name: P14-02 review fix
+
+on:
+  push:
+    branches:
+      - agent/p14-02-model-interfaces
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/p14-02-model-interfaces
+          fetch-depth: 0
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply reviewer fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'packages/backend/model/src/adapters/openai-model-adapter.ts',
+              """        entries.sort((left, right) => left.index - right.index);
+        if (entries.length !== request.inputs.length) {
+          throw invalidResponse(
+            'OpenAI embedding count did not match request inputs.',
+          );
+        }
+        return {
+""",
+              """        entries.sort((left, right) => left.index - right.index);
+        if (entries.length !== request.inputs.length) {
+          throw invalidResponse(
+            'OpenAI embedding count did not match request inputs.',
+          );
+        }
+        if (
+          entries.some(
+            (entry, expectedIndex) => entry.index !== expectedIndex,
+          )
+        ) {
+          throw invalidResponse(
+            'OpenAI embedding indexes did not uniquely cover request inputs.',
+          );
+        }
+        return {
+""",
+          )
+
+          replace_once(
+              'packages/backend/model/src/adapters/openai-model-adapter.ts',
+              """      if (streamAbort.timedOut()) {
+        throw new ModelError('Model stream timed out.', {
+          code: 'timeout',
+          retryable: true,
+          provider: this.provider,
+          cause: error,
+        });
+      }
+      throw error;
+""",
+              """      if (streamAbort.timedOut()) {
+        throw new ModelError('Model stream timed out.', {
+          code: 'timeout',
+          retryable: true,
+          provider: this.provider,
+          cause: error,
+        });
+      }
+      if (error instanceof ModelError) throw error;
+      throw new ModelError('OpenAI stream failed while reading response body.', {
+        code: 'unavailable',
+        retryable: true,
+        provider: this.provider,
+        cause: error,
+      });
+""",
+          )
+
+          replace_once(
+              'packages/backend/model/src/adapters/deterministic-model-adapter.ts',
+              """    yield {
+      type: 'usage',
+      provider: this.provider,
+      model: request.model,
+      usage,
+    };
+    yield {
+      type: 'completed',
+""",
+              """    yield {
+      type: 'usage',
+      provider: this.provider,
+      model: request.model,
+      usage,
+    };
+    assertActive(request.signal);
+    yield {
+      type: 'completed',
+""",
+          )
+
+          replace_once(
+              'packages/backend/model/src/adapters/openai-model-adapter.spec.ts',
+              """  it('translates provider SSE into provider-neutral stream events', async () => {
+""",
+              """  it('rejects duplicate or out-of-range embedding indexes', async () => {
+    for (const data of [
+      [
+        { index: 1, embedding: [0.2] },
+        { index: 1, embedding: [0.9] },
+      ],
+      [
+        { index: 0, embedding: [0.2] },
+        { index: 2, embedding: [0.9] },
+      ],
+    ]) {
+      const fetchMock: typeof fetch = async () =>
+        jsonResponse({
+          model: 'text-embedding-test',
+          data,
+          usage: { prompt_tokens: 2, total_tokens: 2 },
+        });
+      const adapter = new OpenAIModelAdapter({
+        apiKey: 'secret',
+        fetch: fetchMock,
+      });
+
+      await expect(
+        adapter.embed({
+          model: 'text-embedding-test',
+          inputs: ['first', 'second'],
+        }),
+      ).rejects.toMatchObject({
+        code: 'invalid_response',
+        provider: 'openai',
+        retryable: false,
+      });
+    }
+  });
+
+  it('translates provider SSE into provider-neutral stream events', async () => {
+""",
+          )
+
+          replace_once(
+              'packages/backend/model/src/adapters/openai-model-adapter.spec.ts',
+              """  it('maps non-retryable provider authentication failures', async () => {
+""",
+              """  it('normalizes stream body transport failures without retrying', async () => {
+    let calls = 0;
+    const fetchMock: typeof fetch = async () => {
+      calls += 1;
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            controller.error(new Error('connection lost'));
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        },
+      );
+    };
+    const adapter = new OpenAIModelAdapter({
+      apiKey: 'secret',
+      fetch: fetchMock,
+    });
+    const iterator = adapter
+      .stream({
+        ...generationRequest,
+        retry: { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 5 },
+      })
+      [Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toMatchObject({
+      code: 'unavailable',
+      provider: 'openai',
+      retryable: true,
+    });
+    expect(calls).toBe(1);
+  });
+
+  it('maps non-retryable provider authentication failures', async () => {
+""",
+          )
+
+          replace_once(
+              'packages/backend/model/src/adapters/deterministic-model-adapter.spec.ts',
+              """  it('surfaces fixture shape errors through the normalized error contract', async () => {
+""",
+              """  it('honors cancellation before deterministic stream completion', async () => {
+    const controller = new AbortController();
+    const iterator = adapter
+      .stream({
+        model: 'fixture-model',
+        messages: [{ role: 'user', content: 'stream' }],
+        signal: controller.signal,
+      })
+      [Symbol.asyncIterator]();
+
+    await iterator.next();
+    await iterator.next();
+    const usage = await iterator.next();
+    expect(usage).toMatchObject({ done: false, value: { type: 'usage' } });
+
+    controller.abort(new Error('cancelled'));
+    await expect(iterator.next()).rejects.toMatchObject({
+      code: 'aborted',
+      retryable: false,
+    });
+  });
+
+  it('surfaces fixture shape errors through the normalized error contract', async () => {
+""",
+          )
+          PY
+      - name: Format and test model boundary
+        run: |
+          pnpm exec prettier --write \
+            packages/backend/model/src/adapters/openai-model-adapter.ts \
+            packages/backend/model/src/adapters/openai-model-adapter.spec.ts \
+            packages/backend/model/src/adapters/deterministic-model-adapter.ts \
+            packages/backend/model/src/adapters/deterministic-model-adapter.spec.ts
+          pnpm nx run backend-model:test
+          pnpm nx run backend-model:typecheck
+      - name: Commit review fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/p14-02-review-fix.yml
+          git add \
+            packages/backend/model/src/adapters/openai-model-adapter.ts \
+            packages/backend/model/src/adapters/openai-model-adapter.spec.ts \
+            packages/backend/model/src/adapters/deterministic-model-adapter.ts \
+            packages/backend/model/src/adapters/deterministic-model-adapter.spec.ts
+          git commit -m 'fix(model): address P14-02 review findings'
+          git push origin HEAD:agent/p14-02-model-interfaces
