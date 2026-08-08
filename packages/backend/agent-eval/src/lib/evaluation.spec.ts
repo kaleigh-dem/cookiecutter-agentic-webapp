@@ -113,6 +113,34 @@ describe('evaluation lifecycle', () => {
     expect(result.passed).toBe(true);
   });
 
+  it('rejects metric codes that could retain raw subject output', async () => {
+    const secretOutput = 'TOP-SECRET-OUTPUT';
+
+    await expect(
+      runEvaluationCase({
+        fixture: {
+          id: 'synthetic-payload-safe-code',
+          classification: 'synthetic',
+          input: 'request',
+          expected: 'accepted',
+        },
+        subject: () => ({ output: secretOutput }),
+        evaluators: [
+          {
+            id: 'unsafe-code',
+            kind: 'rule',
+            evaluate: ({ output }) => ({
+              score: 1,
+              passed: true,
+              code: output,
+            }),
+          },
+        ],
+        budget: {},
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_metric' });
+  });
+
   it('fails closed on production-derived fixtures without data review', async () => {
     const subject = vi.fn(() => ({ output: 'never' }));
 

@@ -508,6 +508,12 @@ function validateMetric(metric: EvaluationMetric): EvaluationMetric {
     );
   }
   const code = nonEmptyString(metric.code, 'metric.code', 'invalid_metric');
+  if (!/^[a-z][a-z0-9_]{0,63}$/.test(code)) {
+    throw new EvaluationError(
+      'invalid_metric',
+      'metric.code must be a lowercase snake-case identifier up to 64 characters.',
+    );
+  }
   return { score, passed: metric.passed, code };
 }
 
