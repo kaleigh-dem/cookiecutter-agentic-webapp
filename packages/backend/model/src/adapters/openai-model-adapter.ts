@@ -556,6 +556,15 @@ export class OpenAIModelAdapter implements ModelClient {
             'OpenAI embedding count did not match request inputs.',
           );
         }
+        if (
+          entries.some(
+            (entry, expectedIndex) => entry.index !== expectedIndex,
+          )
+        ) {
+          throw invalidResponse(
+            'OpenAI embedding indexes did not uniquely cover request inputs.',
+          );
+        }
         return {
           provider: this.provider,
           model: readResponseModel(response, request.model),
@@ -669,7 +678,13 @@ export class OpenAIModelAdapter implements ModelClient {
           cause: error,
         });
       }
-      throw error;
+      if (error instanceof ModelError) throw error;
+      throw new ModelError('OpenAI stream failed while reading response body.', {
+        code: 'unavailable',
+        retryable: true,
+        provider: this.provider,
+        cause: error,
+      });
     } finally {
       streamAbort.cleanup();
     }
