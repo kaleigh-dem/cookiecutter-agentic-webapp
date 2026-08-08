@@ -13,6 +13,7 @@ flowchart LR
   end
   subgraph project_group_packages["packages"]
     project_backend_agent_task["backend-agent-task<br/>packages/backend/agent-task<br/>npm:private, runtime:node, scope:backend, type:domain"]
+    project_backend_agent_tool["backend-agent-tool<br/>packages/backend/agent-tool<br/>runtime:node, scope:backend, type:util"]
     project_backend_model["backend-model<br/>packages/backend/model<br/>runtime:node, scope:backend, type:util"]
     project_backend_rate_limit["backend-rate-limit<br/>packages/backend/rate-limit<br/>npm:private, runtime:node, scope:backend, type:domain"]
     project_contracts["contracts<br/>packages/contracts<br/>npm:private, runtime:universal, scope:shared, type:contract"]

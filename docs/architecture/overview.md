@@ -30,17 +30,20 @@ Applications are composition roots. HTTP, framework, process lifecycle, and tran
 
 ```text
 packages/backend/agent-task          framework-free Agent Task domain and use cases
+packages/backend/agent-tool          framework-neutral typed tool invocation and authorization boundary
 packages/backend/model               provider-neutral model contracts, execution policy, and optional adapters
 packages/backend/rate-limit          framework-free rate-limit policies and storage port
-packages/web/features/agent-tasks    browser-facing Agent Tasks feature and client behavior
+packages/web/features/agent-tasks    browser-facing Agent Tasks feature, client behavior, and agent-stream consumer
 packages/ui                          shared React presentation
-packages/contracts                   OpenAPI source, generated client/server types, and runtime validators
+packages/contracts                   OpenAPI source, generated client/server types, runtime validators, and versioned agent-stream contract
 packages/database                    PostgreSQL schema, migrations, repositories, outbox, and rate-limit adapters
 packages/env                         Node-only validated configuration
 packages/observability               structured logging, metrics, tracing, and telemetry setup
 ```
 
 The model project is backend-only and is not composed into the default API, worker, or web applications. It owns provider-neutral generation, structured-output, embedding, streaming, usage, cancellation, timeout, retry, and error semantics. Provider wire formats stay behind replaceable adapters; the current OpenAI adapter uses the Node runtime `fetch` API and adds no provider SDK dependency. See `docs/model-interfaces.md` and ADRs 0020–0021.
+
+The P14-03 tool and browser-stream boundaries remain optional runtime primitives rather than default application composition. `backend-agent-tool` validates model-controlled input and handler output and requires authorization against application-supplied actor context before execution. `contracts` owns strict V1 NDJSON agent-stream events, while the Agent Tasks web feature incrementally consumes that universal contract and enforces sequence plus stream-identity continuity. Raw prompts and tool payloads are not V1 transport fields. See `docs/typed-tools-and-streaming.md` and ADR 0022.
 
 `tools/workspace-plugin` owns the released preset, structural generators, and downstream upgrade tooling. `tools/delivery`, `infra`, and `performance` own production-image preparation, environment validation, preview orchestration, release manifests and plans, and performance budgets. `tools/documentation` validates documented links, paths, commands, environment names, identity and authentication descriptions, architecture evidence, and change records.
 
@@ -62,6 +65,8 @@ The graph check fails when the committed diagram differs from Nx. See `docs/docu
 - Domain and contract projects remain framework-free.
 - Infrastructure adapters implement ports owned by domain or policy libraries.
 - Provider-specific model protocol translation stays behind the provider-neutral model boundary and is not a default application dependency.
+- Tool authorization uses trusted application actor context at the invocation boundary; model output is never an authorization decision.
+- Browser-facing AI events use the shared versioned agent-stream contract rather than provider-native streaming frames.
 - HTTP contracts originate in `packages/contracts/openapi/source`; generated artifacts are consumed at API and browser boundaries.
 - The API persists Agent Tasks and outbox events transactionally. The worker claims outbox rows at least once and executes fenced, idempotent handlers.
 - Cross-project imports use public entry points rather than deep internal paths.
