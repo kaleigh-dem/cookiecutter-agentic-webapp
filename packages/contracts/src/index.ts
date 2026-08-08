@@ -5,5 +5,6 @@ export type {
   HealthResponse,
   SuccessResponse,
 } from './generated/server';
+export * from './agent-stream';
 export * from './agent-task-execution-requested';
 export * from './generated/runtime';

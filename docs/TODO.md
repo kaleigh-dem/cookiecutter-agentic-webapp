@@ -41,7 +41,7 @@ Detailed completed-phase task lists are intentionally omitted. Relevant implemen
 ## Execution order
 
 1. Phase 13 is active; P13-01 through P13-06 are complete, and no additional Phase 13 implementation is planned.
-2. Phase 14 is optional; P14-01 and P14-02 are complete, P14-03 is next, and the default workspace profile must remain free of AI runtime dependencies.
+2. Phase 14 is optional; P14-01 through P14-03 are complete, P14-04 is next, and the default workspace profile must remain free of AI runtime dependencies.
 
 ## Phase 13 — Supply chain, CI scale, and documentation integrity
 
@@ -92,7 +92,7 @@ Exit criteria: production uses the exact image digests validated in preview, eac
 
 Goal: offer reusable AI application capabilities without coupling ordinary generated web applications to a specific model provider or orchestration framework.
 
-Phase 14 progress record (2026-08-07): P14-01 is completed by ADR 0020. It separates coding-agent repository support from runtime AI product capabilities, keeps provider-neutral contracts distinct from optional provider adapters, preserves `ai=false` as the default profile, and establishes fail-closed data-classification, explicit-retention, and server-side provider-selection constraints. P14-02 adds the backend `ModelClient` boundary for generation, JSON-Schema structured output, embeddings, and streaming; normalizes usage, cancellation, timeouts, errors, and bounded retries; and supplies an OpenAI native-fetch adapter plus a deterministic no-network adapter without adding a provider SDK dependency or wiring model calls into the default applications. P14-03 is next.
+Phase 14 progress record (2026-08-07): P14-01 is completed by ADR 0020. It separates coding-agent repository support from runtime AI product capabilities, keeps provider-neutral contracts distinct from optional provider adapters, preserves `ai=false` as the default profile, and establishes fail-closed data-classification, explicit-retention, and server-side provider-selection constraints. P14-02 adds the backend `ModelClient` boundary for generation, JSON-Schema structured output, embeddings, and streaming; normalizes usage, cancellation, timeouts, errors, and bounded retries; and supplies an OpenAI native-fetch adapter plus a deterministic no-network adapter without adding a provider SDK dependency or wiring model calls into the default applications. P14-03 adds runtime-validated typed tools with mandatory invocation-time authorization, a strict V1 NDJSON agent-stream contract consumed by the web feature, and identifier-preserving browser decoding without composing AI runtime behavior into the default applications. P14-04 is next.
 
 - [x] **P14-01 Define profile boundaries in an ADR.**
   - Separate coding-agent repository support from runtime AI product capabilities.
@@ -104,7 +104,7 @@ Phase 14 progress record (2026-08-07): P14-01 is completed by ADR 0020. It separ
   - Implement at least two provider adapters or one provider plus a deterministic test adapter.
   - Normalize timeouts, cancellation, usage, errors, and retry behavior.
 
-- [ ] **P14-03 Add typed tools and streaming transport.**
+- [x] **P14-03 Add typed tools and streaming transport.**
   - Define tools with runtime input and output schemas.
   - Add authorization at tool invocation boundaries.
   - Stream events through a versioned protocol consumed by the web profile.
