@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import type { ModelStreamEvent } from '../lib/model';
 import { OpenAIModelAdapter } from './openai-model-adapter';
 
-function jsonResponse(value: unknown, status = 200, headers?: HeadersInit): Response {
+function jsonResponse(
+  value: unknown,
+  status = 200,
+  headers?: Record<string, string>,
+): Response {
   const responseHeaders = new Headers(headers);
   responseHeaders.set('content-type', 'application/json');
   return new Response(JSON.stringify(value), {
